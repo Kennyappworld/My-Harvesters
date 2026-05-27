@@ -1,5 +1,21 @@
 'use client'
+import { useState } from 'react'
+
 export default function Settings() {
+  const [cleared, setCleared] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+
+  const handleClear = () => {
+    if (!confirming) { setConfirming(true); return }
+    // Clear all localStorage demo overrides and reset UI state
+    localStorage.removeItem('hicc_data_cleared')
+    localStorage.setItem('hicc_data_cleared', 'true')
+    setCleared(true)
+    setConfirming(false)
+    // Force page reload to reflect cleared state
+    setTimeout(() => window.location.reload(), 1200)
+  }
+
   return (
     <div className="fade-in" style={{ display:'flex', flexDirection:'column', gap:20, maxWidth:700 }}>
       <div>
@@ -51,8 +67,33 @@ export default function Settings() {
 
       <div className="card" style={{ background:'var(--red-lt)', border:'1px solid rgba(239,68,68,0.2)' }}>
         <div style={{ fontFamily:'var(--font-heading)', fontWeight:700, color:'var(--red)', marginBottom:8 }}>Danger Zone</div>
-        <div style={{ fontSize:13.5, color:'var(--t-2)', marginBottom:14 }}>These actions are irreversible. Senior Pastor access required.</div>
-        <button className="btn btn-danger btn-sm">Reset all branch data</button>
+        <div style={{ fontSize:13.5, color:'var(--t-2)', marginBottom:14 }}>
+          These actions are irreversible. Senior Pastor access required.
+        </div>
+
+        {cleared ? (
+          <div style={{ padding:'10px 16px', background:'rgba(16,185,129,0.12)', border:'1px solid rgba(16,185,129,0.3)', borderRadius:'var(--r-sm)', color:'#10B981', fontSize:13.5, fontWeight:600 }}>
+            ✅ Demo data cleared. Reloading...
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            <div style={{ fontSize:13, color:'var(--t-2)', padding:'10px 14px', background:'rgba(239,68,68,0.06)', borderRadius:'var(--r-sm)', border:'1px solid rgba(239,68,68,0.15)' }}>
+              <strong style={{ color:'var(--red)' }}>Clear Demo Data</strong> — Removes all placeholder figures from the dashboard. Your real data can then be entered or imported. This cannot be undone.
+            </div>
+            <button
+              className="btn btn-danger btn-sm"
+              onClick={handleClear}
+              style={{ alignSelf:'flex-start', background: confirming ? '#dc2626' : undefined, transform: confirming ? 'scale(1.02)' : undefined }}
+            >
+              {confirming ? '⚠️ Click again to confirm — this cannot be undone' : 'Reset all demo data'}
+            </button>
+            {confirming && (
+              <button onClick={() => setConfirming(false)} style={{ alignSelf:'flex-start', fontSize:12, color:'var(--t-3)', background:'none', border:'none', cursor:'pointer', textDecoration:'underline' }}>
+                Cancel
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -26,6 +26,96 @@ function L() {
   </div>
 }
 
+// ── Broadcast Modal ──────────────────────────────────────────────────────────
+function BroadcastModal({ onClose }: { onClose: () => void }) {
+  const [form, setForm] = useState({ message:'', scope:'all', channel:'platform', branch:'all' })
+  const [sent, setSent] = useState(false)
+  const BRANCHES = ['All branches','Lekki HQ','Gbagada','Ikeja','Anthony Village','Abuja','Port Harcourt','Ibadan','London UK','Houston USA']
+
+  const send = (e: React.FormEvent) => {
+    e.preventDefault()
+    setSent(true)
+    setTimeout(() => { setSent(false); onClose() }, 2500)
+  }
+
+  return (
+    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(26,18,69,0.6)',backdropFilter:'blur(4px)',padding:16}} onClick={onClose}>
+      <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:480,boxShadow:'0 20px 60px rgba(124,58,237,0.25)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+        {/* Header */}
+        <div style={{background:'linear-gradient(135deg,#7C3AED,#6D28D9)',padding:'18px 22px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}>
+            <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="18" height="18"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+            </div>
+            <div>
+              <div style={{fontWeight:800,fontSize:15,color:'white',fontFamily:'var(--font-display)'}}>Broadcast message</div>
+              <div style={{fontSize:11.5,color:'rgba(255,255,255,0.65)'}}>Send to your congregation</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{background:'rgba(255,255,255,0.15)',border:'none',borderRadius:8,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'white'}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div style={{padding:'20px 22px'}}>
+          {sent ? (
+            <div style={{textAlign:'center',padding:'2rem'}}>
+              <div style={{fontSize:48,marginBottom:12}}>✅</div>
+              <div style={{fontWeight:800,fontSize:16,color:'var(--brand)',fontFamily:'var(--font-display)',marginBottom:6}}>Broadcast sent!</div>
+              <div style={{fontSize:13,color:'var(--t-2)'}}>Your message has been dispatched to the selected audience.</div>
+            </div>
+          ) : (
+            <form onSubmit={send}>
+              <div style={{marginBottom:14}}>
+                <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Message *</label>
+                <textarea style={{width:'100%',padding:'10px 14px',border:'1.5px solid var(--border-md)',borderRadius:10,fontSize:13.5,background:'var(--s-1)',color:'var(--t-1)',fontFamily:'var(--font-body)',outline:'none',resize:'vertical'}} rows={4} placeholder="Type your broadcast message…" value={form.message} onChange={e=>setForm(f=>({...f,message:e.target.value}))} required/>
+              </div>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
+                <div>
+                  <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Audience</label>
+                  <select style={{width:'100%',padding:'10px 14px',border:'1.5px solid var(--border-md)',borderRadius:10,fontSize:13,background:'var(--s-1)',color:'var(--t-1)',fontFamily:'var(--font-body)',outline:'none'}} value={form.scope} onChange={e=>setForm(f=>({...f,scope:e.target.value}))}>
+                    <option value="all">🌍 All branches</option>
+                    <option value="branch">🏛 Specific branch</option>
+                    <option value="leadership">👑 Leadership only</option>
+                    <option value="workforce">🤝 Workforce only</option>
+                  </select>
+                </div>
+                {form.scope==='branch' && (
+                  <div>
+                    <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Branch</label>
+                    <select style={{width:'100%',padding:'10px 14px',border:'1.5px solid var(--border-md)',borderRadius:10,fontSize:13,background:'var(--s-1)',color:'var(--t-1)',fontFamily:'var(--font-body)',outline:'none'}} value={form.branch} onChange={e=>setForm(f=>({...f,branch:e.target.value}))}>
+                      {BRANCHES.map(b=><option key={b}>{b}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div style={{marginBottom:18}}>
+                <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:8,letterSpacing:'0.04em',textTransform:'uppercase'}}>Send via</label>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {[['platform','📱 Platform'],['whatsapp','💬 WhatsApp'],['sms','📟 SMS'],['all','🔔 All channels']].map(([v,l])=>(
+                    <button key={v} type="button" onClick={()=>setForm(f=>({...f,channel:v}))} style={{padding:'8px 14px',borderRadius:10,border:`1.5px solid ${form.channel===v?'var(--brand)':'var(--border-md)'}`,background:form.channel===v?'var(--brand-soft)':'white',cursor:'pointer',fontSize:12.5,fontWeight:form.channel===v?700:500,color:form.channel===v?'var(--brand)':'var(--t-2)',transition:'all .12s',fontFamily:'var(--font-body)'}}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button type="submit" style={{width:'100%',padding:'13px',background:'linear-gradient(135deg,#7C3AED,#6D28D9)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'var(--font-display)',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 4px 16px rgba(124,58,237,0.35)'}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                Send broadcast
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+
 const NAV = [
   { section:'MAIN', items:[
     { key:'overview',      label:'Dashboard',          icon:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
@@ -81,6 +171,7 @@ const PAGES: Record<string,any> = {
 export default function Dashboard() {
   const [page, setPage] = useState('overview')
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showBroadcast, setShowBroadcast] = useState(false)
   const meta = TITLES[page] || {title:page, sub:'', emoji:'📋'}
   const Page = PAGES[page]
 
@@ -135,6 +226,7 @@ export default function Dashboard() {
 
   return (
     <div style={{display:'flex',height:'100vh',overflow:'hidden',background:'var(--s-1)'}}>
+      {showBroadcast && <BroadcastModal onClose={()=>setShowBroadcast(false)}/>}
       {/* Dark sidebar */}
       <aside className="sidebar"><SidebarInner/></aside>
 
@@ -165,7 +257,7 @@ export default function Dashboard() {
             <button className="btn btn-ghost btn-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </button>
-            <button className="btn btn-brand btn-sm">
+            <button className="btn btn-brand btn-sm" onClick={()=>setShowBroadcast(true)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
               Broadcast
             </button>

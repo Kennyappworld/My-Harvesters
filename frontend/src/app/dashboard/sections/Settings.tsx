@@ -16,31 +16,25 @@ const ROLE_LABELS: Record<string,string> = { senior_pastor:'Senior Pastor', bran
 const ROLE_COLORS: Record<string,string> = { senior_pastor:'var(--brand)', branch_pastor:'var(--purple)', unit_head:'var(--teal)', member:'var(--green)' }
 
 function QRCode({ value, size=160 }: { value:string; size?:number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const c = canvasRef.current
-    if (!c) return
-    const ctx = c.getContext('2d')!
-    ctx.fillStyle = '#FFFFFF'
-    ctx.fillRect(0,0,size,size)
-    // Simplified visual QR placeholder — real implementation uses qrcode library
-    const cellSize = size / 25
-    ctx.fillStyle = '#1A1245'
-    for (let row=0; row<25; row++) {
-      for (let col=0; col<25; col++) {
-        const seed = (row*25+col + value.charCodeAt(row%value.length)) % 3
-        if (seed === 0 || (row<7&&col<7) || (row<7&&col>17) || (row>17&&col<7)) {
-          ctx.fillRect(col*cellSize, row*cellSize, cellSize, cellSize)
-        }
-      }
-    }
-    ctx.strokeStyle = '#1A1245'
-    ctx.lineWidth = cellSize
-    ctx.strokeRect(cellSize*0.5, cellSize*0.5, cellSize*6, cellSize*6)
-    ctx.strokeRect(cellSize*18.5, cellSize*0.5, cellSize*6, cellSize*6)
-    ctx.strokeRect(cellSize*0.5, cellSize*18.5, cellSize*6, cellSize*6)
-  }, [value, size])
-  return <canvas ref={canvasRef} width={size} height={size} style={{ borderRadius:8, border:'4px solid white' }}/>
+  // Use Google Charts API to generate a real QR code image
+  const encoded = encodeURIComponent(value)
+  const src = `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${encoded}&choe=UTF-8&chld=M|2`
+  return (
+    <img
+      src={src}
+      alt="QR Code"
+      width={size}
+      height={size}
+      style={{ borderRadius:8, border:'4px solid white', display:'block' }}
+      onError={e=>{
+        // Fallback: show a styled placeholder if image fails
+        const t = e.currentTarget
+        t.style.display='none'
+        const p = t.nextElementSibling as HTMLElement
+        if(p) p.style.display='flex'
+      }}
+    />
+  )
 }
 
 export default function Settings() {

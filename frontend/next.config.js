@@ -1,7 +1,26 @@
+const withPWA = require('@ducanh2912/next-pwa').default({
+  dest: 'public',
+  cacheOnFrontEndNav: true,
+  aggressiveFrontEndNavCaching: true,
+  reloadOnOnline: true,
+  swcMinify: true,
+  disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+    ],
+    formats: ['image/avif', 'image/webp'],
+  },
   async headers() {
     return [{
       source: '/(.*)',
@@ -16,4 +35,5 @@ const nextConfig = {
     }]
   },
 }
-module.exports = nextConfig
+
+module.exports = withPWA(nextConfig)

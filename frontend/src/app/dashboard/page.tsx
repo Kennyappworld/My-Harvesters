@@ -18,6 +18,8 @@ const Attendance    = dynamic(() => import('./sections/Attendance'),        { lo
 const Events        = dynamic(() => import('./sections/Events'),            { loading: () => <L/> })
 const Reports       = dynamic(() => import('./sections/Reports'),           { loading: () => <L/> })
 const Settings      = dynamic(() => import('./sections/Settings'),          { loading: () => <L/> })
+const PastoralPulse = dynamic(() => import('./sections/PastoralPulse'),      { loading: () => <L/> })
+const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -129,6 +131,7 @@ const NAV = [
     { key:'prayer',        label:'Prayer Wall',        icon:'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z', badge:12, bc:'nb-brand' },
     { key:'testimony',     label:'Testimonies',        icon:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', badge:4, bc:'nb-green' },
     { key:'announcements', label:'Announcements',      icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0', badge:4 },
+    { key:'pastoral',       label:'Pastoral Pulse',     icon:'M22 12h-4l-3 9L9 3l-3 9H2', badge:'!', bc:'nb-brand' },
     { key:'meetings',      label:'Meetings',           icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.259a1 1 0 0 1-1.447.894L15 14M2 8h13v8H2z' },
     { key:'events',        label:'Events',             icon:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', badge:2, bc:'nb-brand' },
   ]},
@@ -137,6 +140,7 @@ const NAV = [
     { key:'soultracker',  label:'Soul Tracker',        icon:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', badge:'New', bc:'nb-green' },
     { key:'memberverif',  label:'Member Verification', icon:'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3' },
     { key:'volunteer',    label:'Workforce',           icon:'M9 11l3 3L22 4' },
+    { key:'membcard',     label:'Membership Cards',    icon:'M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z' },
   ]},
   { section:'OPERATIONS', items:[
     { key:'attendance',   label:'Attendance',          icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
@@ -163,6 +167,8 @@ const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
   attendance:   {title:'Attendance',         sub:'Per-service · Per-department · Member names', emoji:'✓'},
   reports:      {title:'Reports',            sub:'Monthly branch reports · Analytics summaries', emoji:'📊'},
   settings:     {title:'Settings',           sub:'Users · Branches · Departments · QR Signup', emoji:'⚙️'},
+  pastoral:     {title:'Pastoral Pulse',     sub:'Leadership intelligence · Smart alerts · Branch insights', emoji:'❤️'},
+  membcard:     {title:'Membership Cards',   sub:'Digital ID · QR verification · Print-ready', emoji:'🪪'},
 }
 
 const PAGES: Record<string,any> = {
@@ -170,7 +176,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, membcard:MembershipCard,
 }
 
 export default function Dashboard() {

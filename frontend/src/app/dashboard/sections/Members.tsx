@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, ChangeEvent } from 'react'
 import { branches, DEPARTMENTS } from '@/lib/data'
 
 const SAMPLE_MEMBERS = [
-  { id:'m1', name:'Emmanuel Abiola',  branch:'lekki',  dept:'ushering', role:'Unit Head', status:'active',  joined:'Nov 2024', phone:'+234 810 111 2222', email:'emmanuel@hicc.org',  growth:3, attendance:92, birthday:'Mar 14' },
+  { id:'m1', name:'Emmanuel Abiola',  branch:'lekki',  dept:'ushering', role:'Unit Head', status:'active',  joined:'Nov 2024', phone:'+234 810 111 2222', email:'emmanuel@hicc.org',  growth:3, attendance:92, birthday:'Mar 14', photo:'' },
   { id:'m2', name:'Funke Oladipo',    branch:'ikeja',  dept:'prayer',   role:'Member',    status:'active',  joined:'Dec 2024', phone:'+234 803 222 3333', email:'funke.o@hicc.org',    growth:2, attendance:78, birthday:'Jul 22' },
   { id:'m3', name:'Ngozi Kalu',       branch:'lekki',  dept:'worship',  role:'Member',    status:'active',  joined:'Oct 2024', phone:'+234 706 333 4444', email:'ngozi.k@hicc.org',    growth:3, attendance:95, birthday:'Feb 5' },
   { id:'m4', name:'Richard Eze',      branch:'abuja',  dept:'media',    role:'Unit Head', status:'active',  joined:'Feb 2025', phone:'+234 809 444 5555', email:'richard.e@hicc.org',  growth:2, attendance:85, birthday:'Sep 3' },
@@ -19,6 +19,21 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
   const [selected, setSelected] = useState<any>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ name:'', phone:'', email:'', branch:'lekki', dept:'ushering', birthday:'' })
+  const photoRef = useRef<HTMLInputElement>(null)
+
+  const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>, memberId: string) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { alert('Photo must be under 5MB'); return }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = reader.result as string
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, photo: dataUrl } : m))
+      if (selected?.id === memberId) setSelected((s: any) => ({ ...s, photo: dataUrl }))
+    }
+    reader.readAsDataURL(file)
+    // In production: upload to Cloudinary and store the returned URL
+  }
 
   const filtered = members.filter(m => {
     const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) || m.email.toLowerCase().includes(search.toLowerCase())
@@ -45,7 +60,21 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
           <button className="btn btn-ghost btn-sm" style={{ marginBottom:14 }} onClick={()=>setSelected(null)}>← All members</button>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 2fr', gap:16 }}>
             <div className="card card-p" style={{ textAlign:'center' }}>
-              <div className="av av-lg av-purple" style={{ width:64, height:64, fontSize:22, margin:'0 auto 12px' }}>{selected.name.split(' ').map((n:string)=>n[0]).join('').slice(0,2)}</div>
+              {/* Profile photo — click to replace (optional) */}
+              <div style={{ position: 'relative', width: 72, height: 72, margin: '0 auto 12px' }}>
+                {selected.photo
+                  ? <img src={selected.photo} alt={selected.name} style={{ width: 72, height: 72, borderRadius: 18, objectFit: 'cover', border: '2px solid var(--border-md)' }}/>
+                  : <div className="av av-lg av-purple" style={{ width: 72, height: 72, fontSize: 22 }}>{selected.name.split(' ').map((n:string)=>n[0]).join('').slice(0,2)}</div>
+                }
+                <button
+                  onClick={() => photoRef.current?.click()}
+                  title="Change profile photo"
+                  style={{ position: 'absolute', bottom: -4, right: -4, width: 24, height: 24, borderRadius: '50%', background: 'var(--brand)', border: '2px solid var(--navy-1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="12" height="12"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                </button>
+                <input ref={photoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handlePhotoUpload(e, selected.id)}/>
+              </div>
               <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)' }}>{selected.name}</div>
               <div style={{ fontSize:12, color:'var(--t-2)', marginTop:3 }}>{DEPARTMENTS.find(d=>d.id===selected.dept)?.name||selected.dept}</div>
               <div style={{ fontSize:11.5, color:'var(--t-3)', marginTop:2 }}>{branches.find(b=>b.id===selected.branch)?.name}</div>

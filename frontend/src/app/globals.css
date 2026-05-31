@@ -404,3 +404,38 @@ select.input option { background:white; color:var(--t-1); }
 .kpi-card-purple { background:var(--brand-soft); border:1.5px solid var(--brand); }
 .kpi-card-teal   { background:rgba(20,184,166,0.08); border:1.5px solid var(--teal); }
 .kpi-card-gold   { background:var(--gold-lt); border:1.5px solid var(--gold); }
+
+/* ── Skeleton loading animation ────────────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -680px 0; }
+  100% { background-position: 680px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--navy-3) 25%, var(--navy-2) 50%, var(--navy-3) 75%);
+  background-size: 1360px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 6px;
+}
+.skeleton-text  { height: 13px; margin-bottom: 8px; }
+.skeleton-title { height: 18px; width: 60%; margin-bottom: 12px; }
+.skeleton-block { height: 80px; width: 100%; margin-bottom: 12px; border-radius: var(--r); }
+
+/* ── PWA install prompt ─────────────────────────────────────────────────────── */
+.pwa-banner {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--grad-brand); color: white;
+  padding: 12px 20px; border-radius: 40px;
+  font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 8px 32px rgba(124,58,237,0.4);
+  z-index: 90; white-space: nowrap;
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(20px); } }
+
+/* ── Profile photo ring ─────────────────────────────────────────────────────── */
+.photo-ring {
+  border: 2.5px solid var(--brand);
+  padding: 2px;
+  border-radius: 50%;
+}

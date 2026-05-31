@@ -16,8 +16,19 @@ export default function Meetings() {
   const [scheduled, setScheduled] = useState(false)
   const [copied, setCopied] = useState<string|null>(null)
 
-  // Real Google Meet new meeting URL — opens Google Meet's "new meeting" page
-  const MEET_NEW = 'https://meet.google.com/new'
+  const [instantLink, setInstantLink] = useState<string|null>(null)
+
+  const genMeetCode = () => {
+    const seg = () => Math.random().toString(36).slice(2,6)
+    return `${seg()}-${seg()}-${seg()}`
+  }
+
+  const startInstantMeeting = () => {
+    const code = genMeetCode()
+    const link = `https://meet.google.com/${code}`
+    setInstantLink(link)
+    window.open(link, '_blank', 'noopener')
+  }
 
   const copy = (text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(()=>setCopied(null), 1800) })
@@ -25,10 +36,11 @@ export default function Meetings() {
 
   const scheduleNew = (e: React.FormEvent) => {
     e.preventDefault()
+    const code = genMeetCode()
     const newMtg = {
       id: `mt${Date.now()}`, title: form.title, type: form.type,
       date: form.date, time: form.time, duration: Number(form.duration),
-      attendees:9, attended:0, meetCode:'', status:'upcoming', summary:''
+      attendees: 9, attended: 0, meetCode: code, status:'upcoming', summary:''
     }
     setMeetings(prev => [...prev, newMtg])
     setScheduled(true)
@@ -47,10 +59,10 @@ export default function Meetings() {
           <div style={{fontSize:12,color:'var(--t-2)',marginTop:2}}>Google Meet integration · Schedule · Instant · Summaries</div>
         </div>
         {/* Start instant meeting — opens real Google Meet */}
-        <a href={MEET_NEW} target="_blank" rel="noopener noreferrer" className="btn btn-brand btn-sm" style={{textDecoration:'none'}}>
+        <button onClick={startInstantMeeting} className="btn btn-brand btn-sm">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.259a1 1 0 0 1-1.447.894L15 14M2 8h13v8H2z"/></svg>
           Start instant meeting
-        </a>
+        </button>
       </div>
 
       {/* Info banner about Google Meet */}
@@ -82,10 +94,20 @@ export default function Meetings() {
             Google Meet requires a Google account to generate real meeting links. Click the button below to start a new meeting on Google Meet directly. Copy the link from your browser and share with participants.
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            <a href={MEET_NEW} target="_blank" rel="noopener noreferrer" className="btn btn-brand" style={{justifyContent:'center',padding:'13px',textDecoration:'none',fontSize:15,fontWeight:700}}>
+            <button onClick={startInstantMeeting} className="btn btn-brand" style={{justifyContent:"center",padding:"13px",fontSize:15,fontWeight:700}}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.259a1 1 0 0 1-1.447.894L15 14M2 8h13v8H2z"/></svg>
-              Open Google Meet — Start new meeting
-            </a>
+              Start instant meeting — link generated automatically
+            </button>
+            {instantLink && (
+              <div style={{marginTop:12,padding:"12px 16px",background:"var(--brand-soft)",borderRadius:"var(--r)",border:"1px solid var(--brand)"}}>
+                <div style={{fontSize:11,fontWeight:700,color:"var(--brand)",marginBottom:6,textTransform:"uppercase",letterSpacing:"0.06em"}}>Meeting link ready</div>
+                <div style={{fontFamily:"var(--font-mono)",fontSize:12,color:"var(--t-1)",wordBreak:"break-all",marginBottom:8}}>{instantLink}</div>
+                <div style={{display:"flex",gap:8}}>
+                  <button className="btn btn-sm btn-brand" onClick={()=>copy(instantLink,"ilink")}>{copied==="ilink"?"✓ Copied!":"Copy link"}</button>
+                  <a href={instantLink} target="_blank" rel="noopener noreferrer" className="btn btn-sm" style={{textDecoration:"none"}}>Open Meet →</a>
+                </div>
+              </div>
+            )}
             <div style={{padding:'12px 16px',background:'var(--s-3)',borderRadius:'var(--r)',border:'1px solid var(--border)'}}>
               <div style={{fontSize:11,fontWeight:700,color:'var(--t-3)',marginBottom:8,letterSpacing:'0.06em',textTransform:'uppercase'}}>Join an existing meeting</div>
               <div style={{display:'flex',gap:10}}>
@@ -121,7 +143,7 @@ export default function Meetings() {
                       <span style={{background:`${TYPE_COL[m.type]||'var(--brand)'}15`,color:TYPE_COL[m.type]||'var(--brand)',padding:'2px 8px',borderRadius:100,fontSize:11,fontWeight:600,marginTop:5,display:'inline-block'}}>{m.type}</span>
                     </div>
                   </div>
-                  <a href={MEET_NEW} target="_blank" rel="noopener noreferrer" className="btn btn-brand btn-sm" style={{textDecoration:'none'}}>Open Google Meet →</a>
+                  <button onClick={startInstantMeeting} className="btn btn-brand btn-sm">Start Meet →</button>
                 </div>
               ))}
             </>
@@ -175,7 +197,7 @@ export default function Meetings() {
             </div>
             <div style={{display:'flex',gap:10}}>
               <button type="submit" className="btn btn-brand" style={{flex:1,justifyContent:'center',padding:'10px'}}>Save meeting</button>
-              <a href={MEET_NEW} target="_blank" rel="noopener noreferrer" className="btn" style={{flexShrink:0,textDecoration:'none'}}>Open Meet now</a>
+              <button onClick={startInstantMeeting} className="btn btn-brand btn-sm">Open Meet now</button>
             </div>
           </form>
         </div>

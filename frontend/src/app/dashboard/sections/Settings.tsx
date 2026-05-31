@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { branches, DEPARTMENTS } from '@/lib/data'
+import { QRCodeSVG } from 'qrcode.react'
 
 const INITIAL_USERS = [
   { id:'u1', name:'Pastor Bolaji Idowu',  email:'pastor@hicc.org',         role:'senior_pastor', branch:'lekki',  dept:'admin',    status:'active',  joined:'Jan 2024' },
@@ -15,25 +16,11 @@ const INITIAL_USERS = [
 const ROLE_LABELS: Record<string,string> = { senior_pastor:'Senior Pastor', branch_pastor:'Branch Pastor', unit_head:'Unit Head', member:'Member' }
 const ROLE_COLORS: Record<string,string> = { senior_pastor:'var(--brand)', branch_pastor:'var(--purple)', unit_head:'var(--teal)', member:'var(--green)' }
 
-function QRCode({ value, size=160 }: { value:string; size?:number }) {
-  // Use Google Charts API to generate a real QR code image
-  const encoded = encodeURIComponent(value)
-  const src = `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${encoded}&choe=UTF-8&chld=M|2`
+function QRCodeWidget({ value, size=160 }: { value:string; size?:number }) {
   return (
-    <img
-      src={src}
-      alt="QR Code"
-      width={size}
-      height={size}
-      style={{ borderRadius:8, border:'4px solid white', display:'block' }}
-      onError={e=>{
-        // Fallback: show a styled placeholder if image fails
-        const t = e.currentTarget
-        t.style.display='none'
-        const p = t.nextElementSibling as HTMLElement
-        if(p) p.style.display='flex'
-      }}
-    />
+    <div style={{ background:'white', padding:12, borderRadius:12, display:'inline-block', boxShadow:'0 2px 12px rgba(0,0,0,0.15)' }}>
+      <QRCodeSVG value={value} size={size} fgColor="#1a1040" bgColor="#ffffff" level="M" />
+    </div>
   )
 }
 
@@ -300,7 +287,7 @@ export default function Settings() {
             <div className="card card-p" style={{ textAlign:'center' }}>
               <div style={{ fontWeight:700, fontSize:13, marginBottom:12 }}>{branchList.find(b=>b.id===qrBranch)?.name}</div>
               <div style={{ display:'flex', justifyContent:'center', marginBottom:14 }}>
-                <QRCode value={qrUrl} size={160}/>
+                <QRCodeWidget value={qrUrl} size={160}/>
               </div>
               <div style={{ fontSize:10.5, color:'var(--t-3)', marginBottom:14, wordBreak:'break-all', fontFamily:'var(--font-mono)' }}>{qrUrl}</div>
               <div style={{ display:'flex', gap:8, flexDirection:'column' }}>

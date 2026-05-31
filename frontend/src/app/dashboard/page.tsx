@@ -34,6 +34,11 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
 
   const send = (e: React.FormEvent) => {
     e.preventDefault()
+    // If WhatsApp channel selected, open WhatsApp Web with pre-filled message
+    if (form.channel === 'whatsapp' || form.channel === 'all') {
+      const text = encodeURIComponent(`📣 HARVESTERS HICC BROADCAST\n\n${form.message}\n\n— HICC Leadership`)
+      window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener')
+    }
     setSent(true)
     setTimeout(() => { setSent(false); onClose() }, 2500)
   }

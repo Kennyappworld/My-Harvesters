@@ -111,9 +111,16 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
     <div>
       {showNewMembers && <NewMembersModal onClose={()=>setShowNewMembers(false)}/>}
 
-      {/* Mission statement — gold-accented, understated */}
-      <div className="mission-bar" style={{ marginBottom:16 }}>
-        <p style={{ fontSize:13.5, fontWeight:700, color:'var(--t-1)', fontFamily:'var(--font-display)', lineHeight:1.6 }}>
+      {/* Mission statement — editorial, cinematic */}
+      <div style={{ marginBottom:18, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(135deg, var(--brand) 0%, #0A2B1A 100%)', padding:'20px 24px 18px', boxShadow:'0 4px 24px rgba(13,31,22,0.18)' }}>
+        {/* Subtle cross watermark */}
+        <div style={{ position:'absolute', right:-10, top:-10, opacity:0.06, pointerEvents:'none' }}>
+          <svg viewBox="0 0 80 80" width="80" height="80" fill="white"><rect x="36" y="4" width="8" height="72"/><rect x="4" y="32" width="72" height="8"/></svg>
+        </div>
+        {/* Gold top rule */}
+        <div style={{ width:32, height:3, background:'var(--gold)', borderRadius:2, marginBottom:12 }}/>
+        <p style={{ fontSize:10, fontWeight:700, color:'rgba(201,168,76,0.85)', letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8, fontFamily:'var(--font-body)' }}>Our Mission</p>
+        <p style={{ fontSize:14.5, fontWeight:600, color:'white', fontFamily:'var(--font-display)', lineHeight:1.7, letterSpacing:'-0.01em', maxWidth:820 }}>
           We are changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, influencing culture, and leading every member to become a fully devoted follower of Christ.
         </p>
       </div>

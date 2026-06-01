@@ -114,7 +114,7 @@ export default function Meetings() {
                 <input className="input" placeholder="Paste meeting code e.g. abc-defg-hij" id="meetCodeInput" style={{flex:1,fontSize:13}}/>
                 <button className="btn btn-brand" style={{flexShrink:0}} onClick={()=>{
                   const code = (document.getElementById('meetCodeInput') as HTMLInputElement)?.value?.trim()
-                  if(code) window.open(`https://meet.google.com/${code}`, '_blank')
+                  if(code) window.open(`https://meet.google.com/${code}`, '_blank', 'noopener,noreferrer')
                 }}>Join</button>
               </div>
             </div>

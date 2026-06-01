@@ -160,10 +160,12 @@ export default function LoginPage() {
   const submit = (e: FormEvent) => {
     e.preventDefault()
     setErr('')
-    const user = WORKFORCE_USERS[email]
+    // Sanitise inputs — strip any injected characters before lookup
+    const safeEmail = email.trim().toLowerCase().replace(/[<>"'`]/g, '')
+    const user = WORKFORCE_USERS[safeEmail]
     if (!user || password !== DEMO_PASSWORD) { setErr('Incorrect email or password.'); return }
     setBusy(true)
-    setTimeout(() => { setBusy(false); signIn(email) }, 700)
+    setTimeout(() => { setBusy(false); signIn(safeEmail) }, 700)
   }
 
   const useBiometric = async () => {

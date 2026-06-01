@@ -1,5 +1,9 @@
 // Org-level settings — stored in localStorage, editable by super admin
-// In production these would be stored in the database
+// Security note: localStorage is readable by any JS on the page (XSS risk).
+// This store contains only non-sensitive display config (logo, org name, UI prefs).
+// It intentionally contains NO credentials, tokens, or PII.
+// In production: org settings would be fetched from /api/org/settings with
+// a proper session cookie and stored server-side.
 
 export type OrgSettings = {
   name: string

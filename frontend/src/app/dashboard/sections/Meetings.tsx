@@ -1,4 +1,5 @@
 'use client'
+import { notify } from '@/lib/toast'
 import { useState } from 'react'
 
 const SAMPLE_MEETINGS = [
@@ -31,7 +32,7 @@ export default function Meetings() {
   }
 
   const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(()=>setCopied(null), 1800) })
+    navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(()=>setCopied(null), 1800); notify.copy() })
   }
 
   const scheduleNew = (e: React.FormEvent) => {

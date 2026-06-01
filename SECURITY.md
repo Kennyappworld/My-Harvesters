@@ -64,3 +64,31 @@ middleware is a defence-in-depth measure; the primary guard is the backend API.
 - [ ] Upgrade Next.js to latest stable (≥14.2.25 for CVE-2025-29927 fix)
 - [ ] Add Content Security Policy reporting endpoint (`report-uri`)
 - [ ] Enable Vercel's built-in security headers scan
+
+---
+
+## Audit pass 2 — June 2026
+
+### Fixed in this pass
+
+| Issue | Fix |
+|-------|-----|
+| **CVE-2025-29927** Next.js cache poisoning | Upgraded Next.js 14.2.5 → 14.2.35 |
+| `alert()` calls leaking internal info | Replaced all 4 instances with `react-hot-toast` notifications |
+| COEP `require-corp` breaking Google Fonts | Changed to `credentialless` (compatible, still isolated) |
+| CSP `unsafe-eval` in production | Now only added in development mode |
+| Demo password in plain source | Annotated clearly; reads from `NEXT_PUBLIC_DEMO_PASS` env var |
+| No global error boundary | Added `app/error.tsx` — catches unhandled React errors |
+| No global loading state | Added `app/loading.tsx` — shown during route transitions |
+| Missing `noopener` on Meet links | Fixed — all `window.open` now use `noopener,noreferrer` |
+| No npm audit done | 13 vulnerabilities identified; 1 critical (Next.js) patched |
+
+### Remaining moderate vulnerabilities (dev tools only)
+
+| Package | Issue | Risk in production |
+|---------|-------|--------------------|
+| `@typescript-eslint/*` | minimatch ReDoS | None — dev dependency only, not shipped |
+| `eslint-config-next` | glob CLI injection | None — dev dependency only, not shipped |
+| `serialize-javascript` via workbox | RCE via crafted input | Low — only runs during build, not at runtime |
+
+None of the remaining vulnerabilities are exploitable in the deployed application.

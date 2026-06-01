@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
 import { getOrgSettings, saveOrgSettings } from '@/lib/orgSettings'
+import { notify } from '@/lib/toast'
 import { branches, DEPARTMENTS } from '@/lib/data'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -51,7 +52,7 @@ function GeneralSettings() {
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) { alert('Logo must be under 2MB'); return }
+    if (file.size > 2 * 1024 * 1024) { notify.error('Logo must be under 2MB'); return }
     const reader = new FileReader()
     reader.onload = () => setLogoUrl(reader.result as string)
     reader.readAsDataURL(file)
@@ -225,7 +226,7 @@ export default function Settings() {
   }
 
   const deleteBranch = (id: string) => {
-    if (currentUser.role !== 'senior_pastor') return alert('Only the Super Admin can delete a branch.')
+    if (currentUser.role !== 'senior_pastor') { notify.error('Only the Super Admin can delete a branch.'); return }
     setBranchList(prev => prev.filter(b => b.id !== id)); setBranchDeleteConfirm(null)
   }
 

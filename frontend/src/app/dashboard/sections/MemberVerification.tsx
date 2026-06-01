@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { notify } from '@/lib/toast'
 
 const SAMPLE_MEMBERS = [
   { id:'m1', name:'Emmanuel Abiola',  email:'emmanuel@hicc.org', branch:'Lekki HQ',  dept:'Ushering',        joined:'Nov 2022', months:31, rating:4.2, status:'eligible'   },
@@ -106,7 +107,7 @@ export default function MemberVerification() {
                     <td><span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--brand)', fontSize:13 }}>{m.months}mo</span></td>
                     <td><Stars val={m.rating}/></td>
                     <td>
-                      <button className="btn btn-brand btn-sm" onClick={e=>{e.stopPropagation(); alert(`Referral link generated for ${m.name}!\n\nhicc.org/join?ref=${m.id}&branch=${m.branch.toLowerCase().replace(' ','-')}`)}} style={{ fontSize:11 }}>
+                      <button className="btn btn-brand btn-sm" onClick={e=>{e.stopPropagation(); notify.success(`Link generated — hicc.org/join?ref=${m.id}`); navigator.clipboard?.writeText(`https://hicc.org/join?ref=${m.id}&branch=${m.branch.toLowerCase().replace(' ','-')}`).then(()=>notify.copy())}} style={{ fontSize:11 }}>
                         Generate link
                       </button>
                     </td>

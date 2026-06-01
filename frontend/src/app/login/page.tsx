@@ -18,7 +18,10 @@ const WORKFORCE_USERS: Record<string, { name: string; role: string }> = {
   'pastor.london@hicc.org': { name: 'Pastor James Osei',    role: 'Branch Pastor'  },
   'segun@hicc.org':         { name: 'Segun Adeyemi',        role: 'Unit Head'      },
 }
-const DEMO_PASSWORD = 'demo123'
+// ⚠️  DEMO ONLY — replace with backend API call before go-live
+// These credentials are visible in source code intentionally for demo purposes only.
+// Production: POST /api/auth/login → verify against hashed passwords in DB
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASS || 'demo123'
 
 // Scripture splash — only shown once per day
 function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {

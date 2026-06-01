@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef, ChangeEvent } from 'react'
+import { notify } from '@/lib/toast'
 import { branches, DEPARTMENTS } from '@/lib/data'
 
 const SAMPLE_MEMBERS = [
@@ -24,7 +25,7 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
   const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>, memberId: string) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { alert('Photo must be under 5MB'); return }
+    if (file.size > 5 * 1024 * 1024) { notify.error('Photo must be under 5MB'); return }
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = reader.result as string

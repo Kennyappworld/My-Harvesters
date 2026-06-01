@@ -41,7 +41,7 @@ const nextConfig = {
           { key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval'",   // 'unsafe-eval' required by Next.js dev; tighten in prod
+              "script-src 'self'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),   // 'unsafe-eval' required by Next.js dev; tighten in prod
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
@@ -73,7 +73,8 @@ const nextConfig = {
           // ── Cross-Origin policies ───────────────────────────────────────────
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
-          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          // COEP: require-corp breaks Google Fonts. Use credentialless for compatibility.
+          { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
 
           // ── Search engine indexing — this is a private workforce app ────────
           { key: 'X-Robots-Tag', value: 'noindex, nofollow, nosnippet, noodp, noarchive' },

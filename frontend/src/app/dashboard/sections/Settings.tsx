@@ -24,6 +24,90 @@ function QRCodeWidget({ value, size=160 }: { value:string; size?:number }) {
   )
 }
 
+
+// ── General Settings — fully editable ──────────────────────────────────────
+function GeneralSettings() {
+  const [platformName, setPlatformName] = useState('Harvesters HICC Workforce Platform')
+  const [followUpSchedule, setFollowUpSchedule] = useState(['2 weeks','4 weeks','3 months','4 months'])
+  const [sessionTimeout, setSessionTimeout] = useState('15')
+  const [allowSelfRegister, setAllowSelfRegister] = useState(true)
+  const [requireApproval, setRequireApproval] = useState(true)
+  const [saved, setSaved] = useState(false)
+
+  const save = () => { setSaved(true); setTimeout(()=>setSaved(false), 2500) }
+
+  return (
+    <div style={{ maxWidth:540 }}>
+      {saved && (
+        <div style={{ background:'var(--green-lt)', border:'1px solid rgba(27,158,90,0.3)', borderRadius:'var(--r)', padding:'10px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:8, fontSize:13, color:'var(--green)', fontWeight:600 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+          Settings saved
+        </div>
+      )}
+
+      <div className="card card-p" style={{ marginBottom:12 }}>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Platform identity</h3>
+        <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Platform name</label>
+        <input className="input" value={platformName} onChange={e=>setPlatformName(e.target.value)} placeholder="Platform name" style={{ marginBottom:12 }}/>
+        <div className="stat-row"><span style={{ fontSize:12.5, color:'var(--t-2)' }}>Version</span><span style={{ fontFamily:'var(--font-mono)', fontSize:12, color:'var(--t-1)', fontWeight:600 }}>v7.0</span></div>
+        <div className="stat-row"><span style={{ fontSize:12.5, color:'var(--t-2)' }}>Backend</span><span style={{ fontSize:12, color:'var(--green)', fontWeight:600 }}>● Railway · Online</span></div>
+        <div className="stat-row"><span style={{ fontSize:12.5, color:'var(--t-2)' }}>Frontend</span><span style={{ fontSize:12, color:'var(--t-1)', fontWeight:600 }}>Vercel · my-harvesters.vercel.app</span></div>
+      </div>
+
+      <div className="card card-p" style={{ marginBottom:12 }}>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Session & security</h3>
+        <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Access token expiry (minutes)</label>
+        <select className="select" value={sessionTimeout} onChange={e=>setSessionTimeout(e.target.value)} style={{ marginBottom:4 }}>
+          {['5','10','15','30','60'].map(v=><option key={v} value={v}>{v} minutes</option>)}
+        </select>
+        <p style={{ fontSize:11.5, color:'var(--t-3)', marginTop:4 }}>Shorter expiry is more secure. Users are re-authenticated automatically via refresh token.</p>
+      </div>
+
+      <div className="card card-p" style={{ marginBottom:12 }}>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Registration settings</h3>
+        {[
+          { label:'Allow self-registration via QR code', note:'Members can sign up by scanning branch QR codes', val:allowSelfRegister, set:setAllowSelfRegister },
+          { label:'Require admin approval for new accounts', note:'New registrations are pending until approved', val:requireApproval, set:setRequireApproval },
+        ].map(s => (
+          <div key={s.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 0', borderBottom:'1px solid var(--border)' }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:500, color:'var(--t-1)' }}>{s.label}</div>
+              <div style={{ fontSize:11.5, color:'var(--t-3)', marginTop:2 }}>{s.note}</div>
+            </div>
+            <button onClick={()=>s.set((v:boolean)=>!v)} style={{ width:44, height:24, borderRadius:100, border:'none', cursor:'pointer', background:s.val?'var(--brand)':'var(--s-4)', transition:'background .2s', position:'relative', flexShrink:0, marginLeft:16 }}>
+              <span style={{ position:'absolute', top:2, left:s.val?22:2, width:20, height:20, borderRadius:'50%', background:'white', boxShadow:'0 1px 4px rgba(0,0,0,0.2)', transition:'left .2s' }}/>
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="card card-p" style={{ marginBottom:20 }}>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Follow-up schedule</h3>
+        <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:14 }}>Automated pastoral follow-up messages sent to new converts and first-timers.</p>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          {followUpSchedule.map((stage, i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <span style={{ width:22, height:22, borderRadius:'50%', background:'var(--brand)', color:'white', fontSize:11, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{i+1}</span>
+              <input className="input" value={stage} onChange={e=>setFollowUpSchedule(prev=>prev.map((s,j)=>j===i?e.target.value:s))} style={{ flex:1 }}/>
+              {followUpSchedule.length > 1 && (
+                <button className="btn btn-ghost btn-icon btn-sm" onClick={()=>setFollowUpSchedule(prev=>prev.filter((_,j)=>j!==i))}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              )}
+            </div>
+          ))}
+          <button className="btn btn-sm" style={{ alignSelf:'flex-start', marginTop:4 }} onClick={()=>setFollowUpSchedule(prev=>[...prev,''])}>+ Add stage</button>
+        </div>
+      </div>
+
+      <button className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'12px', fontSize:14, fontWeight:700 }} onClick={save}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+        Save settings
+      </button>
+    </div>
+  )
+}
+
 export default function Settings() {
   const [tab, setTab] = useState<'users'|'branches'|'departments'|'qr'|'general'>('users')
   const [users, setUsers] = useState(INITIAL_USERS)
@@ -317,7 +401,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div style={{ marginTop:20, padding:'14px 18px', background:'var(--navy-3)', borderRadius:'var(--r-lg)', border:'0.5px solid var(--border)', maxWidth:640 }}>
+          <div style={{ marginTop:20, padding:'14px 18px', background:'var(--s-3)', borderRadius:'var(--r-lg)', border:'0.5px solid var(--border)', maxWidth:640 }}>
             <div style={{ fontWeight:700, fontSize:13, marginBottom:6 }}>What members fill in when they scan:</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
               {['Full name','Phone number','Email (optional)','Branch (pre-filled)','Department / Unit','Whether they are a first-timer'].map(f => (
@@ -333,23 +417,7 @@ export default function Settings() {
 
       {/* ── GENERAL ── */}
       {tab === 'general' && (
-        <div className="card card-p" style={{ maxWidth:520 }}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:16 }}>Platform configuration</div>
-          {[
-            { l:'Platform name', v:'Harvesters HICC Leadership Platform' },
-            { l:'Version', v:'v5.0' },
-            { l:'Verification threshold', v:'6 months' },
-            { l:'Follow-up schedule', v:'2 weeks · 4 weeks · 3 months · 4 months' },
-            { l:'JWT access token expiry', v:'15 minutes' },
-            { l:'Backend', v:'Railway (Online)' },
-            { l:'Frontend', v:'Vercel · my-harvesters.vercel.app' },
-          ].map(row => (
-            <div key={row.l} className="stat-row">
-              <span style={{ fontSize:12.5, color:'var(--t-2)' }}>{row.l}</span>
-              <span style={{ fontSize:12.5, fontWeight:600, color:'var(--t-1)' }}>{row.v}</span>
-            </div>
-          ))}
-        </div>
+        <GeneralSettings/>
       )}
     </div>
   )

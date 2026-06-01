@@ -2,185 +2,250 @@
 import { useState } from 'react'
 
 const SAMPLE_MEMBERS = [
-  { id:'m1', name:'Emmanuel Abiola',  branch:'Gbagada',  joinDate:'Nov 2024', monthsActive:7, rating:5, eligible:true,  verified:true,  referrals:3, status:'verified'   },
-  { id:'m2', name:'Funke Oladipo',    branch:'Ikeja',    joinDate:'Dec 2024', monthsActive:6, rating:4, eligible:true,  verified:false, referrals:0, status:'eligible'   },
-  { id:'m3', name:'Kolade Nwachukwu', branch:'London UK',joinDate:'Jan 2025', monthsActive:5, rating:3, eligible:false, verified:false, referrals:0, status:'building'   },
-  { id:'m4', name:'Toyin Okafor',     branch:'Lekki HQ', joinDate:'Mar 2025', monthsActive:3, rating:2, eligible:false, verified:false, referrals:0, status:'building'   },
-  { id:'m5', name:'Ngozi Kalu',       branch:'Lekki HQ', joinDate:'Oct 2024', monthsActive:8, rating:5, eligible:true,  verified:true,  referrals:5, status:'verified'   },
-  { id:'m6', name:'Richard Eze',      branch:'Abuja',    joinDate:'Feb 2025', monthsActive:4, rating:3, eligible:false, verified:false, referrals:0, status:'building'   },
+  { id:'m1', name:'Emmanuel Abiola',  email:'emmanuel@hicc.org', branch:'Lekki HQ',  dept:'Ushering',        joined:'Nov 2022', months:31, rating:4.2, status:'eligible'   },
+  { id:'m2', name:'Funke Oladipo',    email:'funke.o@hicc.org',  branch:'Ikeja',      dept:'Prayer',          joined:'Dec 2023', months:18, rating:3.8, status:'eligible'   },
+  { id:'m3', name:'Ngozi Kalu',       email:'ngozi.k@hicc.org',  branch:'Lekki HQ',  dept:'Worship & Music', joined:'Oct 2024', months:8,  rating:4.5, status:'eligible'   },
+  { id:'m4', name:'Richard Eze',      email:'richard.e@hicc.org',branch:'Abuja',      dept:'Media',           joined:'Feb 2025', months:4,  rating:2.9, status:'ineligible' },
+  { id:'m5', name:'Toyin Okafor',     email:'toyin@hicc.org',    branch:'Lekki HQ',  dept:'KidsHouse',       joined:'Mar 2025', months:3,  rating:3.1, status:'ineligible' },
+  { id:'m6', name:'Kolade Nwachukwu', email:'kolade@gmail.com',  branch:'London UK', dept:'Outreach',        joined:'Jan 2025', months:5,  rating:3.6, status:'ineligible' },
 ]
 
-const STATUS_STYLE: Record<string, { label:string; color:string; bg:string }> = {
-  verified: { label:'Verified member', color:'#22C55E', bg:'rgba(34,197,94,0.12)' },
-  eligible: { label:'Eligible — awaiting', color:'#F59E0B', bg:'rgba(245,158,11,0.12)' },
-  building: { label:'Building towards', color:'#71717A', bg:'rgba(113,113,122,0.12)' },
-}
+const RATING_COMPONENTS = ['Attendance', 'Giving', 'Prayer', 'Serving', 'Small group']
+const APPROVER_OPTIONS  = ['Cell admin only', 'Church admin only', 'Cell admin / Church admin', 'Senior Pastor only']
+const EXPIRY_OPTIONS    = ['7 days', '14 days', '30 days', '60 days', '90 days', 'Never']
 
-function StarRating({ value, max=5 }: { value:number; max?:number }) {
+function Stars({ val }: { val: number }) {
   return (
-    <div style={{ display:'flex', gap:2 }}>
-      {Array.from({length:max}).map((_,i) => (
-        <svg key={i} viewBox="0 0 24 24" fill={i < value ? '#F59E0B' : 'none'} stroke={i < value ? '#F59E0B' : '#3F3F46'} strokeWidth="1.5" width="13" height="13">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    <span style={{ display:'inline-flex', gap:1 }}>
+      {[1,2,3,4,5].map(i => (
+        <svg key={i} viewBox="0 0 24 24" width="11" height="11"
+          fill={i <= Math.round(val) ? 'var(--gold)' : 'none'}
+          stroke={i <= Math.round(val) ? 'var(--gold)' : 'var(--t-3)'}
+          strokeWidth="1.8">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </svg>
       ))}
-    </div>
+      <span style={{ fontSize:11, color:'var(--t-2)', marginLeft:4 }}>{val.toFixed(1)}</span>
+    </span>
   )
 }
 
-export default function MemberVerification({ onNavigate }: { onNavigate: (p:string)=>void }) {
-  const [tab, setTab] = useState<'overview'|'requests'|'settings'>('overview')
+export default function MemberVerification() {
+  const [tab, setTab]           = useState<'overview'|'requests'|'settings'>('overview')
   const [threshold, setThreshold] = useState(6)
   const [selected, setSelected] = useState<string|null>(null)
+  const [saved, setSaved]       = useState(false)
 
-  const eligible = SAMPLE_MEMBERS.filter(m => m.eligible)
-  const verified = SAMPLE_MEMBERS.filter(m => m.verified)
+  // Editable settings state
+  const [approver, setApprover]           = useState('Cell admin / Church admin')
+  const [ratingComponents, setRatingComponents] = useState(['Attendance','Giving','Prayer','Serving'])
+  const [expiry, setExpiry]               = useState('30 days')
+  const [ratingScale, setRatingScale]     = useState<[number,number]>([1,5])
+  const [platformName, setPlatformName]   = useState('Harvesters HICC Workforce Platform')
+
+  const toggleComponent = (comp: string) => {
+    setRatingComponents(prev =>
+      prev.includes(comp) ? prev.filter(c => c !== comp) : [...prev, comp]
+    )
+  }
+
+  const saveSettings = () => {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  const eligible   = SAMPLE_MEMBERS.filter(m => m.months >= threshold)
+  const ineligible = SAMPLE_MEMBERS.filter(m => m.months < threshold)
 
   return (
     <div>
-      {/* Explainer */}
-      <div style={{ background:'var(--s-2)', border:'0.5px solid var(--border)', borderRadius:12, padding:'14px 18px', marginBottom:16, borderLeft:'3px solid var(--brand)' }}>
-        <div style={{ fontSize:10.5, color:'var(--brand)', fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:4 }}>How membership verification works</div>
-        <div style={{ fontSize:12.5, color:'var(--t-2)', lineHeight:1.7 }}>
-          After <strong style={{ color:'var(--t-1)' }}>{threshold} months</strong> of active engagement, a member becomes eligible to request a <strong style={{ color:'var(--t-1)' }}>membership referral link</strong>. They share this link with someone they want to bring in. The cell or church admin accepts the request. The system rates the referring member on a <strong style={{ color:'var(--t-1)' }}>1–5 commitment scale</strong> based on attendance, giving faithfulness, prayer activity, and serving record — giving leadership a clear picture of engagement depth.
-        </div>
+      <div style={{ marginBottom:16 }}>
+        <h2 style={{ fontWeight:800, fontSize:17, fontFamily:'var(--font-display)', color:'var(--t-1)', marginBottom:3 }}>Member Verification</h2>
+        <p style={{ fontSize:12.5, color:'var(--t-2)' }}>Manage eligibility thresholds, referral links, and commitment ratings.</p>
       </div>
 
-      {/* KPIs */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))', gap:10, marginBottom:16 }}>
-        {[
-          { l:'Verified members', v:verified.length,  sub:'Full membership confirmed' },
-          { l:'Eligible for referral', v:eligible.length, sub:`${threshold}+ months active`, accent:true },
-          { l:'Referral links issued', v:SAMPLE_MEMBERS.reduce((a,b)=>a+b.referrals,0), sub:'All time, all branches' },
-          { l:'Avg commitment score', v:'4.0', sub:'Out of 5 · all branches' },
-        ].map(m => (
-          <div key={m.l} className="metric-tile" style={{ borderTop:`2px solid ${m.accent?'var(--brand)':'var(--s-4)'}` }}>
-            <div className="metric-label">{m.l}</div>
-            <div className="metric-value" style={{ fontSize:'1.5rem' }}>{m.v}</div>
-            <div className="metric-sub flat">{m.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tabs */}
       <div className="tabs" style={{ marginBottom:16 }}>
-        {([['overview','Member status'],['requests','Pending requests'],['settings','Threshold settings']] as const).map(([k,l]) => (
+        {([['overview','Overview'],['requests','Referral requests'],['settings','Settings']] as const).map(([k,l]) => (
           <button key={k} className={`tab ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
 
       {/* ── OVERVIEW ── */}
       {tab === 'overview' && (
-        <div className="card card-p">
-          <div style={{ fontSize:13.5, fontWeight:600, marginBottom:14 }}>Member verification status</div>
-          <table className="tbl">
-            <thead><tr><th>Member</th><th>Branch</th><th>Active since</th><th>Months</th><th>Commitment</th><th>Referrals given</th><th>Status</th></tr></thead>
-            <tbody>
-              {SAMPLE_MEMBERS.map(m => {
-                const st = STATUS_STYLE[m.status]
-                return (
-                  <tr key={m.id} style={{ cursor:'pointer' }} onClick={() => setSelected(selected===m.id?null:m.id)}>
-                    <td><strong>{m.name}</strong></td>
-                    <td style={{ fontSize:12 }}>{m.branch}</td>
-                    <td style={{ fontSize:12, color:'var(--t-2)' }}>{m.joinDate}</td>
+        <div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:10, marginBottom:16 }}>
+            {[
+              { l:'Eligible members', v:eligible.length, sub:`Active ≥ ${threshold} months`, accent:'var(--brand)' },
+              { l:'Not yet eligible', v:ineligible.length, sub:'Below threshold', accent:'var(--amber)' },
+              { l:'Avg commitment',   v:'3.9★', sub:'Across all branches', accent:'var(--gold)' },
+              { l:'Links generated',  v:12, sub:'This quarter', accent:'var(--teal)' },
+            ].map(m => (
+              <div key={m.l} className="metric-tile" style={{ borderTop:`3px solid ${m.accent}` }}>
+                <div className="metric-label">{m.l}</div>
+                <div className="metric-value" style={{ fontSize:'1.6rem' }}>{m.v}</div>
+                <div className="metric-sub flat">{m.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card" style={{ overflow:'hidden', marginBottom:12 }}>
+            <div style={{ padding:'12px 18px', background:'linear-gradient(90deg,rgba(27,67,50,0.05) 0%,transparent 100%)', borderBottom:'1px solid var(--border-md)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span style={{ fontWeight:700, fontSize:13, fontFamily:'var(--font-display)' }}>Eligible for referral link</span>
+              <span className="chip chip-brand">{eligible.length} members</span>
+            </div>
+            <table className="tbl">
+              <thead><tr><th>Member</th><th>Branch</th><th>Active months</th><th>Rating</th><th>Action</th></tr></thead>
+              <tbody>
+                {eligible.map(m => (
+                  <tr key={m.id} style={{ cursor:'pointer' }} onClick={()=>setSelected(selected===m.id?null:m.id)}>
                     <td>
-                      <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <div style={{ width:60, height:4, background:'var(--s-4)', borderRadius:100, overflow:'hidden' }}>
-                          <div style={{ height:'100%', borderRadius:100, background: m.monthsActive>=threshold?'var(--green)':'var(--brand)', width:`${Math.min(100,(m.monthsActive/threshold)*100)}%` }}/>
+                      <div style={{ fontWeight:600, fontSize:13 }}>{m.name}</div>
+                      <div style={{ fontSize:11, color:'var(--t-3)' }}>{m.dept}</div>
+                    </td>
+                    <td><span className="chip chip-gray">{m.branch}</span></td>
+                    <td><span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--brand)', fontSize:13 }}>{m.months}mo</span></td>
+                    <td><Stars val={m.rating}/></td>
+                    <td>
+                      <button className="btn btn-brand btn-sm" onClick={e=>{e.stopPropagation(); alert(`Referral link generated for ${m.name}!\n\nhicc.org/join?ref=${m.id}&branch=${m.branch.toLowerCase().replace(' ','-')}`)}} style={{ fontSize:11 }}>
+                        Generate link
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="card" style={{ overflow:'hidden' }}>
+            <div style={{ padding:'12px 18px', background:'linear-gradient(90deg,rgba(201,168,76,0.06) 0%,transparent 100%)', borderBottom:'1px solid var(--border-md)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span style={{ fontWeight:700, fontSize:13, fontFamily:'var(--font-display)' }}>Not yet eligible</span>
+              <span className="chip chip-amber">{ineligible.length} members · below {threshold}-month threshold</span>
+            </div>
+            <table className="tbl">
+              <thead><tr><th>Member</th><th>Branch</th><th>Active months</th><th>Remaining</th></tr></thead>
+              <tbody>
+                {ineligible.map(m => (
+                  <tr key={m.id}>
+                    <td>
+                      <div style={{ fontWeight:600, fontSize:13 }}>{m.name}</div>
+                      <div style={{ fontSize:11, color:'var(--t-3)' }}>{m.dept}</div>
+                    </td>
+                    <td><span className="chip chip-gray">{m.branch}</span></td>
+                    <td><span style={{ fontFamily:'var(--font-mono)', fontSize:13 }}>{m.months}mo</span></td>
+                    <td>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <div className="track" style={{ width:80 }}>
+                          <div className="fill fill-brand" style={{ width:`${Math.min(100,(m.months/threshold)*100)}%` }}/>
                         </div>
-                        <span style={{ fontSize:11.5, fontFamily:'var(--font-mono)', color: m.monthsActive>=threshold?'var(--green)':'var(--t-2)' }}>{m.monthsActive}mo</span>
+                        <span style={{ fontSize:11, color:'var(--t-3)', fontFamily:'var(--font-mono)' }}>{threshold-m.months}mo left</span>
                       </div>
                     </td>
-                    <td><StarRating value={m.rating}/></td>
-                    <td style={{ fontSize:12, fontFamily:'var(--font-mono)', color: m.referrals>0?'var(--brand)':'var(--t-3)' }}>{m.referrals}</td>
-                    <td><span style={{ background:st.bg, color:st.color, padding:'2px 8px', borderRadius:100, fontSize:11, fontWeight:500 }}>{st.label}</span></td>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-
-          {/* Expanded detail */}
-          {selected && (() => {
-            const m = SAMPLE_MEMBERS.find(x => x.id === selected)!
-            return (
-              <div style={{ marginTop:14, padding:'14px 16px', background:'var(--s-3)', borderRadius:10, border:'0.5px solid var(--border)' }}>
-                <div style={{ fontSize:13, fontWeight:600, marginBottom:10 }}>{m.name} — commitment profile</div>
-                {[
-                  { label:'Months active', score: m.monthsActive, max:12, unit:'mo' },
-                  { label:'Commitment rating', score: m.rating, max:5, unit:'/5' },
-                  { label:'Referrals given', score: m.referrals, max:10, unit:'' },
-                ].map(row => (
-                  <div key={row.label} style={{ display:'flex', alignItems:'center', gap:12, padding:'6px 0', borderBottom:'0.5px solid var(--border)' }}>
-                    <div style={{ width:140, fontSize:12, color:'var(--t-2)' }}>{row.label}</div>
-                    <div style={{ flex:1, height:5, background:'var(--s-4)', borderRadius:100, overflow:'hidden' }}>
-                      <div style={{ height:'100%', borderRadius:100, background:'var(--brand)', width:`${(row.score/row.max)*100}%` }}/>
-                    </div>
-                    <div style={{ fontSize:12, fontFamily:'var(--font-mono)', fontWeight:600 }}>{row.score}{row.unit}</div>
-                  </div>
                 ))}
-                {m.eligible && !m.verified && (
-                  <button className="btn btn-brand btn-sm" style={{ marginTop:12 }}>Generate referral link ↗</button>
-                )}
-              </div>
-            )
-          })()}
-        </div>
-      )}
-
-      {/* ── PENDING REQUESTS ── */}
-      {tab === 'requests' && (
-        <div className="card card-p">
-          <div style={{ fontSize:13.5, fontWeight:600, marginBottom:4 }}>Pending referral requests</div>
-          <div style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:16 }}>Members who are eligible and have requested their referral link for review.</div>
-          {eligible.filter(m=>!m.verified).map(m => (
-            <div key={m.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 0', borderBottom:'0.5px solid var(--border)' }}>
-              <div>
-                <div style={{ fontSize:13, fontWeight:600 }}>{m.name}</div>
-                <div style={{ fontSize:11.5, color:'var(--t-2)', marginTop:2 }}>{m.branch} · {m.monthsActive} months active</div>
-                <div style={{ marginTop:6 }}><StarRating value={m.rating}/></div>
-              </div>
-              <div style={{ display:'flex', gap:8 }}>
-                <button className="btn btn-sm btn-brand">Approve & generate link</button>
-                <button className="btn btn-sm">Review later</button>
-              </div>
-            </div>
-          ))}
-          {eligible.filter(m=>!m.verified).length === 0 && (
-            <div style={{ padding:'2rem', textAlign:'center', color:'var(--t-3)', fontSize:13 }}>No pending requests at this time.</div>
-          )}
-        </div>
-      )}
-
-      {/* ── SETTINGS ── */}
-      {tab === 'settings' && (
-        <div className="card card-p" style={{ maxWidth:480 }}>
-          <div style={{ fontSize:13.5, fontWeight:600, marginBottom:4 }}>Verification threshold</div>
-          <div style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:20, lineHeight:1.65 }}>
-            Super admin, senior pastor, or group admin can adjust the minimum months required before a member becomes eligible for a referral link.
+              </tbody>
+            </table>
           </div>
-          <div style={{ marginBottom:20 }}>
-            <label style={{ fontSize:12, fontWeight:500, color:'var(--t-2)', display:'block', marginBottom:8 }}>Minimum active months: <strong style={{ color:'var(--brand)', fontFamily:'var(--font-mono)' }}>{threshold}</strong></label>
-            <input type="range" min={1} max={24} value={threshold} onChange={e=>setThreshold(Number(e.target.value))} style={{ width:'100%', accentColor:'var(--brand)' }}/>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--t-3)', marginTop:4 }}>
+        </div>
+      )}
+
+      {/* ── REFERRAL REQUESTS ── */}
+      {tab === 'requests' && (
+        <div className="card card-p" style={{ textAlign:'center', padding:'3rem' }}>
+          <div style={{ fontSize:40, marginBottom:14 }}>🔗</div>
+          <div style={{ fontWeight:700, fontSize:15, color:'var(--t-1)', marginBottom:6 }}>No pending referral requests</div>
+          <p style={{ fontSize:13, color:'var(--t-2)', maxWidth:360, margin:'0 auto' }}>When eligible members request a referral link, they'll appear here for you to approve and generate.</p>
+        </div>
+      )}
+
+      {/* ── SETTINGS ── fully editable ── */}
+      {tab === 'settings' && (
+        <div style={{ maxWidth:560 }}>
+          {saved && (
+            <div style={{ background:'var(--green-lt)', border:'1px solid rgba(27,158,90,0.3)', borderRadius:'var(--r)', padding:'10px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:8, fontSize:13, color:'var(--green)', fontWeight:600 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+              Settings saved successfully
+            </div>
+          )}
+
+          <div className="card card-p" style={{ marginBottom:12 }}>
+            <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:4 }}>Verification threshold</h3>
+            <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:18, lineHeight:1.6 }}>
+              Minimum months a member must be active before they can request a referral link.
+            </p>
+            <label style={{ fontSize:12, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:8 }}>
+              Minimum active months: <strong style={{ color:'var(--brand)', fontFamily:'var(--font-mono)', fontSize:15 }}>{threshold}</strong>
+            </label>
+            <input
+              type="range" min={1} max={24} value={threshold}
+              onChange={e => setThreshold(Number(e.target.value))}
+              style={{ width:'100%', accentColor:'var(--brand)', cursor:'pointer', height:6 }}
+            />
+            <div style={{ display:'flex', justifyContent:'space-between', fontSize:10.5, color:'var(--t-3)', marginTop:5 }}>
               <span>1 month</span><span>12 months</span><span>24 months</span>
             </div>
           </div>
-          {[
-            { label:'Who can approve referral requests', val:'Cell admin / Church admin', note:'Set per branch' },
-            { label:'Commitment rating components', val:'Attendance · Giving · Prayer · Serving', note:'Weighted equally' },
-            { label:'Rating scale', val:'1 (lowest) → 5 (highest commitment)', note:'Shown to approving admin' },
-            { label:'Link expiry', val:'30 days after generation', note:'Requester can renew' },
-          ].map(row => (
-            <div key={row.label} className="stat-row">
-              <div>
-                <div style={{ fontSize:12.5 }}>{row.label}</div>
-                <div style={{ fontSize:11, color:'var(--t-3)' }}>{row.note}</div>
-              </div>
-              <div style={{ fontSize:12, color:'var(--brand)', fontWeight:500, textAlign:'right', maxWidth:200 }}>{row.val}</div>
+
+          <div className="card card-p" style={{ marginBottom:12 }}>
+            <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Who can approve referral requests</h3>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {APPROVER_OPTIONS.map(opt => (
+                <label key={opt} style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer', padding:'10px 12px', borderRadius:'var(--r)', border:`1px solid ${approver===opt?'var(--brand)':'var(--border)'}`, background:approver===opt?'var(--brand-soft)':'transparent', transition:'all .12s' }}>
+                  <input type="radio" name="approver" value={opt} checked={approver===opt} onChange={()=>setApprover(opt)} style={{ accentColor:'var(--brand)', width:15, height:15 }}/>
+                  <span style={{ fontSize:13, fontWeight:approver===opt?600:400, color:'var(--t-1)' }}>{opt}</span>
+                </label>
+              ))}
             </div>
-          ))}
-          <button className="btn btn-brand btn-sm" style={{ marginTop:16 }}>Save settings</button>
+          </div>
+
+          <div className="card card-p" style={{ marginBottom:12 }}>
+            <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:6 }}>Commitment rating components</h3>
+            <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:14 }}>Select which activities contribute to a member's commitment score.</p>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {RATING_COMPONENTS.map(comp => {
+                const on = ratingComponents.includes(comp)
+                return (
+                  <button key={comp} onClick={()=>toggleComponent(comp)} style={{ padding:'7px 14px', borderRadius:100, fontSize:12.5, fontWeight:on?700:400, cursor:'pointer', border:`1px solid ${on?'var(--brand)':'var(--border-md)'}`, background:on?'var(--brand)':'var(--s-2)', color:on?'white':'var(--t-2)', transition:'all .12s', fontFamily:'var(--font-body)', display:'flex', alignItems:'center', gap:6 }}>
+                    {on && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>}
+                    {comp}
+                  </button>
+                )
+              })}
+            </div>
+            <p style={{ fontSize:11.5, color:'var(--t-3)', marginTop:10 }}>Selected components are weighted equally. {ratingComponents.length} component{ratingComponents.length!==1?'s':''} selected.</p>
+          </div>
+
+          <div className="card card-p" style={{ marginBottom:12 }}>
+            <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Referral link expiry</h3>
+            <select className="select" value={expiry} onChange={e=>setExpiry(e.target.value)}>
+              {EXPIRY_OPTIONS.map(o => <option key={o} value={o}>{o} after generation</option>)}
+            </select>
+            <p style={{ fontSize:11.5, color:'var(--t-3)', marginTop:8 }}>After expiry, the member can request a fresh link from their unit head.</p>
+          </div>
+
+          <div className="card card-p" style={{ marginBottom:20 }}>
+            <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:6 }}>Rating scale</h3>
+            <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:12 }}>Set the rating range visible to approving admins.</p>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ flex:1 }}>
+                <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Minimum</label>
+                <select className="select" value={ratingScale[0]} onChange={e=>setRatingScale([Number(e.target.value),ratingScale[1]])}>
+                  {[1,2,3].map(n=><option key={n} value={n}>{n}</option>)}
+                </select>
+              </div>
+              <span style={{ fontSize:18, color:'var(--t-3)', marginTop:18 }}>→</span>
+              <div style={{ flex:1 }}>
+                <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Maximum</label>
+                <select className="select" value={ratingScale[1]} onChange={e=>setRatingScale([ratingScale[0],Number(e.target.value)])}>
+                  {[3,4,5,7,10].map(n=><option key={n} value={n}>{n} (highest)</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'12px', fontSize:14, fontWeight:700 }} onClick={saveSettings}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>
+            Save settings
+          </button>
         </div>
       )}
     </div>

@@ -134,6 +134,21 @@ export default function LoginPage() {
     setSplash({ show: true, name })
   }, [])
 
+  // Handle magic link redirect — Supabase puts tokens in the URL hash
+  useEffect(() => {
+    if (!supabase) return
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        const name = session.user.user_metadata?.full_name
+          || session.user.email?.split('@')[0]
+          || 'Welcome'
+        localStorage.setItem('hicc_biometric_email', session.user.email || '')
+        afterAuth(name, session.user.email || '')
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [afterAuth])
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setErr('')
@@ -272,8 +287,13 @@ export default function LoginPage() {
       {/* Login card */}
       <div className="glass" style={{ width:'100%', maxWidth:380, padding:'2rem' }}>
         <h1 style={{ fontFamily:'var(--font-display)', fontSize:20, fontWeight:800, color:'white', marginBottom:4, letterSpacing:'-0.02em' }}>Sign in</h1>
-        <p style={{ fontSize:13, color:'rgba(255,255,255,.4)', marginBottom:24 }}>Enter your credentials to continue</p>
-        {!supabase && <p style={{ fontSize:11, color:'var(--gold)', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.2)', borderRadius:8, padding:'6px 10px', marginBottom:12 }}>⚠ Demo mode — Supabase not connected</p>}
+        <p style={{ fontSize:13, color:'rgba(255,255,255,.4)', marginBottom:16 }}>Enter your credentials to continue</p>
+        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:18, padding:'6px 10px', background: supabase ? 'rgba(16,185,129,0.08)' : 'rgba(201,168,76,0.08)', border:`1px solid ${supabase ? 'rgba(16,185,129,0.2)' : 'rgba(201,168,76,0.2)'}`, borderRadius:8 }}>
+          <div style={{ width:7, height:7, borderRadius:'50%', background: supabase ? '#10B981' : '#C9A84C', flexShrink:0 }}/>
+          <span style={{ fontSize:11, color: supabase ? '#6EE7B7' : 'var(--gold)' }}>
+            {supabase ? 'Connected to Harvesters database' : 'Demo mode — database not connected'}
+          </span>
+        </div>
 
         {err && (
           <div style={{ background:'rgba(197,48,48,.15)', border:'1px solid rgba(197,48,48,.3)', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#FC8181', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
@@ -287,12 +307,17 @@ export default function LoginPage() {
             <label style={{ fontSize:11.5, fontWeight:600, color:'rgba(255,255,255,.45)', display:'block', marginBottom:6, letterSpacing:'.03em' }}>Email address</label>
             <input className="input-dark" type="email" value={email} onChange={e => { setEmail(e.target.value); setErr('') }} placeholder="your@email.com" required autoComplete="email" autoFocus/>
           </div>
-          <div style={{ marginBottom:8, position:'relative' }}>
+          <div style={{ marginBottom:8 }}>
             <label style={{ fontSize:11.5, fontWeight:600, color:'rgba(255,255,255,.45)', display:'block', marginBottom:6, letterSpacing:'.03em' }}>Password</label>
-            <input className="input-dark" type={showPwd ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setErr('') }} placeholder="Enter password" required autoComplete="current-password" style={{ paddingRight:42 }}/>
-            <button type="button" onClick={() => setShowPwd(p => !p)} style={{ position:'absolute', right:12, bottom:11, background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.35)', padding:0 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">{showPwd ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>}</svg>
-            </button>
+            <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+              <input className="input-dark" type={showPwd ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); setErr('') }} placeholder="Enter password" required autoComplete="current-password" style={{ paddingRight:44, marginBottom:0 }}/>
+              <button type="button" onClick={() => setShowPwd(p => !p)} style={{ position:'absolute', right:12, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.45)', padding:4, display:'flex', alignItems:'center', zIndex:1 }}>
+                {showPwd
+                  ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="17" height="17"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="17" height="17"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                }
+              </button>
+            </div>
           </div>
           <div style={{ textAlign:'right', marginBottom:20 }}>
             <button type="button" onClick={() => setMode('forgot')} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--gold)', fontSize:12, fontFamily:'var(--font-body)', fontWeight:600 }}>

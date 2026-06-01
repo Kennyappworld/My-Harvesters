@@ -2,6 +2,11 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
+  : null
 
 const BRANCHES: Record<string,string> = {
   lekki:'Lekki HQ', gbagada:'Gbagada', ikeja:'Ikeja', anthony:'Anthony Village',
@@ -25,8 +30,40 @@ function SignupForm() {
   const [form, setForm] = useState({ name:'', phone:'', email:'', branch:branchParam||'lekki', dept:'', firstTimer:'no', dob:'' })
   const [done, setDone] = useState(false)
 
+  const [busy, setBusy] = useState(false)
+  const [signupErr, setSignupErr] = useState('')
+  const [tempPassword, setTempPassword] = useState('')
+
   const next = (e:React.FormEvent) => { e.preventDefault(); setStep(2) }
-  const submit = (e:React.FormEvent) => { e.preventDefault(); setDone(true) }
+  const submit = async (e:React.FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    setSignupErr('')
+    // Generate a temporary password the user must change on first login
+    const tmp = Math.random().toString(36).slice(-8) + 'Hi1!'
+    setTempPassword(tmp)
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.signUp({
+          email: form.email.trim().toLowerCase(),
+          password: tmp,
+          options: {
+            data: {
+              full_name: form.name,
+              phone: form.phone,
+              branch_id: form.branch,
+              department: form.dept,
+              role: 'worker',
+            },
+            emailRedirectTo: window.location.origin + '/login',
+          }
+        })
+        if (error) { setSignupErr(error.message); setBusy(false); return }
+      }
+      setDone(true)
+    } catch { setSignupErr('Registration failed. Please try again.') }
+    finally { setBusy(false) }
+  }
 
   if (done) return (
     <div style={{textAlign:'center',padding:'3rem 1.5rem'}}>

@@ -41,16 +41,15 @@ const nextConfig = {
           { key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),   // 'unsafe-eval' required by Next.js dev; tighten in prod
+              "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""),
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com",
-              "connect-src 'self' https://api.anthropic.com",
-              "frame-ancestors 'none'",             // blocks clickjacking at CSP level
-              "base-uri 'self'",                    // blocks base tag injection
-              "form-action 'self'",                 // restricts form targets
-              "object-src 'none'",                  // no Flash/plugins
-              "upgrade-insecure-requests",
+              "font-src 'self' data: https://fonts.gstatic.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://*.supabase.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "object-src 'none'",
             ].join('; ')
           },
 

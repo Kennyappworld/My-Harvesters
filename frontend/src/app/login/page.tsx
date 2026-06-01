@@ -153,18 +153,8 @@ export default function LoginPage() {
     if (!user) return
     sessionStorage.setItem('hicc_user', JSON.stringify({ email: userEmail, ...user }))
 
-    // Show scripture splash if more than 3 hours since last shown
-    const lastShownKey = 'hicc_splash_last'
-    const lastShown = Number(localStorage.getItem(lastShownKey) || '0')
-    const threeHours = 3 * 60 * 60 * 1000
-    const showSplash = Date.now() - lastShown > threeHours
-
-    if (showSplash) {
-      localStorage.setItem(lastShownKey, String(Date.now()))
-      setSplash({ show: true, name: user.name })
-    } else {
-      router.push('/dashboard')
-    }
+    // Show scripture splash on every login
+    setSplash({ show: true, name: user.name })
   }, [router])
 
   const submit = (e: FormEvent) => {

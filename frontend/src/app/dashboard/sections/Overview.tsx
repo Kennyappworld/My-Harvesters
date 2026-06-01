@@ -114,7 +114,7 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
       {/* Mission statement — gold-accented, understated */}
       <div className="mission-bar" style={{ marginBottom:16 }}>
         <p style={{ fontSize:13.5, fontWeight:700, color:'var(--t-1)', fontFamily:'var(--font-display)', lineHeight:1.6 }}>
-          Changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, influencing culture, and leading every member to become a fully devoted follower of Christ.
+          We are changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, influencing culture, and leading every member to become a fully devoted follower of Christ.
         </p>
       </div>
 

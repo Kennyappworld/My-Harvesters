@@ -22,6 +22,7 @@ const Settings      = dynamic(() => import('./sections/Settings'),          { lo
 const PastoralPulse = dynamic(() => import('./sections/PastoralPulse'),      { loading: () => <L/> })
 const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { loading: () => <L/> })
 const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),     { loading: () => <L/> })
+const Devotional    = dynamic(() => import('./sections/Devotional'),          { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -134,6 +135,7 @@ const NAV = [
     { key:'prayer',        label:'Prayer Wall',        icon:'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z', badge:12, bc:'nb-brand' },
     { key:'testimony',     label:'Testimonies',        icon:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', badge:4, bc:'nb-green' },
     { key:'announcements', label:'Announcements',      icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0', badge:4 },
+    { key:'devotional',    label:'Daily Devotional',   icon:'M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z', badge:'New', bc:'nb-green' },
     { key:'pastoral',       label:'Pastoral Pulse',     icon:'M22 12h-4l-3 9L9 3l-3 9H2', badge:'!', bc:'nb-brand' },
     { key:'meetings',      label:'Meetings',           icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.259a1 1 0 0 1-1.447.894L15 14M2 8h13v8H2z' },
     { key:'events',        label:'Events',             icon:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', badge:2, bc:'nb-brand' },
@@ -179,7 +181,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings, pastoral:PastoralPulse, membcard:MembershipCard, branches:BranchDash,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash,
 }
 
 export default function Dashboard() {

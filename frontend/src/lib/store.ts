@@ -12,6 +12,7 @@ type StorageKey =
   | 'hicc_members_photos'
   | 'hicc_meetings'
   | 'hicc_attendance'
+  | 'hicc_devotional_plans'
 
 export function persist<T>(key: StorageKey, data: T): void {
   if (typeof window === 'undefined') return

@@ -28,24 +28,42 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
   const dismiss = () => { setVis(false); setTimeout(onDone, 350) }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:200, background:'var(--dark)', display:'flex', alignItems:'center', justifyContent:'center', padding:'1.5rem', transition:'opacity .4s', opacity: vis ? 1 : 0 }}>
-      <div style={{ position:'absolute', top:'10%', left:'15%', width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle, rgba(27,67,50,0.4) 0%, transparent 70%)', filter:'blur(50px)', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', bottom:'12%', right:'10%', width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle, rgba(201,168,76,0.18) 0%, transparent 70%)', filter:'blur(40px)', pointerEvents:'none' }}/>
-      <div style={{ maxWidth:420, width:'100%', textAlign:'center', position:'relative' }}>
-        <div style={{ width:52, height:52, background:'var(--grad-brand)', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 18px', boxShadow:'var(--sh-brand)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="24" height="24"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+    <div style={{ position:'fixed', inset:0, zIndex:200, background:'var(--dark)', display:'flex', alignItems:'center', justifyContent:'center', padding:'1.5rem', transition:'opacity .5s', opacity: vis ? 1 : 0, overflow:'hidden' }}>
+      {/* Ambient glow layers */}
+      <div style={{ position:'absolute', top:'-5%', left:'-10%', width:420, height:420, borderRadius:'50%', background:'radial-gradient(circle, rgba(27,67,50,0.55) 0%, transparent 70%)', filter:'blur(70px)', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', bottom:'-5%', right:'-8%', width:360, height:360, borderRadius:'50%', background:'radial-gradient(circle, rgba(201,168,76,0.22) 0%, transparent 70%)', filter:'blur(60px)', pointerEvents:'none' }}/>
+      <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:600, height:300, borderRadius:'50%', background:'radial-gradient(ellipse, rgba(27,67,50,0.2) 0%, transparent 70%)', filter:'blur(80px)', pointerEvents:'none' }}/>
+
+      <div style={{ maxWidth:440, width:'100%', textAlign:'center', position:'relative' }}>
+        {/* Cross icon */}
+        <div style={{ width:56, height:56, background:'linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08))', border:'1px solid rgba(201,168,76,0.35)', borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 24px', boxShadow:'0 0 40px rgba(201,168,76,0.15)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
         </div>
-        <p style={{ fontSize:11, fontWeight:700, color:'var(--gold)', letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8 }}>Grace and peace to you</p>
-        <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.5rem,4vw,2rem)', fontWeight:800, color:'white', marginBottom:4 }}>{name}</h1>
-        <p style={{ fontSize:13, color:'rgba(255,255,255,.45)', marginBottom:32 }}>Welcome back to Harvesters' Workforce Community</p>
-        <div style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:16, padding:'1.5rem', marginBottom:28, backdropFilter:'blur(8px)' }}>
-          <p style={{ fontSize:14, fontStyle:'italic', color:'rgba(255,255,255,.75)', lineHeight:1.75, marginBottom:10 }}>"{word.verse}"</p>
-          <p style={{ fontSize:11, color:'var(--gold)', fontWeight:700, letterSpacing:'.08em' }}>{word.ref}</p>
+
+        {/* Grace headline */}
+        <div style={{ marginBottom:6 }}>
+          <span style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,7vw,3.2rem)', fontWeight:800, color:'var(--gold)', letterSpacing:'-0.02em', lineHeight:1, display:'block', textShadow:'0 0 60px rgba(201,168,76,0.4)' }}>
+            Grace! Grace!! Grace!!!
+          </span>
         </div>
-        <button onClick={dismiss} className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'13px', fontSize:15, fontWeight:700, marginBottom:12 }}>
-          Enter →
+        <p style={{ fontSize:12, fontWeight:600, color:'rgba(201,168,76,0.6)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:18 }}>This is my story</p>
+
+        {/* Name */}
+        <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.2rem,3.5vw,1.6rem)', fontWeight:700, color:'white', marginBottom:24, letterSpacing:'-0.01em' }}>
+          Welcome back, <span style={{ color:'var(--gold)' }}>{name}</span>
+        </h1>
+
+        {/* Scripture card */}
+        <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', borderLeft:'3px solid rgba(201,168,76,0.6)', borderRadius:14, padding:'1.2rem 1.4rem', marginBottom:28, textAlign:'left' }}>
+          <p style={{ fontSize:13.5, fontStyle:'italic', color:'rgba(255,255,255,.78)', lineHeight:1.8, marginBottom:10 }}>"{word.verse}"</p>
+          <p style={{ fontSize:11, color:'var(--gold)', fontWeight:700, letterSpacing:'.08em', textAlign:'right' }}>— {word.ref}</p>
+        </div>
+
+        {/* Buttons */}
+        <button onClick={dismiss} className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'14px', fontSize:15, fontWeight:700, marginBottom:12, letterSpacing:'0.02em', boxShadow:'0 0 30px rgba(27,67,50,0.6)' }}>
+          Enter the platform →
         </button>
-        <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.3)', fontSize:12, fontFamily:'var(--font-body)' }}>
+        <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.25)', fontSize:12, fontFamily:'var(--font-body)', letterSpacing:'.04em' }}>
           Skip for now
         </button>
       </div>

@@ -189,15 +189,15 @@ export default function Dashboard() {
   function SidebarInner() {
     return (
       <>
-        {/* Sidebar header — dark navy like guide */}
-        <div style={{padding:'18px 16px 14px', borderBottom:'1px solid rgba(255,255,255,0.08)'}}>
-          <div style={{display:'flex', alignItems:'center', gap:10, marginBottom:2}}>
-            <div style={{width:34,height:34,background:'var(--brand)',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 4px 12px rgba(124,58,237,0.4)'}}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="17" height="17"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+        {/* Sidebar header */}
+        <div style={{padding:'16px 14px 14px', borderBottom:'1px solid rgba(255,255,255,0.07)', background:'rgba(0,0,0,0.15)'}}>
+          <div style={{display:'flex', alignItems:'center', gap:10}}>
+            <div style={{width:36,height:36,background:'linear-gradient(135deg, var(--brand-md) 0%, var(--brand) 100%)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 4px 14px rgba(27,67,50,0.6), inset 0 1px 0 rgba(255,255,255,0.15)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
             </div>
             <div>
-              <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em'}}>Harvesters HICC</div>
-              <div style={{fontSize:10,color:'rgba(255,255,255,0.4)',letterSpacing:'0.04em'}}>Leadership Portal</div>
+              <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>Harvesters HICC</div>
+              <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>Workforce Platform</div>
             </div>
           </div>
         </div>
@@ -205,11 +205,13 @@ export default function Dashboard() {
         <div style={{padding:'10px 10px',flex:1,overflowY:'auto'}}>
           {NAV.map(sec=>(
             <div key={sec.section}>
-              <div style={{fontSize:9,color:'rgba(255,255,255,0.3)',padding:'12px 10px 4px',letterSpacing:'.1em',textTransform:'uppercase',fontWeight:700}}>{sec.section}</div>
+              <div style={{fontSize:8.5,color:'rgba(201,168,76,0.55)',padding:'14px 12px 5px',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700,display:'flex',alignItems:'center',gap:8}}><div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/>{sec.section}<div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/></div>
               {sec.items.map((item:any)=>(
                 <div key={item.key} className={`nav-link ${page===item.key?'active':''}`} onClick={()=>{setPage(item.key);setMobileOpen(false)}}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="15" height="15"><path d={item.icon}/></svg>
-                  {item.label}
+                  <span style={{width:28,height:28,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,background:page===item.key?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.06)',transition:'background .12s'}}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d={item.icon}/></svg>
+                  </span>
+                  <span style={{flex:1,fontSize:12.5}}>{item.label}</span>
                   {item.badge && <span className={`nav-badge ${item.bc||'nb-red'}`}>{item.badge}</span>}
                 </div>
               ))}
@@ -218,9 +220,9 @@ export default function Dashboard() {
         </div>
 
         {/* User info — bottom of dark sidebar */}
-        <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-            <div style={{width:34,height:34,borderRadius:'50%',background:'var(--brand)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'white',flexShrink:0}}>BI</div>
+        <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,0.08)',background:'rgba(0,0,0,0.15)'}}>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--brand-md),var(--brand-lt))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0,boxShadow:'0 2px 8px rgba(27,67,50,0.5)',border:'2px solid rgba(255,255,255,0.15)'}}>BI</div>
             <div>
               <div style={{fontSize:12,fontWeight:700,color:'white'}}>Pastor Bolaji Idowu</div>
               <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>Senior Pastor · All branches</div>
@@ -251,16 +253,16 @@ export default function Dashboard() {
 
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
         {/* Topbar — warm, branded */}
-        <div className="topbar" style={{ background:'var(--s-2)', borderBottom:'1px solid var(--border)', borderLeft:'3px solid var(--brand)' }}>
+        <div className="topbar">
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             <button className="btn btn-ghost btn-icon" onClick={()=>setMobileOpen(true)} style={{display:'none'}} id="mob-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
             <div style={{display:'flex',alignItems:'center',gap:10}}>
-              <div style={{width:36,height:36,borderRadius:10,background:'var(--brand-soft)',border:'1px solid var(--border-md)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:18}}>{meta.emoji}</div>
+              <div style={{width:38,height:38,borderRadius:12,background:'linear-gradient(135deg,var(--brand) 0%,var(--brand-md) 100%)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,boxShadow:'0 3px 10px rgba(27,67,50,0.25)'}}>{meta.emoji}</div>
               <div>
-                <div style={{fontSize:16,fontWeight:800,fontFamily:'var(--font-display)',color:'var(--t-1)',letterSpacing:'-0.02em'}}>{meta.title}</div>
-                <div style={{fontSize:11,color:'var(--t-3)',marginTop:1}}>{meta.sub}</div>
+                <div style={{fontSize:17,fontWeight:800,fontFamily:'var(--font-display)',color:'var(--t-1)',letterSpacing:'-0.025em',lineHeight:1.2}}>{meta.title}</div>
+                <div style={{fontSize:10.5,color:'var(--t-3)',marginTop:2,letterSpacing:'0.01em'}}>{meta.sub}</div>
               </div>
             </div>
           </div>

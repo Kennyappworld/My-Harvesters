@@ -75,11 +75,15 @@ export default function Settings() {
 
   return (
     <div>
-      <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)', marginBottom:4 }}>Platform Settings</div>
-      <div style={{ fontSize:12, color:'var(--t-2)', marginBottom:16 }}>User management · Branches · Departments · QR signup · Configuration</div>
+      {/* Page header */}
+      <div style={{ marginBottom:20 }}>
+        <h2 style={{ fontWeight:800, fontSize:17, fontFamily:'var(--font-display)', color:'var(--t-1)', letterSpacing:'-0.02em', marginBottom:3 }}>Platform Settings</h2>
+        <p style={{ fontSize:12.5, color:'var(--t-3)' }}>Manage users, branches, departments, and platform configuration</p>
+      </div>
 
+      {/* Main tabs */}
       <div className="tabs" style={{ marginBottom:20 }}>
-        {([['users','Users'],['branches','Branches'],['departments','Departments'],['qr','QR Signup'],['general','General']] as const).map(([k,l]) => (
+        {([['users','👥 Users'],['branches','🏛 Branches'],['departments','📂 Departments'],['qr','🔳 QR Signup'],['general','⚙️ General']] as const).map(([k,l]) => (
           <button key={k} className={`tab ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</button>
         ))}
       </div>
@@ -88,10 +92,17 @@ export default function Settings() {
       {tab === 'users' && (
         <div>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, flexWrap:'wrap', gap:10 }}>
-            <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-              {[['all','All'],['pending','Pending approval'],['senior_pastor','Senior Pastor'],['branch_pastor','Branch Pastor'],['unit_head','Unit Head'],['member','Member']].map(([k,l]) => (
-                <button key={k} className={`btn btn-sm ${userFilter===k?'btn-brand':''}`} style={{ fontSize:11 }} onClick={()=>setUserFilter(k)}>{l}{k==='pending'&&users.filter(u=>u.status==='pending').length>0?` (${users.filter(u=>u.status==='pending').length})`:''}</button>
-              ))}
+            <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+              <span style={{ fontSize:11, color:'var(--t-3)', fontWeight:600, marginRight:2 }}>Filter:</span>
+              {[['all','All'],['pending','Pending'],['senior_pastor','Senior Pastor'],['branch_pastor','Branch Pastor'],['unit_head','Unit Head'],['member','Member']].map(([k,l]) => {
+                const pCount = k==='pending' ? users.filter(u=>u.status==='pending').length : 0
+                const isActive = userFilter===k
+                return (
+                  <button key={k} onClick={()=>setUserFilter(k)} style={{ padding:'4px 12px', borderRadius:100, fontSize:11.5, fontWeight:isActive?700:500, cursor:'pointer', border:`1px solid ${isActive?'var(--brand)':'var(--border-md)'}`, background:isActive?'var(--brand)':'var(--s-2)', color:isActive?'white':'var(--t-2)', transition:'all .12s', fontFamily:'var(--font-body)', display:'flex', alignItems:'center', gap:5 }}>
+                    {l}{pCount>0&&<span style={{ width:16, height:16, borderRadius:'50%', background:'rgba(255,255,255,0.3)', fontSize:9.5, fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center' }}>{pCount}</span>}
+                  </button>
+                )
+              })}
             </div>
             <button className="btn btn-brand btn-sm" onClick={()=>setShowAddUser(v=>!v)}>+ Add user</button>
           </div>
@@ -125,7 +136,13 @@ export default function Settings() {
             </div>
           )}
 
-          <div className="card card-p">
+          <div className="card" style={{ overflow:'hidden' }}>
+            <div style={{ padding:'12px 16px', background:'linear-gradient(90deg, rgba(27,67,50,0.05) 0%, transparent 100%)', borderBottom:'1px solid var(--border-md)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              <span style={{ fontSize:13, fontWeight:700, fontFamily:'var(--font-display)', color:'var(--t-1)' }}>
+                {filteredUsers.length} {userFilter==='all'?'total users':userFilter==='pending'?'pending approval':userFilter.replace('_',' ')+'s'}
+              </span>
+              <span style={{ fontSize:11, color:'var(--t-3)' }}>{users.filter(u=>u.status==='active').length} active · {users.filter(u=>u.status==='pending').length} pending</span>
+            </div>
             <table className="tbl">
               <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Branch</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
               <tbody>

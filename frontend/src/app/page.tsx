@@ -56,7 +56,7 @@ export default function Landing() {
 
         {/* Headline */}
         <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,5.5vw,3.6rem)', fontWeight:800, letterSpacing:'-.04em', lineHeight:1.08, color:'white', marginBottom:16, maxWidth:680 }}>
-          Welcome to the Harvesters Workers Community
+          Welcome to Harvesters' Workforce Community
         </h1>
 
         {/* Single unifying statement */}

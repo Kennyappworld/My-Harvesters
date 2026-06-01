@@ -61,7 +61,7 @@ export default function Landing() {
 
         {/* Single unifying statement */}
         <p style={{ fontSize:'clamp(14px,1.8vw,16.5px)', color:'rgba(255,255,255,.5)', lineHeight:1.75, maxWidth:420, marginBottom:40, fontStyle:'italic' }}>
-          Many members, one mission — raising champions for God's Kingdom, together.
+          Changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, and leading every member to become a fully devoted follower of Christ.
         </p>
 
         {/* CTAs only — nothing else below */}

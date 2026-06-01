@@ -111,16 +111,11 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
     <div>
       {showNewMembers && <NewMembersModal onClose={()=>setShowNewMembers(false)}/>}
 
-      {/* Mission statement */}
-      <div style={{ background:'var(--grad-brand)',borderRadius:14,padding:'16px 22px',marginBottom:16,position:'relative',overflow:'hidden' }}>
-        <div style={{ position:'absolute',right:-20,top:-20,width:120,height:120,borderRadius:'50%',background:'rgba(255,255,255,0.06)' }}/>
-        <div style={{ fontSize:9.5,fontWeight:700,color:'rgba(255,255,255,0.7)',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:5 }}>Our mission</div>
-        <div style={{ fontSize:14,fontWeight:700,color:'white',lineHeight:1.6,maxWidth:680,fontFamily:'var(--font-display)' }}>
+      {/* Mission statement — gold-accented, understated */}
+      <div className="mission-bar" style={{ marginBottom:16 }}>
+        <p style={{ fontSize:13.5, fontWeight:700, color:'var(--t-1)', fontFamily:'var(--font-display)', lineHeight:1.6 }}>
           Raise Kingdom champions — bonding the workforce in unity, growing every member spiritually, and equipping leadership with the insight to harvest more souls.
-        </div>
-        <div style={{ fontSize:11,color:'rgba(255,255,255,0.6)',marginTop:6 }}>
-          Aligned with the Harvesters vision: raising champions to take their world for Jesus Christ.
-        </div>
+        </p>
       </div>
 
       {/* KPIs */}

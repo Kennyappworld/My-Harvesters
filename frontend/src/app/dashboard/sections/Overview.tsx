@@ -213,8 +213,8 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
       </div>
 
       {/* Branch snapshot */}
-      <div className="card card-p">
-        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12 }}>
+      <div className="card" style={{ overflow:'hidden' }}>
+        <div style={{ padding:'13px 18px', background:'linear-gradient(90deg, rgba(27,67,50,0.05) 0%, transparent 100%)', borderBottom:'1px solid var(--border-md)', display:'flex',justifyContent:'space-between',alignItems:'center' }}>
           <div className="heading">Branch snapshot</div>
           <button className="btn btn-brand btn-sm" onClick={()=>onNavigate('settings')}>+ Add branch</button>
         </div>

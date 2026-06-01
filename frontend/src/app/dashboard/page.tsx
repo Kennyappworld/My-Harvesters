@@ -244,14 +244,14 @@ export default function Dashboard() {
       {/* Mobile overlay */}
       {mobileOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex'}}>
-          <div style={{width:216,background:'var(--navy)',display:'flex',flexDirection:'column'}}><SidebarInner/></div>
+          <div style={{width:216,background:'var(--dark)',display:'flex',flexDirection:'column'}}><SidebarInner/></div>
           <div style={{flex:1,background:'rgba(0,0,0,0.5)'}} onClick={()=>setMobileOpen(false)}/>
         </div>
       )}
 
       <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:0}}>
-        {/* White topbar — matches guide interior pages */}
-        <div className="topbar">
+        {/* Topbar — warm, branded */}
+        <div className="topbar" style={{ background:'var(--s-2)', borderBottom:'1px solid var(--border)', borderLeft:'3px solid var(--brand)' }}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             <button className="btn btn-ghost btn-icon" onClick={()=>setMobileOpen(true)} style={{display:'none'}} id="mob-btn">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
@@ -276,7 +276,7 @@ export default function Dashboard() {
         </div>
 
         {/* Light interior content area */}
-        <div style={{flex:1,overflowY:'auto',padding:'20px 24px',background:'var(--s-1)'}}>
+        <div style={{flex:1,overflowY:'auto',padding:'20px 24px',background:'linear-gradient(160deg, #EDECEA 0%, #F0EFE8 60%, #EAE9E0 100%)'}}>
           {Page ? <Page onNavigate={setPage}/> : (
             <div style={{textAlign:'center',padding:'4rem',color:'var(--t-3)'}}>
               <div style={{fontSize:40,marginBottom:16}}>🔧</div>
@@ -287,7 +287,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom nav bar — matches guide exactly */}
-        <div style={{height:56,background:'white',borderTop:'1px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'space-around',flexShrink:0,boxShadow:'0 -2px 12px rgba(124,58,237,0.06)'}}>
+        <div style={{height:56,background:'var(--dark-2)',borderTop:'1px solid rgba(255,255,255,0.08)',display:'flex',alignItems:'center',justifyContent:'space-around',flexShrink:0,boxShadow:'0 -4px 20px rgba(13,31,22,0.25)'}}>
           {[
             {key:'overview',  icon:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z', label:'Home'},
             {key:'members',   icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M12 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', label:'Members'},
@@ -296,9 +296,9 @@ export default function Dashboard() {
             {key:'settings',  icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z', label:'Settings'},
           ].map(item=>(
             <button key={item.key} onClick={()=>setPage(item.key)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 12px',border:'none',background:'none',cursor:'pointer',position:'relative',transition:'all .15s'}}>
-              <svg viewBox="0 0 24 24" fill={page===item.key?'var(--brand)':'none'} stroke={page===item.key?'var(--brand)':'var(--t-3)'} strokeWidth="1.8" width="22" height="22"><path d={item.icon}/></svg>
-              <span style={{fontSize:10,fontWeight:page===item.key?700:500,color:page===item.key?'var(--brand)':'var(--t-3)',letterSpacing:'0.02em'}}>{item.label}</span>
-              {page===item.key && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:24,height:3,background:'var(--brand)',borderRadius:'2px 2px 0 0'}}/>}
+              <svg viewBox="0 0 24 24" fill={page===item.key?'var(--gold)':'none'} stroke={page===item.key?'var(--gold)':'rgba(255,255,255,0.35)'} strokeWidth="1.8" width="22" height="22"><path d={item.icon}/></svg>
+              <span style={{fontSize:10,fontWeight:page===item.key?700:500,color:page===item.key?'var(--gold)':'rgba(255,255,255,0.35)',letterSpacing:'0.02em'}}>{item.label}</span>
+              {page===item.key && <div style={{position:'absolute',bottom:-1,left:'50%',transform:'translateX(-50%)',width:20,height:3,background:'var(--gold)',borderRadius:'2px 2px 0 0'}}/>}
             </button>
           ))}
         </div>

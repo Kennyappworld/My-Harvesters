@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, FormEvent } from 'react'
+import PoweredBy from '@/lib/PoweredBy'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -275,6 +276,7 @@ export default function LoginPage() {
             <p style={{ textAlign:'center', fontSize:12, color:'rgba(255,255,255,.2)', marginTop:'1.25rem' }}>
               New member? <Link href="/signup" style={{ color:'var(--gold)' }}>Register here</Link>
             </p>
+            <PoweredBy dark={true}/>
           </div>
         )
       }

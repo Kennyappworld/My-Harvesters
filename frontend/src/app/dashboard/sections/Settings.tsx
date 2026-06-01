@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
+import { getOrgSettings, saveOrgSettings } from '@/lib/orgSettings'
 import { branches, DEPARTMENTS } from '@/lib/data'
 import { QRCodeSVG } from 'qrcode.react'
 
@@ -33,8 +34,34 @@ function GeneralSettings() {
   const [allowSelfRegister, setAllowSelfRegister] = useState(true)
   const [requireApproval, setRequireApproval] = useState(true)
   const [saved, setSaved] = useState(false)
+  const [logoUrl, setLogoUrl] = useState('')
+  const [poweredByText, setPoweredByText] = useState('Powered by Anchorsuites Technologies Ltd')
+  const [poweredByUrl, setPoweredByUrl]   = useState('https://anchorsuites.com')
+  const [poweredByVisible, setPoweredByVisible] = useState(true)
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false), 2500) }
+  useEffect(() => {
+    const s = getOrgSettings()
+    setLogoUrl(s.logoUrl || '')
+    setPoweredByText(s.poweredByText)
+    setPoweredByUrl(s.poweredByUrl)
+    setPoweredByVisible(s.poweredByVisible)
+  }, [])
+
+  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { alert('Logo must be under 2MB'); return }
+    const reader = new FileReader()
+    reader.onload = () => setLogoUrl(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const save = () => {
+    saveOrgSettings({ logoUrl, poweredByText, poweredByUrl, poweredByVisible })
+    setSaved(true)
+    setTimeout(()=>setSaved(false), 2500)
+  }
 
   return (
     <div style={{ maxWidth:540 }}>
@@ -45,13 +72,60 @@ function GeneralSettings() {
         </div>
       )}
 
+      {/* ── Logo upload ── */}
       <div className="card card-p" style={{ marginBottom:12 }}>
-        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:14 }}>Platform identity</h3>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:4 }}>Church logo</h3>
+        <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:16 }}>Upload your church logo. It will appear in the navigation bar and landing page.</p>
+        <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:16 }}>
+          <div style={{ width:72, height:72, borderRadius:16, border:'2px dashed var(--border-md)', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--s-3)', overflow:'hidden', flexShrink:0 }}>
+            {logoUrl
+              ? <img src={logoUrl} alt="Logo preview" style={{ width:72, height:72, objectFit:'cover', borderRadius:14 }}/>
+              : <svg viewBox="0 0 24 24" fill="none" stroke="var(--t-3)" strokeWidth="1.5" width="28" height="28"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            }
+          </div>
+          <div>
+            <button className="btn btn-sm" onClick={()=>logoInputRef.current?.click()} style={{ marginBottom:6, display:'flex', alignItems:'center', gap:6 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Upload logo
+            </button>
+            {logoUrl && <button className="btn btn-sm btn-danger" onClick={()=>setLogoUrl('')} style={{ fontSize:11 }}>Remove</button>}
+            <input ref={logoInputRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style={{ display:'none' }} onChange={handleLogoUpload}/>
+            <p style={{ fontSize:11, color:'var(--t-3)', marginTop:6 }}>PNG, JPG, SVG · max 2MB · square recommended</p>
+          </div>
+        </div>
         <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Platform name</label>
         <input className="input" value={platformName} onChange={e=>setPlatformName(e.target.value)} placeholder="Platform name" style={{ marginBottom:12 }}/>
         <div className="stat-row"><span style={{ fontSize:12.5, color:'var(--t-2)' }}>Version</span><span style={{ fontFamily:'var(--font-mono)', fontSize:12, color:'var(--t-1)', fontWeight:600 }}>v7.0</span></div>
         <div className="stat-row"><span style={{ fontSize:12.5, color:'var(--t-2)' }}>Backend</span><span style={{ fontSize:12, color:'var(--green)', fontWeight:600 }}>● Railway · Online</span></div>
         <div className="stat-row"><span style={{ fontSize:12.5, color:'var(--t-2)' }}>Frontend</span><span style={{ fontSize:12, color:'var(--t-1)', fontWeight:600 }}>Vercel · my-harvesters.vercel.app</span></div>
+      </div>
+
+      {/* ── Powered by ── */}
+      <div className="card card-p" style={{ marginBottom:12 }}>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:4 }}>Powered-by attribution</h3>
+        <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:16 }}>Shown at the bottom of every page. Super admin can edit or hide this.</p>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:'1px solid var(--border)', marginBottom:12 }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:500 }}>Show attribution</div>
+            <div style={{ fontSize:11.5, color:'var(--t-3)' }}>Display the powered-by line at the bottom</div>
+          </div>
+          <button onClick={()=>setPoweredByVisible(v=>!v)} style={{ width:44, height:24, borderRadius:100, border:'none', cursor:'pointer', background:poweredByVisible?'var(--brand)':'var(--s-4)', transition:'background .2s', position:'relative', flexShrink:0 }}>
+            <span style={{ position:'absolute', top:2, left:poweredByVisible?22:2, width:20, height:20, borderRadius:'50%', background:'white', boxShadow:'0 1px 4px rgba(0,0,0,0.2)', transition:'left .2s' }}/>
+          </button>
+        </div>
+        {poweredByVisible && (
+          <>
+            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Attribution text</label>
+            <input className="input" value={poweredByText} onChange={e=>setPoweredByText(e.target.value)} placeholder="Powered by..." style={{ marginBottom:10 }}/>
+            <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Link URL (optional)</label>
+            <input className="input" value={poweredByUrl} onChange={e=>setPoweredByUrl(e.target.value)} placeholder="https://..."/>
+            <div style={{ marginTop:12, padding:'10px 14px', background:'var(--s-3)', borderRadius:'var(--r)', border:'1px solid var(--border)', display:'flex', alignItems:'center', gap:6 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold-dk)" strokeWidth="1.8" width="11" height="11"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="21"/><path d="M5 15a7 7 0 0 0 14 0"/></svg>
+              <span style={{ fontSize:11, color:'var(--t-3)' }}>Preview: </span>
+              <span style={{ fontSize:11, color:'var(--t-2)', fontStyle:'italic' }}>{poweredByText}</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="card card-p" style={{ marginBottom:12 }}>

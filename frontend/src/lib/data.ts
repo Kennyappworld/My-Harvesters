@@ -3,32 +3,32 @@
    ───────────────────────────────────────────────────────────────────────── */
 
 export const BRANCH_COLORS: Record<string, string> = {
-  lekki:'#7C3AED', gbagada:'#10B981', ikeja:'#F59E0B',
+  lekki:'#1B4332', gbagada:'#10B981', ikeja:'#F59E0B',
   anthony:'#8B5CF6', abuja:'#EF4444', portharcourt:'#EC4899',
   ibadan:'#F97316', london:'#3B82F6', houston:'#14B8A6',
 }
 
 export const branches = [
-  { id:'lekki',        name:'Lekki HQ',       short:'Lekki',   location:'Lekki Phase 1, Lagos',  country:'NG', type:'hq',           pastor:'Pastor Bolaji Idowu',  members:18200, attendance:92, services:4, color:'#7C3AED', founded:2003 },
+  { id:'lekki',        name:'Lekki HQ',       short:'Lekki',   location:'Lekki Phase 1, Lagos',  country:'NG', type:'hq',           pastor:'Pastor Bolaji Idowu',  members:18200, attendance:92, services:4, color:'#1B4332', founded:2003 },
   { id:'gbagada',      name:'Gbagada',         short:'Gbagada', location:'Gbagada, Lagos',         country:'NG', type:'branch',       pastor:'Pastor Emeka Nwosu',   members:14500, attendance:88, services:3, color:'#10B981', founded:2007 },
   { id:'ikeja',        name:'Ikeja',           short:'Ikeja',   location:'Ikeja GRA, Lagos',       country:'NG', type:'review',       pastor:'TBA',                  members:11800, attendance:84, services:3, color:'#F59E0B', founded:2009 },
-  { id:'anthony',      name:'Anthony Village', short:'Anthony', location:'Anthony Village, Lagos', country:'NG', type:'branch',       pastor:'Pastor Bola Fadahunsi',members:9400,  attendance:79, services:2, color:'#8B5CF6', founded:2011 },
-  { id:'abuja',        name:'Abuja',           short:'Abuja',   location:'FCT, Abuja',             country:'NG', type:'review',       pastor:'Pastor Lola Adeleke',  members:8700,  attendance:81, services:2, color:'#EF4444', founded:2012 },
-  { id:'portharcourt', name:'Port Harcourt',   short:'PH',      location:'Port Harcourt, Rivers',  country:'NG', type:'branch',       pastor:'Pastor Chidi Obi',     members:6800,  attendance:80, services:2, color:'#EC4899', founded:2014 },
+  { id:'anthony',      name:'Anthony Village', short:'Anthony', location:'Anthony Village, Lagos', country:'NG', type:'branch',       pastor:'Pastor Bola Fadahunsi',members:9400,  attendance:79, services:2, color:'#6B7280', founded:2011 },
+  { id:'abuja',        name:'Abuja',           short:'Abuja',   location:'FCT, Abuja',             country:'NG', type:'review',       pastor:'Pastor Lola Adeleke',  members:8700,  attendance:81, services:2, color:'#C05621', founded:2012 },
+  { id:'portharcourt', name:'Port Harcourt',   short:'PH',      location:'Port Harcourt, Rivers',  country:'NG', type:'branch',       pastor:'Pastor Chidi Obi',     members:6800,  attendance:80, services:2, color:'#9C4221', founded:2014 },
   { id:'ibadan',       name:'Ibadan',          short:'Ibadan',  location:'Ibadan, Oyo State',      country:'NG', type:'branch',       pastor:'TBA',                  members:3700,  attendance:77, services:2, color:'#F97316', founded:2016 },
   { id:'london',       name:'London UK',       short:'London',  location:'London, United Kingdom', country:'UK', type:'international',pastor:'Pastor James Osei',    members:6200,  attendance:86, services:2, color:'#3B82F6', founded:2010 },
   { id:'houston',      name:'Houston USA',     short:'Houston', location:'Texas, United States',   country:'US', type:'international',pastor:'Pastor Sola Williams', members:4100,  attendance:82, services:2, color:'#14B8A6', founded:2013 },
 ]
 
 export const DEPARTMENTS = [
-  { id:'ushering',   name:'Ushering',               color:'#7C3AED', icon:'🚪', head:'Deacon Segun' },
+  { id:'ushering',   name:'Ushering',               color:'#1B4332', icon:'🚪', head:'Deacon Segun' },
   { id:'worship',    name:'Worship & Music',         color:'#F59E0B', icon:'🎵', head:'Minister Tolu' },
   { id:'media',      name:'Media & Technology',      color:'#3B82F6', icon:'📷', head:'Bro Kenny' },
   { id:'kids',       name:'KidsHouse',               color:'#10B981', icon:'🧒', head:'Sis Tosin' },
-  { id:'protocol',   name:'Protocol & Guest Care',   color:'#EC4899', icon:'🤝', head:'Sis Amaka' },
-  { id:'welfare',    name:'Welfare & Care',          color:'#EF4444', icon:'❤️', head:'Deaconess Funke' },
+  { id:'protocol',   name:'Protocol & Guest Care',   color:'#9C4221', icon:'🤝', head:'Sis Amaka' },
+  { id:'welfare',    name:'Welfare & Care',          color:'#C05621', icon:'❤️', head:'Deaconess Funke' },
   { id:'outreach',   name:'Outreach & Evangelism',   color:'#F97316', icon:'📢', head:'Pastor Kola' },
-  { id:'prayer',     name:'Prayer & Intercession',   color:'#8B5CF6', icon:'🙏', head:'Elder Taiwo' },
+  { id:'prayer',     name:'Prayer & Intercession',   color:'#6B7280', icon:'🙏', head:'Elder Taiwo' },
   { id:'security',   name:'Security & Traffic',      color:'#14B8A6', icon:'🛡️', head:'Bro Ibrahim' },
   { id:'drama',      name:'Drama & Creative Arts',   color:'#6366F1', icon:'🎭', head:'Sis Ngozi' },
   { id:'IT',         name:'IT & Digital',            color:'#06B6D4', icon:'💻', head:'Bro David' },
@@ -97,11 +97,11 @@ export const firstTimerFunnel = [
 ]
 
 export const churnReasons = [
-  { reason:'Relocated',                 pct:28, color:'#7C3AED' },
-  { reason:'Joined another church',     pct:22, color:'#EF4444' },
+  { reason:'Relocated',                 pct:28, color:'#1B4332' },
+  { reason:'Joined another church',     pct:22, color:'#C05621' },
   { reason:'No small group connection', pct:19, color:'#F59E0B' },
-  { reason:'Irregular → lapse',         pct:16, color:'#8B5CF6' },
-  { reason:'Life circumstances',        pct:10, color:'#EC4899' },
+  { reason:'Irregular → lapse',         pct:16, color:'#6B7280' },
+  { reason:'Life circumstances',        pct:10, color:'#9C4221' },
   { reason:'Other',                     pct:5,  color:'#71717A' },
 ]
 
@@ -171,11 +171,11 @@ export const testimonies = [
 ]
 
 export const volunteerSlots = [
-  { id:'1', title:'Ushering — Lekki HQ (Service 1)', dept:'Ushering',  branch:'Lekki HQ',  date:'Jun 1', need:8,  confirmed:6,  color:'#7C3AED' },
+  { id:'1', title:'Ushering — Lekki HQ (Service 1)', dept:'Ushering',  branch:'Lekki HQ',  date:'Jun 1', need:8,  confirmed:6,  color:'#1B4332' },
   { id:'2', title:'KidsHouse teachers — Gbagada',     dept:'KidsHouse', branch:'Gbagada',   date:'Jun 1', need:6,  confirmed:4,  color:'#10B981' },
   { id:'3', title:'Worship team — Ikeja (Service 2)', dept:'Worship',   branch:'Ikeja',     date:'Jun 1', need:12, confirmed:12, color:'#F59E0B' },
   { id:'4', title:'Media & livestream — Lekki HQ',    dept:'Media',     branch:'Lekki HQ',  date:'Jun 1', need:5,  confirmed:3,  color:'#3B82F6' },
-  { id:'5', title:'Parking & traffic — Anthony',      dept:'Security',  branch:'Anthony',   date:'Jun 1', need:10, confirmed:7,  color:'#EC4899' },
+  { id:'5', title:'Parking & traffic — Anthony',      dept:'Security',  branch:'Anthony',   date:'Jun 1', need:10, confirmed:7,  color:'#9C4221' },
 ]
 
 export const announcements = [

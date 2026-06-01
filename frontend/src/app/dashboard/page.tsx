@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import PoweredBy from '@/lib/PoweredBy'
+import { getOrgSettings } from '@/lib/orgSettings'
 
 const Overview      = dynamic(() => import('./sections/Overview'),          { loading: () => <L/> })
 const Growth        = dynamic(() => import('./sections/Growth'),            { loading: () => <L/> })
@@ -20,6 +22,7 @@ const Reports       = dynamic(() => import('./sections/Reports'),           { lo
 const Settings      = dynamic(() => import('./sections/Settings'),          { loading: () => <L/> })
 const PastoralPulse = dynamic(() => import('./sections/PastoralPulse'),      { loading: () => <L/> })
 const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { loading: () => <L/> })
+const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),     { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -126,6 +129,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
 const NAV = [
   { section:'MAIN', items:[
     { key:'overview',      label:'Dashboard',          icon:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z' },
+    { key:'branches',       label:'Branch Dashboards',  icon:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z' },
     { key:'growth',        label:'Growth & Retention', icon:'M18 20V10M12 20V4M6 20v-6', badge:'↑', bc:'nb-green' },
     { key:'chat',          label:'Community Chat',     icon:'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', badge:7 },
     { key:'prayer',        label:'Prayer Wall',        icon:'M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z', badge:12, bc:'nb-brand' },
@@ -153,6 +157,7 @@ const NAV = [
 
 const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
   overview:     {title:'Dashboard',          sub:'Harvesters International Christian Centre', emoji:'🏠'},
+  branches:     {title:'Branch Dashboards',  sub:'Per-branch workforce · KPIs · Departments', emoji:'🏛'},
   growth:       {title:'Growth & Retention', sub:'Member trends · Retention heatmaps · Funnel · Churn', emoji:'📈'},
   chat:         {title:'Community Chat',     sub:'Unit · Peer · Leadership — tiered by role', emoji:'💬'},
   prayer:       {title:'Prayer Wall',        sub:'Unit → Branch → Global elevation', emoji:'🙏'},
@@ -176,7 +181,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings, pastoral:PastoralPulse, membcard:MembershipCard,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, membcard:MembershipCard, branches:BranchDash,
 }
 
 export default function Dashboard() {
@@ -233,6 +238,7 @@ export default function Dashboard() {
             Sign out
           </Link>
         </div>
+        <PoweredBy dark={true}/>
       </>
     )
   }

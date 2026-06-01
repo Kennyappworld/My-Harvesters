@@ -168,15 +168,26 @@ export default function LoginPage() {
     const user = WORKFORCE_USERS[safeEmail]
     if (!user || password !== DEMO_PASSWORD) { setErr('Incorrect email or password.'); return }
     setBusy(true)
-    setTimeout(() => { setBusy(false); signIn(safeEmail) }, 700)
+    setTimeout(() => {
+      setBusy(false)
+      // Register this email for biometric login on this device
+      localStorage.setItem('hicc_biometric_email', safeEmail)
+      signIn(safeEmail)
+    }, 700)
   }
 
   const useBiometric = async () => {
     setBioLoading(true)
     try {
       await new Promise<void>(res => setTimeout(res, 900))
-      const linked = sessionStorage.getItem('hicc_biometric_email') || 'pastor@hicc.org'
-      sessionStorage.setItem('hicc_biometric_email', linked)
+      // Use the email from the last successful password login on this device
+      const linked = localStorage.getItem('hicc_biometric_email')
+      if (!linked || !WORKFORCE_USERS[linked]) {
+        // No biometric registration yet — ask user to sign in with password first
+        setErr('Please sign in with your password first to register biometric login.')
+        setBioLoading(false)
+        return
+      }
       signIn(linked)
     } catch {
       setErr('Biometric not available. Please use your password.')

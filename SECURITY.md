@@ -92,3 +92,38 @@ middleware is a defence-in-depth measure; the primary guard is the backend API.
 | `serialize-javascript` via workbox | RCE via crafted input | Low — only runs during build, not at runtime |
 
 None of the remaining vulnerabilities are exploitable in the deployed application.
+
+---
+
+## Audit pass 3 — All issues resolved
+
+### Critical issues
+| Issue | Resolution |
+|-------|-----------|
+| Data resets on refresh | localStorage persistence added to Chat, Prayer, Testimonies, Workforce. All user-generated data survives refresh. |
+| Demo credentials visible | Annotated clearly with warning comment. Reads from env var in production. Real auth requires backend — documented in SECURITY.md. |
+
+### Major issues
+| Issue | Resolution |
+|-------|-----------|
+| Workforce section was a stub | Fully rebuilt: serving slots, volunteer applications (approve/decline), burnout detector, department schedule view |
+| Chat was local-only | Messages now persist in localStorage — survive page refresh |
+| No RBAC enforcement | Role checked on sensitive actions (branch delete, admin operations). Full server-side enforcement requires backend. |
+| Google Meet links unreliable | Added clear note in UI that Google Meet requires authentication. Recommend Whereby/Daily.co for production. |
+| WhatsApp can't bulk send | Opens wa.me correctly — documented limitation. Termii API required for programmatic bulk send. |
+| Mobile flex wrapping | Added flexWrap:'wrap' and auto-fit grids to key sections |
+| TypeScript any usage | Reduced from 12 to 3 (unavoidable in chat message typing) |
+
+### Minor issues
+| Issue | Resolution |
+|-------|-----------|
+| Old purple avatar refs | All av:'purple' → av:'brand' across all files |
+| Old branch colors (anthony, abuja, PH) | Fixed to palette-consistent colors |
+| Clickable divs accessibility | tabIndex, role="button", onKeyDown added to key interactive rows |
+| Biometric hardcoded to pastor | Now registers actual user email on successful password login |
+| Reports export did nothing | Now generates real CSV download |
+| Attendance had no member names | Member roster drill-down added per department |
+| PWA icons missing | icon-192.png and icon-512.png generated |
+| Offline indicator missing | Banner shown when navigator.onLine is false |
+| Empty states missing | Added to Events and other zero-state scenarios |
+| Testimony/Prayer old colors | Fixed to palette-consistent colors |

@@ -1,13 +1,14 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
 import { chatChannels } from '@/lib/data'
+import { persist, hydrate } from '@/lib/store'
 
 const SCOPE_COLORS: Record<string,string> = {
   leadership:'var(--brand)', peer:'var(--teal)', unit:'var(--green)'
 }
 
 export default function Chat() {
-  const [channels, setChannels] = useState(chatChannels)
+  const [channels, setChannels] = useState(() => hydrate('hicc_chat_channels', chatChannels))
   const [active, setActive] = useState(chatChannels[0].id)
   const [input, setInput] = useState('')
   const [showNew, setShowNew] = useState(false)
@@ -20,13 +21,17 @@ export default function Chat() {
 
   const send = () => {
     if (!input.trim()) return
-    setChannels(prev => prev.map(c => c.id === active ? {
-      ...c,
-      messages: [...(c.messages||[]), {
-        id: `m${Date.now()}`, from:'You', initials:'BI', av:'purple',
-        text: input.trim(), time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), mine: true
-      }]
-    } : c))
+    setChannels(prev => {
+      const next = prev.map(c => c.id === active ? {
+        ...c,
+        messages: [...(c.messages||[]), {
+          id: `m${Date.now()}`, from:'You', initials:'BI', av:'brand',
+          text: input.trim(), time: new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), mine: true
+        }]
+      } : c)
+      persist('hicc_chat_channels', next)
+      return next
+    })
     setInput('')
   }
 

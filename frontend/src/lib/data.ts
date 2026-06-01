@@ -4,7 +4,7 @@
 
 export const BRANCH_COLORS: Record<string, string> = {
   lekki:'#1B4332', gbagada:'#10B981', ikeja:'#F59E0B',
-  anthony:'#8B5CF6', abuja:'#EF4444', portharcourt:'#EC4899',
+  anthony:'#6B7280', abuja:'#C05621', portharcourt:'#9C4221',
   ibadan:'#F97316', london:'#3B82F6', houston:'#14B8A6',
 }
 
@@ -138,17 +138,17 @@ export const ATTENDANCE_RECORDS = [
 ]
 
 export const prayerRequests = [
-  { id:'1', author:'Funke Oladipo',    branch:'Ikeja',    branchId:'ikeja',   initials:'FO', av:'purple', time:'2h ago',  scope:'branch', elevated:true,  text:'Trusting God for a job breakthrough this month. I have been waiting for 8 months. Please agree with me in prayer.',       interceding:31, responses:4 },
+  { id:'1', author:'Funke Oladipo',    branch:'Ikeja',    branchId:'ikeja',   initials:'FO', av:'brand', time:'2h ago',  scope:'branch', elevated:true,  text:'Trusting God for a job breakthrough this month. I have been waiting for 8 months. Please agree with me in prayer.',       interceding:31, responses:4 },
   { id:'2', author:'Kolade Nwachukwu', branch:'London UK',branchId:'london',  initials:'KN', av:'blue',   time:'5h ago',  scope:'global', elevated:false, text:'My mother is scheduled for surgery next Friday. Standing on Isaiah 53:5 — please lift her in prayer.',                  interceding:58, responses:9 },
   { id:'3', author:'Toyin Okafor',     branch:'Gbagada',  branchId:'gbagada', initials:'TO', av:'amber',  time:'1d ago',  scope:'unit',   elevated:false, text:'Believing God for peace in my home. Things have been difficult. Please pray for restoration and understanding.',         interceding:14, responses:2 },
   { id:'4', author:'Richard Eze',      branch:'Abuja',    branchId:'abuja',   initials:'RE', av:'teal',   time:'2d ago',  scope:'branch', elevated:false, text:'Believing God for admission into medical school. Third attempt this year. Your prayers are appreciated.',                interceding:22, responses:6 },
 ]
 
 export const chatChannels = [
-  { id:'sc', label:'Senior Pastors Council',        scope:'leadership', av:'purple', initials:'SC', sub:'All branches · Leadership', unread:0, messages:[
-    { id:'m1', from:'Pastor Bolaji', initials:'BI', av:'purple', text:'Good morning. This Sunday we observe communion. Please ensure all branch pastors brief their ushering leads by Thursday.', time:'9:02 AM', mine:false },
+  { id:'sc', label:'Senior Pastors Council',        scope:'leadership', av:'brand', initials:'SC', sub:'All branches · Leadership', unread:0, messages:[
+    { id:'m1', from:'Pastor Bolaji', initials:'BI', av:'brand', text:'Good morning. This Sunday we observe communion. Please ensure all branch pastors brief their ushering leads by Thursday.', time:'9:02 AM', mine:false },
     { id:'m2', from:'P. Kanmi',      initials:'KA', av:'amber',  text:'Noted sir. Ikeja is ready and we will communicate to our unit heads today.', time:'9:15 AM', mine:false },
-    { id:'m3', from:'You',           initials:'BI', av:'purple', text:'Each campus sources locally — coordinator will send the spec by end of today.', time:'9:21 AM', mine:true },
+    { id:'m3', from:'You',           initials:'BI', av:'brand', text:'Each campus sources locally — coordinator will send the spec by end of today.', time:'9:21 AM', mine:true },
   ]},
   { id:'kh', label:'KidsHouse Leaders (All Branches)', scope:'peer', av:'green', initials:'KH', sub:'All KidsHouse heads · 9 members', unread:2, messages:[
     { id:'m4', from:'Sis Tosin (Gbagada)', initials:'ST', av:'green', text:'Has anyone tried the new curriculum from Open Doors? We piloted it and the kids loved it.', time:'10:12 AM', mine:false },
@@ -166,7 +166,7 @@ export const chatChannels = [
 export const testimonies = [
   { id:'1', author:'Emmanuel Abiola', branch:'Gbagada',      initials:'EA', av:'teal',   role:'Small group leader',    date:'May 23', category:'Healing',     text:'After three years of waiting, God gave us twins last week Thursday. The Gbagada Next Level Prayers group kept interceding for us.', celebrating:284, comments:47 },
   { id:'2', author:'Ngozi Kalu',      branch:'Lekki HQ',     initials:'NK', av:'blue',   role:'Growth Track graduate', date:'May 21', category:'Finance',     text:'I completed Growth Track Level 3 last month. Within 30 days, I received a promotion I had been passed over for twice.',           celebrating:192, comments:31 },
-  { id:'3', author:'Michael Osei',    branch:'London UK',    initials:'MO', av:'purple', role:'Member',                date:'May 18', category:'Salvation',   text:'My brother who I have been praying for since 2019 gave his life to Christ last Sunday at the London campus.',                     celebrating:145, comments:22 },
+  { id:'3', author:'Michael Osei',    branch:'London UK',    initials:'MO', av:'brand', role:'Member',                date:'May 18', category:'Salvation',   text:'My brother who I have been praying for since 2019 gave his life to Christ last Sunday at the London campus.',                     celebrating:145, comments:22 },
   { id:'4', author:'Amaka Obi',       branch:'Port Harcourt',initials:'AO', av:'red',    role:'Workforce member',      date:'May 15', category:'Breakthrough', text:'After 18 months of rejection, my business proposal was accepted and funded. I serve in the media unit faithfully.',              celebrating:118, comments:18 },
 ]
 

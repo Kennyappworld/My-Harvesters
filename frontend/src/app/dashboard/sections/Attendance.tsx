@@ -6,6 +6,15 @@ export default function Attendance() {
   const [view, setView] = useState<'summary'|'record'|'register'>('summary')
   const [selected, setSelected] = useState<any>(null)
   const [selectedDept, setSelectedDept] = useState<string|null>(null)
+  
+  // Sample participant roster per department — in production from the backend
+  const DEPT_MEMBERS: Record<string, { name:string; phone:string; role:string }[]> = {
+    'Ushering':         [{name:'Segun Adeyemi',phone:'+234 810 111 2222',role:'Unit Head'},{name:'Emeka Obi',phone:'+234 803 234 5678',role:'Member'},{name:'Ngozi Kalu',phone:'+234 706 345 6789',role:'Member'},{name:'Femi Adeyemi',phone:'+234 812 456 7890',role:'Member'}],
+    'Worship & Music':  [{name:'Tolu Mensah',phone:'+234 805 567 8901',role:'Unit Head'},{name:'Seun Adesanya',phone:'+234 817 678 9012',role:'Member'},{name:'Kemi Brown',phone:'+234 908 789 0123',role:'Member'}],
+    'KidsHouse':        [{name:'Tosin Obi',phone:'+234 813 890 1234',role:'Unit Head'},{name:'Blessing Okafor',phone:'+234 906 901 2345',role:'Member'},{name:'Peace Nwosu',phone:'+234 811 012 3456',role:'Member'}],
+    'Media & Technology':[{name:'Kenny Appiah',phone:'+234 815 123 4567',role:'Unit Head'},{name:'Rotimi Bello',phone:'+234 804 234 5678',role:'Member'}],
+    'Prayer & Intercession':[{name:'Elder Taiwo',phone:'+234 802 345 6789',role:'Unit Head'},{name:'Sister Grace',phone:'+234 809 456 7890',role:'Member'},{name:'Bro Ike',phone:'+234 816 567 8901',role:'Member'}],
+  }
   const [records, setRecords] = useState(ATTENDANCE_RECORDS)
   const [regForm, setRegForm] = useState({ branch:'lekki', date:'', service:'1st Service (8AM)', total:'' })
   const [saved, setSaved] = useState(false)

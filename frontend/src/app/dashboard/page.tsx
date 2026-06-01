@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import PoweredBy from '@/lib/PoweredBy'
 import { getOrgSettings } from '@/lib/orgSettings'
+import { useEffect, useState as useOnlineState } from 'react'
 
 const Overview      = dynamic(() => import('./sections/Overview'),          { loading: () => <L/> })
 const Growth        = dynamic(() => import('./sections/Growth'),            { loading: () => <L/> })
@@ -186,6 +187,14 @@ const PAGES: Record<string,any> = {
 
 export default function Dashboard() {
   const [page, setPage] = useState('overview')
+  const [isOnline, setIsOnline] = useOnlineState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+  useEffect(() => {
+    const on = () => setIsOnline(true)
+    const off = () => setIsOnline(false)
+    window.addEventListener('online', on)
+    window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showBroadcast, setShowBroadcast] = useState(false)
   const meta = TITLES[page] || {title:page, sub:'', emoji:'📋'}
@@ -285,6 +294,12 @@ export default function Dashboard() {
 
         {/* Light interior content area */}
         <div style={{flex:1,overflowY:'auto',padding:'20px 24px',background:'linear-gradient(160deg, #EDECEA 0%, #F0EFE8 60%, #EAE9E0 100%)'}}>
+          {!isOnline && (
+            <div style={{background:'rgba(197,48,48,0.08)',border:'1px solid rgba(197,48,48,0.25)',borderRadius:'var(--r)',padding:'8px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:8,fontSize:12.5,color:'var(--red)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+              You're offline — showing cached data. Changes will sync when reconnected.
+            </div>
+          )}
           {Page ? <Page onNavigate={setPage}/> : (
             <div style={{textAlign:'center',padding:'4rem',color:'var(--t-3)'}}>
               <div style={{fontSize:40,marginBottom:16}}>🔧</div>

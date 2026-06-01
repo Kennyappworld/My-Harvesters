@@ -1,11 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { prayerRequests } from '@/lib/data'
+import { persist, hydrate } from '@/lib/store'
 
 const SCOPE_COL: Record<string,string> = { unit:'var(--green)', branch:'var(--blue)', global:'var(--red)' }
 
 export default function Prayer() {
-  const [requests, setRequests] = useState(prayerRequests.map(r => ({ ...r, interceding: r.interceding, isInterceding: false })))
+  const [requests, setRequests] = useState(() => hydrate('hicc_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ text:'', scope:'unit' })
@@ -14,7 +15,7 @@ export default function Prayer() {
   const filtered = filter === 'all' ? requests : requests.filter(r => r.scope === filter)
 
   const intercede = (id: string) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, interceding: r.isInterceding ? r.interceding-1 : r.interceding+1, isInterceding: !r.isInterceding } : r))
+    setRequests(prev => { const n = prev.map(r => r.id === id ? { ...r, interceding: r.isInterceding ? r.interceding-1 : r.interceding+1, isInterceding: !r.isInterceding } : r); persist('hicc_prayer_requests', n); return n })
   }
 
   const elevate = (id: string) => {
@@ -26,7 +27,7 @@ export default function Prayer() {
     if (!form.text.trim()) return
     setRequests(prev => [{
       id: `p${Date.now()}`, author:'You', branch:'Lekki HQ', branchId:'lekki',
-      initials:'BI', av:'purple', time:'just now', scope: form.scope as any,
+      initials:'BI', av:'brand', time:'just now', scope: form.scope as any,
       elevated: false, text: form.text, interceding: 0, responses: 0, isInterceding: false
     }, ...prev])
     setForm({ text:'', scope:'unit' }); setSaved(true)

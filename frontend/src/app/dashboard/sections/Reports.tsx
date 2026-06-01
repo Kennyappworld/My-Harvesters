@@ -28,7 +28,18 @@ export default function Reports() {
   const totalMembers = displayBranches.reduce((a,b)=>a+b.members,0)
   const avgRetention = Math.round(displayBranches.reduce((a,b)=>a+b.retention3m,0)/displayBranches.length)
 
-  const generate = () => { setGenerated(true); setTimeout(()=>setGenerated(false),3000) }
+  const generate = () => {
+    // Build CSV from branch data
+    const headers = ['Branch','Country','Members','New (May)','Retention 3m','Gone Quiet','Attendance %']
+    const rows = displayBranches.map(b => [b.name, b.country, b.members, b.newMembers, `${b.retention3m}%`, b.goneQuiet, `${b.attendance}%`])
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url; a.download = `HICC-Report-${selectedMonth}-${selectedBranch}.csv`
+    a.click(); URL.revokeObjectURL(url)
+    setGenerated(true); setTimeout(()=>setGenerated(false), 3000)
+  }
 
   return (
     <div>
@@ -43,7 +54,7 @@ export default function Reports() {
         </button>
       </div>
 
-      {generated && <div style={{padding:'10px 16px',background:'var(--green-lt)',borderRadius:'var(--r)',fontSize:13,color:'var(--green)',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>✓ Report exported as PDF — ready to download. (Connect backend for real file generation)</div>}
+      {generated && <div style={{padding:'10px 16px',background:'var(--green-lt)',borderRadius:'var(--r)',fontSize:13,color:'var(--green)',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>✓ CSV downloaded to your device — open in Excel or Google Sheets.</div>}
 
       <div className="tabs" style={{marginBottom:16}}>
         {([['monthly','Monthly report'],['generate','Branch summary']] as const).map(([k,l])=>(

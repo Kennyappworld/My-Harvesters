@@ -1,15 +1,16 @@
 'use client'
 import { useState } from 'react'
 import { testimonies } from '@/lib/data'
+import { persist, hydrate } from '@/lib/store'
 
 const CATS = ['All','Healing','Finance','Salvation','Breakthrough','Marriage','Career']
 const CAT_COL: Record<string,string> = {
   Healing:'#10B981', Finance:'#F59E0B', Salvation:'#1B4332',
-  Breakthrough:'#3B82F6', Marriage:'#EC4899', Career:'#14B8A6',
+  Breakthrough:'#2B6CB0', Marriage:'#C9A84C', Career:'#14B8A6',
 }
 
 export default function Testimony() {
-  const [items, setItems] = useState(testimonies.map(t=>({...t, celebrating:t.celebrating, hasCelebrated:false})))
+  const [items, setItems] = useState(() => hydrate('hicc_testimonies', testimonies.map(t=>({...t, hasCelebrated:false}))))
   const [filter, setFilter] = useState('All')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title:'', category:'Breakthrough', text:'' })
@@ -23,7 +24,7 @@ export default function Testimony() {
 
   const submit = (e:React.FormEvent) => {
     e.preventDefault()
-    setItems(prev=>[{id:`t${Date.now()}`,author:'You',branch:'Lekki HQ',initials:'BI',av:'purple',role:'Senior Pastor',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),category:form.category,text:form.text,celebrating:0,comments:0,hasCelebrated:false},...prev])
+    setItems(prev=>[{id:`t${Date.now()}`,author:'You',branch:'Lekki HQ',initials:'BI',av:'brand',role:'Senior Pastor',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),category:form.category,text:form.text,celebrating:0,comments:0,hasCelebrated:false},...prev])
     setSaved(true); setTimeout(()=>{setSaved(false);setShowForm(false);setForm({title:'',category:'Breakthrough',text:''})},2000)
   }
 

@@ -160,7 +160,7 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
               <thead><tr><th>Name</th><th>Branch</th><th>Department</th><th>Role</th><th>Attendance</th><th>Growth</th><th>Status</th></tr></thead>
               <tbody>
                 {filtered.map(m => (
-                  <tr key={m.id} style={{ cursor:'pointer' }} onClick={()=>setSelected(m)}>
+                  <tr key={m.id} style={{ cursor:'pointer' }} onClick={()=>setSelected(m)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' ')setSelected(m)}} tabIndex={0} role="button" aria-label={`View ${m.name} profile`}>
                     <td><strong>{m.name}</strong></td>
                     <td style={{ fontSize:12 }}>{branches.find(b=>b.id===m.branch)?.name}</td>
                     <td style={{ fontSize:12 }}>{DEPARTMENTS.find(d=>d.id===m.dept)?.icon} {DEPARTMENTS.find(d=>d.id===m.dept)?.name}</td>

@@ -22,7 +22,6 @@ const Settings      = dynamic(() => import('./sections/Settings'),          { lo
 const PastoralPulse = dynamic(() => import('./sections/PastoralPulse'),      { loading: () => <L/> })
 const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { loading: () => <L/> })
 const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),     { loading: () => <L/> })
-const Giving        = dynamic(() => import('./sections/Giving'),              { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -148,7 +147,6 @@ const NAV = [
   ]},
   { section:'OPERATIONS', items:[
     { key:'attendance',   label:'Attendance',          icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-    { key:'giving',       label:'Giving',              icon:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', badge:'YTD', bc:'nb-green' },
     { key:'reports',      label:'Reports',             icon:'M18 20V10M12 20V4M6 20v-6', badge:3 },
   ]},
   { section:'ADMIN', items:[
@@ -173,7 +171,6 @@ const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
   attendance:   {title:'Attendance',         sub:'Per-service · Per-department · Member names', emoji:'✓'},
   reports:      {title:'Reports',            sub:'Monthly branch reports · Analytics summaries', emoji:'📊'},
   settings:     {title:'Settings',           sub:'Users · Branches · Departments · QR Signup', emoji:'⚙️'},
-  giving:       {title:'Giving',              sub:'Tithes · Offerings · Branch breakdown · Participation', emoji:'💰'},
   membcard:     {title:'Membership Cards',   sub:'Digital ID · QR verification · Print-ready', emoji:'🪪'},
 }
 
@@ -182,7 +179,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings, pastoral:PastoralPulse, membcard:MembershipCard, branches:BranchDash, giving:Giving,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, membcard:MembershipCard, branches:BranchDash,
 }
 
 export default function Dashboard() {

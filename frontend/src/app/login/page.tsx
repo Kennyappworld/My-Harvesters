@@ -148,7 +148,7 @@ export default function LoginPage() {
           password,
         })
         if (error) {
-          setErr('Incorrect email or password.')
+          setErr(error.message || 'Incorrect email or password.')
           setBusy(false)
           return
         }
@@ -244,6 +244,7 @@ export default function LoginPage() {
       <div className="glass" style={{ width:'100%', maxWidth:380, padding:'2rem' }}>
         <h1 style={{ fontFamily:'var(--font-display)', fontSize:20, fontWeight:800, color:'white', marginBottom:4, letterSpacing:'-0.02em' }}>Sign in</h1>
         <p style={{ fontSize:13, color:'rgba(255,255,255,.4)', marginBottom:24 }}>Enter your credentials to continue</p>
+        {!supabase && <p style={{ fontSize:11, color:'var(--gold)', background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.2)', borderRadius:8, padding:'6px 10px', marginBottom:12 }}>⚠ Demo mode — Supabase not connected</p>}
 
         {err && (
           <div style={{ background:'rgba(197,48,48,.15)', border:'1px solid rgba(197,48,48,.3)', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#FC8181', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>

@@ -214,6 +214,35 @@ export default function LoginPage() {
     }
   }
 
+  const [magicMode, setMagicMode] = useState(false)
+  const [magicEmail, setMagicEmail] = useState('')
+  const [magicSent, setMagicSent] = useState(false)
+  const [magicBusy, setMagicBusy] = useState(false)
+
+  const sendMagicLink = async (e: FormEvent) => {
+    e.preventDefault()
+    setErr('')
+    const safeEmail = magicEmail.trim().toLowerCase().replace(/[<>"'\`]/g, '')
+    if (!safeEmail) return
+    setMagicBusy(true)
+    try {
+      if (supabase) {
+        const { error } = await supabase.auth.signInWithOtp({
+          email: safeEmail,
+          options: { emailRedirectTo: window.location.origin + '/dashboard' }
+        })
+        if (error) { setErr(error.message); setMagicBusy(false); return }
+        setMagicSent(true)
+      } else {
+        setErr('Magic link requires Supabase to be connected.')
+      }
+    } catch {
+      setErr('Something went wrong. Please try again.')
+    } finally {
+      setMagicBusy(false)
+    }
+  }
+
   if (splash.show) {
     return <WelcomeSplash name={splash.name} onDone={() => { setSplash({show:false,name:''}); router.push('/dashboard') }}/>
   }
@@ -287,7 +316,39 @@ export default function LoginPage() {
           </button>
         )}
 
-        <p style={{ textAlign:'center', marginTop:20, fontSize:12.5, color:'rgba(255,255,255,.3)' }}>
+        {/* Divider */}
+        <div style={{ display:'flex', alignItems:'center', gap:10, margin:'18px 0 14px' }}>
+          <div style={{ flex:1, height:'0.5px', background:'rgba(255,255,255,0.1)' }}/>
+          <span style={{ fontSize:11, color:'rgba(255,255,255,.25)', letterSpacing:'.06em', textTransform:'uppercase' }}>or</span>
+          <div style={{ flex:1, height:'0.5px', background:'rgba(255,255,255,0.1)' }}/>
+        </div>
+
+        {/* Magic link */}
+        {!magicMode ? (
+          <button onClick={() => { setMagicMode(true); setErr('') }} style={{ width:'100%', padding:'11px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, cursor:'pointer', color:'rgba(255,255,255,.55)', fontSize:13, fontFamily:'var(--font-body)', display:'flex', alignItems:'center', justifyContent:'center', gap:8, transition:'all .15s' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="15" height="15"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Sign in with magic link
+          </button>
+        ) : magicSent ? (
+          <div style={{ background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:12, padding:'14px 16px', textAlign:'center' }}>
+            <div style={{ fontSize:24, marginBottom:8 }}>📬</div>
+            <div style={{ fontSize:13, fontWeight:700, color:'#6EE7B7', marginBottom:4 }}>Magic link sent!</div>
+            <div style={{ fontSize:12, color:'rgba(255,255,255,.45)', lineHeight:1.6 }}>Check your inbox at <strong style={{ color:'white' }}>{magicEmail}</strong> and click the link to sign in.</div>
+            <button onClick={() => { setMagicMode(false); setMagicSent(false); setMagicEmail('') }} style={{ marginTop:12, background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.35)', fontSize:12, fontFamily:'var(--font-body)' }}>Back to sign in</button>
+          </div>
+        ) : (
+          <form onSubmit={sendMagicLink}>
+            <div style={{ display:'flex', gap:8 }}>
+              <input className="input-dark" type="email" value={magicEmail} onChange={e => setMagicEmail(e.target.value)} placeholder="your@email.com" required autoFocus style={{ flex:1, marginBottom:0 }}/>
+              <button type="submit" className="btn btn-brand" style={{ padding:'10px 14px', whiteSpace:'nowrap', flexShrink:0 }} disabled={magicBusy}>
+                {magicBusy ? '…' : 'Send link'}
+              </button>
+            </div>
+            <button type="button" onClick={() => { setMagicMode(false); setErr('') }} style={{ marginTop:8, background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.3)', fontSize:12, fontFamily:'var(--font-body)', padding:0 }}>← Back to password</button>
+          </form>
+        )}
+
+        <p style={{ textAlign:'center', marginTop:18, fontSize:12.5, color:'rgba(255,255,255,.3)' }}>
           New worker?{' '}
           <a href="/signup" style={{ color:'var(--gold)', fontWeight:600, textDecoration:'none' }}>Register here</a>
         </p>

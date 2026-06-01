@@ -9,7 +9,7 @@ const SAMPLE_EVENTS = [
   { id:'e4', title:'Abuja Praise Night', branch:'Abuja', branchId:'abuja', date:'Jun 14 2026', time:'6:00 PM', type:'Praise Night', status:'pending', registrations:0, capacity:500, organiser:'Abuja Admin', desc:'A night of praise and worship.' },
 ]
 
-const TYPE_COL: Record<string,string> = { Service:'#7C3AED', Programme:'#10B981', Conference:'#F59E0B', 'Praise Night':'#EC4899', Seminar:'#3B82F6' }
+const TYPE_COL: Record<string,string> = { Service:'#1B4332', Programme:'#10B981', Conference:'#F59E0B', 'Praise Night':'#EC4899', Seminar:'#3B82F6' }
 
 export default function Events() {
   const [events, setEvents] = useState(SAMPLE_EVENTS)
@@ -71,7 +71,7 @@ export default function Events() {
                       <span style={{color:'var(--t-3)'}}>Registrations</span>
                       <span style={{fontFamily:'var(--font-mono)',fontWeight:600}}>{ev.registrations}/{ev.capacity}</span>
                     </div>
-                    <div style={{height:4,background:'var(--navy-4)',borderRadius:100,overflow:'hidden'}}>
+                    <div style={{height:4,background:'var(--s-4)',borderRadius:100,overflow:'hidden'}}>
                       <div style={{height:'100%',background:'var(--brand)',borderRadius:100,width:`${ev.capacity>0?(ev.registrations/ev.capacity)*100:0}%`}}/>
                     </div>
                   </div>

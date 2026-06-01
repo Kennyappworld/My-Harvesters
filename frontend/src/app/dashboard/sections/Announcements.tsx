@@ -102,7 +102,7 @@ export default function Announcements() {
             </div>
 
             {/* Audience targeting */}
-            <div style={{background:'var(--navy-3)',borderRadius:'var(--r)',padding:'14px 16px',marginBottom:12,border:'0.5px solid var(--border)'}}>
+            <div style={{background:'var(--s-3)',borderRadius:'var(--r)',padding:'14px 16px',marginBottom:12,border:'0.5px solid var(--border)'}}>
               <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:'var(--t-1)'}}>🎯 Target audience</div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <div>
@@ -135,7 +135,7 @@ export default function Announcements() {
             </div>
 
             {/* Delivery channel */}
-            <div style={{background:'var(--navy-3)',borderRadius:'var(--r)',padding:'14px 16px',marginBottom:16,border:'0.5px solid var(--border)'}}>
+            <div style={{background:'var(--s-3)',borderRadius:'var(--r)',padding:'14px 16px',marginBottom:16,border:'0.5px solid var(--border)'}}>
               <div style={{fontWeight:700,fontSize:12,marginBottom:12,color:'var(--t-1)'}}>📣 Delivery channel</div>
               <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                 {[['platform','📱 Platform'],['whatsapp','💬 WhatsApp'],['sms','📟 SMS'],['all_channels','🔔 All channels']].map(([v,l])=>(
@@ -183,7 +183,7 @@ export default function Announcements() {
                 <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5,letterSpacing:'0.05em',textTransform:'uppercase'}}>WhatsApp Business number</label>
                 <div style={{display:'flex',gap:8}}>
                   <input className="input" value={waNumbers[b.id]||''} onChange={e=>setWaNumbers(prev=>({...prev,[b.id]:e.target.value}))} placeholder={b.country==='NG'?'+234 800 000 0000':b.country==='UK'?'+44 700 000 0000':'+1 000 000 0000'} style={{fontSize:12,fontFamily:'var(--font-mono)'}}/>
-                  <button className="btn btn-sm" style={{flexShrink:0,background:waNumbers[b.id]?'var(--green-lt)':'var(--navy-3)',color:waNumbers[b.id]?'var(--green)':'var(--t-3)',border:`1px solid ${waNumbers[b.id]?'rgba(16,185,129,0.3)':'var(--border)'}`,fontSize:11}}>
+                  <button className="btn btn-sm" style={{flexShrink:0,background:waNumbers[b.id]?'var(--green-lt)':'var(--s-3)',color:waNumbers[b.id]?'var(--green)':'var(--t-3)',border:`1px solid ${waNumbers[b.id]?'rgba(16,185,129,0.3)':'var(--border)'}`,fontSize:11}}>
                     {waNumbers[b.id]?'✓ Saved':'Save'}
                   </button>
                 </div>
@@ -198,7 +198,7 @@ export default function Announcements() {
             ))}
           </div>
 
-          <div style={{marginTop:20,padding:'14px 18px',background:'var(--navy-3)',borderRadius:'var(--r-lg)',border:'0.5px solid var(--border)',maxWidth:640}}>
+          <div style={{marginTop:20,padding:'14px 18px',background:'var(--s-3)',borderRadius:'var(--r-lg)',border:'0.5px solid var(--border)',maxWidth:640}}>
             <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>SMS delivery — Termii / Infobip</div>
             <div style={{fontSize:12.5,color:'var(--t-2)',lineHeight:1.7,marginBottom:12}}>
               For SMS broadcasts, connect your Termii or Infobip API key in the backend environment variables. Members without WhatsApp receive SMS as fallback.

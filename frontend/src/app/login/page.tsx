@@ -22,15 +22,17 @@ const DEMO_PASSWORD = 'demo123'
 // Scripture splash — only shown once per day
 function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
   const [vis, setVis] = useState(false)
-  const [count, setCount] = useState(4)
   const [word] = useState(() => DAILY_WORDS[Math.floor(Math.random() * DAILY_WORDS.length)])
 
   useEffect(() => {
     requestAnimationFrame(() => setVis(true))
-    const tick = setInterval(() => setCount(n => Math.max(0, n - 1)), 1000)
-    const exit = setTimeout(() => { setVis(false); setTimeout(onDone, 400) }, 4200)
-    return () => { clearInterval(tick); clearTimeout(exit) }
-  }, [onDone])
+    // No auto-dismiss — user must tap 'Enter' or 'Skip' manually
+  }, [])
+
+  const dismiss = () => {
+    setVis(false)
+    setTimeout(onDone, 350)
+  }
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:200, background:'var(--dark)', display:'flex', alignItems:'center', justifyContent:'center', padding:'1.5rem', transition:'opacity .4s', opacity: vis ? 1 : 0 }}>
@@ -47,11 +49,12 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
           <p style={{ fontFamily:'var(--font-display)', fontSize:15, color:'white', lineHeight:1.8, fontStyle:'italic', marginBottom:10 }}>"{word.verse}"</p>
           <cite style={{ fontSize:11.5, color:'var(--gold)', fontWeight:700, fontStyle:'normal' }}>— {word.ref}</cite>
         </div>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:8, color:'rgba(255,255,255,.3)', fontSize:12 }}>
-          <span style={{ width:26, height:26, borderRadius:'50%', border:'2px solid var(--brand-lt)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'var(--brand-xl)', fontFamily:'var(--font-mono)' }}>{count}</span>
-          <span>Taking you in…</span>
-        </div>
-        <button onClick={onDone} style={{ marginTop:12, background:'none', border:'none', cursor:'pointer', fontSize:11, color:'rgba(255,255,255,.2)', textDecoration:'underline', fontFamily:'var(--font-body)' }}>Skip</button>
+        <button onClick={dismiss} className="btn btn-brand" style={{ marginTop:4, padding:'11px 32px', fontSize:14, fontWeight:700 }}>
+          Enter →
+        </button>
+        <button onClick={dismiss} style={{ marginTop:10, background:'none', border:'none', cursor:'pointer', fontSize:11.5, color:'rgba(255,255,255,.3)', fontFamily:'var(--font-body)' }}>
+          Skip for now
+        </button>
       </div>
     </div>
   )
@@ -147,10 +150,16 @@ export default function LoginPage() {
   const signIn = useCallback((userEmail: string) => {
     const user = WORKFORCE_USERS[userEmail]
     if (!user) return
-    const dayKey = `hicc_splash_${new Date().toDateString()}`
     sessionStorage.setItem('hicc_user', JSON.stringify({ email: userEmail, ...user }))
-    if (!sessionStorage.getItem(dayKey)) {
-      sessionStorage.setItem(dayKey, '1')
+
+    // Show scripture splash if more than 3 hours since last shown
+    const lastShownKey = 'hicc_splash_last'
+    const lastShown = Number(localStorage.getItem(lastShownKey) || '0')
+    const threeHours = 3 * 60 * 60 * 1000
+    const showSplash = Date.now() - lastShown > threeHours
+
+    if (showSplash) {
+      localStorage.setItem(lastShownKey, String(Date.now()))
       setSplash({ show: true, name: user.name })
     } else {
       router.push('/dashboard')

@@ -49,7 +49,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
     <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(26,18,69,0.6)',backdropFilter:'blur(4px)',padding:16}} onClick={onClose}>
       <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:480,boxShadow:'0 20px 60px rgba(124,58,237,0.25)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
         {/* Header */}
-        <div style={{background:'linear-gradient(135deg,#7C3AED,#6D28D9)',padding:'18px 22px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{background:'var(--grad-brand)',padding:'18px 22px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
               <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="18" height="18"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
@@ -109,7 +109,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <button type="submit" style={{width:'100%',padding:'13px',background:'linear-gradient(135deg,#7C3AED,#6D28D9)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'var(--font-display)',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'0 4px 16px rgba(124,58,237,0.35)'}}>
+              <button type="submit" style={{width:'100%',padding:'13px',background:'var(--grad-brand)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'var(--font-display)',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'var(--sh-brand)'}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
                 Send broadcast
               </button>

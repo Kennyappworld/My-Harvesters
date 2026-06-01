@@ -27,7 +27,7 @@ const DEMO_MEMBERS: CardHolder[] = [
 const GROWTH_LABELS = ['', 'Foundation', 'Discipleship', 'Ministry', 'Leadership', 'Ambassador']
 
 const BRANCH_COLORS: Record<string, string> = {
-  'Lekki HQ':   '#7C3AED',
+  'Lekki HQ':   '#1B4332',
   'Gbagada':    '#1D9E75',
   'Ikeja':      '#185FA5',
   'Abuja':      '#D85A30',
@@ -42,7 +42,7 @@ function initials(name: string) {
 
 function MemberCard({ holder, onClose }: { holder: CardHolder; onClose: () => void }) {
   const cardRef = useRef<HTMLDivElement>(null)
-  const branchColor = BRANCH_COLORS[holder.branch] || '#7C3AED'
+  const branchColor = BRANCH_COLORS[holder.branch] || '#1B4332'
   const qrData = JSON.stringify({ id: holder.id, name: holder.name, branch: holder.branch, verified: holder.verified, ts: Date.now() })
 
   const handlePrint = () => window.print()
@@ -157,7 +157,7 @@ export default function MembershipCard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
         {filtered.map(m => {
-          const branchColor = BRANCH_COLORS[m.branch] || '#7C3AED'
+          const branchColor = BRANCH_COLORS[m.branch] || '#1B4332'
           return (
             <div key={m.id} className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', transition: 'transform .15s', borderLeft: `3px solid ${branchColor}` }} onClick={() => setSelected(m)}>
               <div style={{ padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>

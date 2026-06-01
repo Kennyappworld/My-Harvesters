@@ -127,7 +127,7 @@ export default function Attendance() {
                     </div>
                   </div>
                   {selectedDept === dept.dept && (
-                    <div style={{ background:'var(--navy-3)', borderRadius:'0 0 var(--r-lg) var(--r-lg)', padding:'0 18px 14px', border:'0.5px solid var(--border)', borderTop:'none', marginBottom:8 }}>
+                    <div style={{ background:'var(--s-3)', borderRadius:'0 0 var(--r-lg) var(--r-lg)', padding:'0 18px 14px', border:'0.5px solid var(--border)', borderTop:'none', marginBottom:8 }}>
                       <table className="tbl">
                         <thead><tr><th>Name</th><th>Phone</th></tr></thead>
                         <tbody>
@@ -143,7 +143,7 @@ export default function Attendance() {
               ))}
             </>
           ) : (
-            <div style={{ padding:'2rem', textAlign:'center', color:'var(--t-3)', fontSize:13, background:'var(--navy-2)', borderRadius:'var(--r-lg)' }}>No department breakdown recorded for this service. Departments can add their counts when logging attendance.</div>
+            <div style={{ padding:'2rem', textAlign:'center', color:'var(--t-3)', fontSize:13, background:'var(--s-2)', borderRadius:'var(--r-lg)' }}>No department breakdown recorded for this service. Departments can add their counts when logging attendance.</div>
           )}
         </div>
       )}

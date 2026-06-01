@@ -91,10 +91,10 @@ const URGENCY_LABELS: Record<string, string> = {
 // ------------------------------------------------------------------
 function SkeletonTile() {
   return (
-    <div style={{ background: 'var(--navy-2)', borderRadius: 'var(--r-lg)', padding: '14px 18px', border: '0.5px solid var(--border)', animation: 'pulse 1.6s ease-in-out infinite' }}>
-      <div style={{ width: 70, height: 10, background: 'var(--navy-4)', borderRadius: 4, marginBottom: 12 }}/>
-      <div style={{ width: 50, height: 22, background: 'var(--navy-4)', borderRadius: 4, marginBottom: 6 }}/>
-      <div style={{ width: 100, height: 9, background: 'var(--navy-4)', borderRadius: 4 }}/>
+    <div style={{ background: 'var(--s-2)', borderRadius: 'var(--r-lg)', padding: '14px 18px', border: '0.5px solid var(--border)', animation: 'pulse 1.6s ease-in-out infinite' }}>
+      <div style={{ width: 70, height: 10, background: 'var(--s-4)', borderRadius: 4, marginBottom: 12 }}/>
+      <div style={{ width: 50, height: 22, background: 'var(--s-4)', borderRadius: 4, marginBottom: 6 }}/>
+      <div style={{ width: 100, height: 9, background: 'var(--s-4)', borderRadius: 4 }}/>
     </div>
   )
 }
@@ -174,13 +174,13 @@ export default function PastoralPulse() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {!loaded
           ? [1, 2, 3].map(i => (
-            <div key={i} style={{ background: 'var(--navy-2)', borderRadius: 'var(--r-lg)', padding: '18px 20px', border: '0.5px solid var(--border)', animation: 'pulse 1.6s ease-in-out infinite' }}>
+            <div key={i} style={{ background: 'var(--s-2)', borderRadius: 'var(--r-lg)', padding: '18px 20px', border: '0.5px solid var(--border)', animation: 'pulse 1.6s ease-in-out infinite' }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <div style={{ width: 8, height: 40, background: 'var(--navy-4)', borderRadius: 4, flexShrink: 0 }}/>
+                <div style={{ width: 8, height: 40, background: 'var(--s-4)', borderRadius: 4, flexShrink: 0 }}/>
                 <div style={{ flex: 1 }}>
-                  <div style={{ width: '60%', height: 13, background: 'var(--navy-4)', borderRadius: 4, marginBottom: 10 }}/>
-                  <div style={{ width: '90%', height: 10, background: 'var(--navy-4)', borderRadius: 4, marginBottom: 6 }}/>
-                  <div style={{ width: '75%', height: 10, background: 'var(--navy-4)', borderRadius: 4 }}/>
+                  <div style={{ width: '60%', height: 13, background: 'var(--s-4)', borderRadius: 4, marginBottom: 10 }}/>
+                  <div style={{ width: '90%', height: 10, background: 'var(--s-4)', borderRadius: 4, marginBottom: 6 }}/>
+                  <div style={{ width: '75%', height: 10, background: 'var(--s-4)', borderRadius: 4 }}/>
                 </div>
               </div>
             </div>

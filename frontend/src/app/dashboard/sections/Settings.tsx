@@ -122,7 +122,7 @@ export default function Settings() {
   const [branchDeleteConfirm, setBranchDeleteConfirm] = useState<string|null>(null)
 
   const [userForm, setUserForm] = useState({ name:'', email:'', role:'member', branch:'lekki', dept:'ushering' })
-  const [deptForm, setDeptForm] = useState({ name:'', icon:'📋', color:'#7C3AED', head:'' })
+  const [deptForm, setDeptForm] = useState({ name:'', icon:'📋', color:'#1B4332', head:'' })
   const [branchForm, setBranchForm] = useState({ name:'', location:'', country:'NG', pastor:'' })
 
   const currentUser = { role:'senior_pastor' } // In production: from auth context
@@ -141,12 +141,12 @@ export default function Settings() {
   const addDept = (e: React.FormEvent) => {
     e.preventDefault()
     setDepts(prev => [...prev, { id:`d${Date.now()}`, name:deptForm.name, color:deptForm.color, icon:deptForm.icon, head:deptForm.head }])
-    setDeptForm({ name:'', icon:'📋', color:'#7C3AED', head:'' }); setShowAddDept(false)
+    setDeptForm({ name:'', icon:'📋', color:'#1B4332', head:'' }); setShowAddDept(false)
   }
 
   const addBranch = (e: React.FormEvent) => {
     e.preventDefault()
-    setBranchList(prev => [...prev, { id:`br${Date.now()}`, name:branchForm.name, short:branchForm.name.split(' ')[0], location:branchForm.location, country:branchForm.country as any, type:'branch', pastor:branchForm.pastor, members:0, attendance:0, services:1, color:'#7C3AED', founded:new Date().getFullYear() }])
+    setBranchList(prev => [...prev, { id:`br${Date.now()}`, name:branchForm.name, short:branchForm.name.split(' ')[0], location:branchForm.location, country:branchForm.country as any, type:'branch', pastor:branchForm.pastor, members:0, attendance:0, services:1, color:'#1B4332', founded:new Date().getFullYear() }])
     setBranchForm({ name:'', location:'', country:'NG', pastor:'' }); setShowAddBranch(false)
   }
 
@@ -337,7 +337,7 @@ export default function Settings() {
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
                   <div><label style={{ fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5 }}>Department name</label><input className="input" value={deptForm.name} onChange={e=>setDeptForm(f=>({...f,name:e.target.value}))} placeholder="e.g. Social Media" required/></div>
                   <div><label style={{ fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5 }}>Icon (emoji)</label><input className="input" value={deptForm.icon} onChange={e=>setDeptForm(f=>({...f,icon:e.target.value}))} placeholder="📱"/></div>
-                  <div><label style={{ fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5 }}>Colour (hex)</label><div style={{ display:'flex', gap:8, alignItems:'center' }}><input className="input" value={deptForm.color} onChange={e=>setDeptForm(f=>({...f,color:e.target.value}))} placeholder="#7C3AED"/><div style={{ width:32, height:32, borderRadius:6, background:deptForm.color, border:'1px solid var(--border)', flexShrink:0 }}/></div></div>
+                  <div><label style={{ fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5 }}>Colour (hex)</label><div style={{ display:'flex', gap:8, alignItems:'center' }}><input className="input" value={deptForm.color} onChange={e=>setDeptForm(f=>({...f,color:e.target.value}))} placeholder="#1B4332"/><div style={{ width:32, height:32, borderRadius:6, background:deptForm.color, border:'1px solid var(--border)', flexShrink:0 }}/></div></div>
                   <div><label style={{ fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5 }}>Head</label><input className="input" value={deptForm.head} onChange={e=>setDeptForm(f=>({...f,head:e.target.value}))} placeholder="Name of dept head"/></div>
                 </div>
                 <div style={{ display:'flex', gap:10 }}>

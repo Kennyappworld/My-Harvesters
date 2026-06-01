@@ -5,7 +5,7 @@ import { weeklyAttendance, memberGrowthMonthly, retentionCohorts, retentionMonth
 
 function CT({ active, payload, label }: any) {
   if (!active||!payload?.length) return null
-  return <div style={{ background:'var(--navy-3)',border:'1px solid var(--border-md)',borderRadius:10,padding:'10px 14px',fontSize:12,boxShadow:'var(--sh-md)' }}>
+  return <div style={{ background:'var(--dark-2)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:10,padding:'10px 14px',fontSize:12,boxShadow:'var(--sh-lg)',color:'white' }}>
     <div style={{ fontWeight:700,marginBottom:6,color:'var(--t-1)' }}>{label}</div>
     {payload.map((p:any)=><div key={p.dataKey} style={{ color:p.color,marginBottom:2 }}>{p.name}: <strong>{typeof p.value==='number'&&p.value>100?p.value.toLocaleString():p.value}</strong></div>)}
   </div>
@@ -25,8 +25,8 @@ function NewMembersModal({ onClose }: { onClose:()=>void }) {
 
   return (
     <div style={{ position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.7)',padding:16 }} onClick={onClose}>
-      <div style={{ background:'var(--navy-2)',border:'1px solid var(--border-md)',borderRadius:'var(--r-2xl)',width:'100%',maxWidth:820,maxHeight:'88vh',overflow:'auto',boxShadow:'var(--sh-lg)' }} onClick={e=>e.stopPropagation()}>
-        <div style={{ padding:'20px 24px',borderBottom:'0.5px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'var(--navy-2)',zIndex:1 }}>
+      <div style={{ background:'var(--s-2)',border:'1px solid var(--border-md)',borderRadius:'var(--r-2xl)',width:'100%',maxWidth:820,maxHeight:'88vh',overflow:'auto',boxShadow:'0 24px 64px rgba(13,31,22,0.28)' }} onClick={e=>e.stopPropagation()}>
+        <div style={{ padding:'20px 24px',borderBottom:'0.5px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'linear-gradient(90deg,#EBE9DF,#F4F2EA)',zIndex:1 }}>
           <div>
             <div style={{ fontSize:16,fontWeight:800,fontFamily:'var(--font-display)' }}>New Members — May 2026</div>
             <div style={{ fontSize:12,color:'var(--t-2)',marginTop:2 }}>Recorded by branch at each service · {grandTotal} total this week</div>

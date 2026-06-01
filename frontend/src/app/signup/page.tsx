@@ -35,7 +35,7 @@ function SignupForm() {
       <div style={{fontSize:15,color:'var(--t-2)',lineHeight:1.7,marginBottom:24,maxWidth:400,margin:'0 auto 24px'}}>
         {form.name}, your registration is complete. Your campus coordinator at <strong style={{color:'var(--brand)'}}>{BRANCHES[form.branch]||branchName}</strong> will be in touch within 2 weeks.
       </div>
-      <div style={{background:'var(--navy-2)',border:'1px solid var(--border)',borderRadius:14,padding:'16px 20px',maxWidth:320,margin:'0 auto 24px',textAlign:'left'}}>
+      <div style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:14,padding:'16px 20px',maxWidth:320,margin:'0 auto 24px',textAlign:'left'}}>
         <div style={{fontSize:11,fontWeight:700,color:'var(--brand)',marginBottom:10,letterSpacing:'0.06em',textTransform:'uppercase'}}>What happens next</div>
         {['2 weeks — Personalised welcome message','4 weeks — Small group invitation','3 months — Growth Track enrolment','4 months — Membership pathway'].map((s,i)=>(
           <div key={i} style={{display:'flex',gap:10,padding:'6px 0',borderBottom:'0.5px solid var(--border)',fontSize:12.5,color:'var(--t-2)'}}>
@@ -62,8 +62,8 @@ function SignupForm() {
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:16}}>
           {[1,2].map(s=>(
             <div key={s} style={{display:'flex',alignItems:'center',gap:8}}>
-              <div style={{width:28,height:28,borderRadius:'50%',background:step>=s?'var(--grad-brand)':'var(--navy-3)',border:`2px solid ${step>=s?'var(--brand)':'var(--border)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:step>=s?'white':'var(--t-3)'}}>{s}</div>
-              {s<2 && <div style={{width:40,height:2,background:step>s?'var(--brand)':'var(--navy-4)',borderRadius:2}}/>}
+              <div style={{width:28,height:28,borderRadius:'50%',background:step>=s?'var(--grad-brand)':'var(--s-3)',border:`2px solid ${step>=s?'var(--brand)':'var(--border)'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:700,color:step>=s?'white':'var(--t-3)'}}>{s}</div>
+              {s<2 && <div style={{width:40,height:2,background:step>s?'var(--brand)':'var(--s-4)',borderRadius:2}}/>}
             </div>
           ))}
         </div>
@@ -136,7 +136,7 @@ function SignupForm() {
 
 export default function SignupPage() {
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'var(--navy)',padding:'1.5rem',position:'relative',overflow:'hidden'}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'var(--dark)',padding:'1.5rem',position:'relative',overflow:'hidden'}}>
       <div style={{position:'fixed',top:'-10%',left:'-5%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)',filter:'blur(60px)',pointerEvents:'none'}}/>
       <div style={{position:'fixed',bottom:'-10%',right:'-5%',width:400,height:400,borderRadius:'50%',background:'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)',filter:'blur(60px)',pointerEvents:'none'}}/>
       <Suspense fallback={<div style={{color:'var(--t-2)'}}>Loading…</div>}>

@@ -69,7 +69,7 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
                 <button
                   onClick={() => photoRef.current?.click()}
                   title="Change profile photo"
-                  style={{ position: 'absolute', bottom: -4, right: -4, width: 24, height: 24, borderRadius: '50%', background: 'var(--brand)', border: '2px solid var(--navy-1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  style={{ position: 'absolute', bottom: -4, right: -4, width: 24, height: 24, borderRadius: '50%', background: 'var(--brand)', border: '2px solid var(--s-1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 >
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="12" height="12"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                 </button>
@@ -85,7 +85,7 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
                 <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Growth Passport</div>
                 {['Growth Track Level 1','Growth Track Level 2','Growth Track Level 3'].map((level, i) => (
                   <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'0.5px solid var(--border)' }}>
-                    <div style={{ width:22, height:22, borderRadius:'50%', background: i<selected.growth?'var(--green)':'var(--navy-4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <div style={{ width:22, height:22, borderRadius:'50%', background: i<selected.growth?'var(--green)':'var(--s-4)', display:'flex', alignItems:'center', justifyContent:'center' }}>
                       {i<selected.growth && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>}
                     </div>
                     <span style={{ fontSize:13, color: i<selected.growth?'var(--t-1)':'var(--t-3)' }}>{level}</span>

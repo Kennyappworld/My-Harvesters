@@ -41,14 +41,14 @@ export default function Chat() {
     <div style={{ display:'flex', gap:0, height:'calc(100vh - var(--topbar-h) - 56px)', minHeight:500 }}>
 
       {/* Channel list */}
-      <div style={{ width:240, flexShrink:0, borderRight:'0.5px solid var(--border)', display:'flex', flexDirection:'column', background:'var(--navy-2)', borderRadius:'14px 0 0 14px' }}>
+      <div style={{ width:240, flexShrink:0, borderRight:'0.5px solid var(--border)', display:'flex', flexDirection:'column', background:'linear-gradient(180deg, #F2F0E8 0%, #EDEAE0 100%)', borderRadius:'14px 0 0 14px' }}>
         <div style={{ padding:'14px 16px', borderBottom:'0.5px solid var(--border)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
           <div style={{ fontWeight:700, fontSize:13, fontFamily:'var(--font-display)' }}>Channels</div>
           <button className="btn btn-brand btn-sm" style={{ fontSize:11, padding:'4px 10px' }} onClick={()=>setShowNew(v=>!v)}>+ New</button>
         </div>
 
         {showNew && (
-          <div style={{ padding:'12px 14px', borderBottom:'0.5px solid var(--border)', background:'var(--navy-3)' }}>
+          <div style={{ padding:'12px 14px', borderBottom:'0.5px solid var(--border)', background:'rgba(27,67,50,0.06)' }}>
             <input className="input" style={{ marginBottom:8, fontSize:12 }} placeholder="Channel name" value={newCh.name} onChange={e=>setNewCh(n=>({...n,name:e.target.value}))}/>
             <select className="input" style={{ marginBottom:8, fontSize:12 }} value={newCh.scope} onChange={e=>setNewCh(n=>({...n,scope:e.target.value}))}>
               <option value="unit">Unit</option><option value="peer">Peer</option><option value="leadership">Leadership</option>
@@ -77,7 +77,7 @@ export default function Chat() {
       </div>
 
       {/* Chat area */}
-      <div style={{ flex:1, display:'flex', flexDirection:'column', background:'var(--navy)', borderRadius:'0 14px 14px 0', border:'0.5px solid var(--border)', borderLeft:'none' }}>
+      <div style={{ flex:1, display:'flex', flexDirection:'column', background:'var(--dark-2)', borderRadius:'0 14px 14px 0', border:'0.5px solid var(--border)', borderLeft:'none' }}>
         <div style={{ padding:'14px 18px', borderBottom:'0.5px solid var(--border)', display:'flex', alignItems:'center', gap:12 }}>
           <div style={{ width:36, height:36, borderRadius:'50%', background:`${SCOPE_COLORS[ch.scope]||'var(--brand)'}25`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:700, color:SCOPE_COLORS[ch.scope]||'var(--brand)', flexShrink:0 }}>{ch.initials}</div>
           <div>

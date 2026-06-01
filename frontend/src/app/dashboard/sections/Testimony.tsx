@@ -4,7 +4,7 @@ import { testimonies } from '@/lib/data'
 
 const CATS = ['All','Healing','Finance','Salvation','Breakthrough','Marriage','Career']
 const CAT_COL: Record<string,string> = {
-  Healing:'#10B981', Finance:'#F59E0B', Salvation:'#7C3AED',
+  Healing:'#10B981', Finance:'#F59E0B', Salvation:'#1B4332',
   Breakthrough:'#3B82F6', Marriage:'#EC4899', Career:'#14B8A6',
 }
 

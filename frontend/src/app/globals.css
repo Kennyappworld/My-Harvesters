@@ -408,3 +408,11 @@ body {
   gap:10px;
 }
 .card-heading h3 { font-family:var(--font-display); font-size:14px; font-weight:700; color:var(--t-1); }
+
+/* ── Mobile responsive helpers ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .grid-2 { grid-template-columns: 1fr !important; }
+  .grid-3 { grid-template-columns: 1fr !important; }
+  .hide-mobile { display:none !important; }
+  .card-p { padding: 12px 14px !important; }
+}

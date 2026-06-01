@@ -12,6 +12,7 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.1",
+    "@supabase/supabase-js": "^2.106.2",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",
     "lucide-react": "^0.383.0",

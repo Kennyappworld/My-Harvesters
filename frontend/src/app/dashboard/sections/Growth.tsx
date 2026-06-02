@@ -1,5 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -38,12 +43,32 @@ const TABS = [
 ]
 
 export default function Growth({ onNavigate }: { onNavigate: (p:string)=>void }) {
+  const [liveWorkerCount, setLiveWorkerCount] = useState<number|null>(null)
+  const [liveSoulCount, setLiveSoulCount] = useState<number|null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        const [{ count: w }, { count: s }] = await Promise.all([
+          supabase.from('workers').select('*', { count:'exact', head:true }),
+          supabase.from('soul_records').select('*', { count:'exact', head:true }),
+        ])
+        setLiveWorkerCount(w || 0)
+        setLiveSoulCount(s || 0)
+      } catch {}
+    }
+    load()
+  }, [])
   const [tab, setTab] = useState('growth')
   const [sel, setSel] = useState(['lekki','gbagada','ikeja','london','houston'])
   const [fw, setFw] = useState(7)
 
   const f = firstTimerFunnel[fw]
   const may = memberGrowthMonthly[4], apr = memberGrowthMonthly[3]
+  // Override KPI tiles with live Supabase counts when available
+  const displayWorkers = liveWorkerCount !== null ? liveWorkerCount : (memberGrowthMonthly.reduce((a:any,b:any)=>a+b.total,0))
+  const displaySouls = liveSoulCount !== null ? liveSoulCount : 0
   const gPct = (((may.total-apr.total)/apr.total)*100).toFixed(1)
   const avgR = retentionMonthly[4].avg.toFixed(1)
   const conv = ((f.becameMember/f.firstTimers)*100).toFixed(1)
@@ -69,7 +94,9 @@ export default function Growth({ onNavigate }: { onNavigate: (p:string)=>void })
           { l:'Visitor conversion', v:`${conv}%`,                    sub:'Visitor → member',   up:true },
           { l:'At-risk members',    v:totalRisk.toLocaleString(),    sub:'Engagement falling', warn:true },
           { l:'Gone quiet (60d+)',  v:totalQ.toLocaleString(),       sub:'Need outreach',      danger:true },
-          { l:'Jan–May total',      v:memberGrowthMonthly.reduce((a,b)=>a+b.total,0).toLocaleString(), sub:'All branches', up:true },
+          { l:'Jan–May total',      v:memberGrowthMonthly.reduce((a:any,b:any)=>a+b.total,0).toLocaleString(), sub:'All branches', up:true },
+          ...(liveWorkerCount!==null?[{ l:'Workers in DB',  v:liveWorkerCount.toLocaleString(), sub:'Live from Supabase', up:true }]:[]),
+          ...(liveSoulCount!==null?[{ l:'Souls recorded', v:liveSoulCount.toLocaleString(), sub:'Total new converts', up:true }]:[]),
         ].map(m=>(
           <div key={m.l} className={`metric-tile${m.up?' metric-tile-accent':m.danger?' metric-tile-red':m.warn?' metric-tile-accent':''}`}>
             <div className="metric-label">{m.l}</div>

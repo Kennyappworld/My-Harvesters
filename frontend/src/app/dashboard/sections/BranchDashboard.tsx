@@ -1,6 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { branches, memberGrowthMonthly, retentionCohorts, retentionMonthly } from '@/lib/data'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts'
 
 // Simulated per-branch workforce breakdown
@@ -45,9 +50,50 @@ function MiniChart({ data, color }: { data: number[]; color: string }) {
 }
 
 export default function BranchDashboard() {
+  const [liveWorkers, setLiveWorkers] = useState<Record<string,number>>({})
+  const [liveSouls, setLiveSouls] = useState<Record<string,number>>({})
+  const [livePrayers, setLivePrayers] = useState<Record<string,number>>({})
+
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        // Get worker counts per branch
+        const { data: workers } = await supabase.from('workers').select('branch_id')
+        if (workers) {
+          const counts: Record<string,number> = {}
+          workers.forEach((w:any) => { counts[w.branch_id] = (counts[w.branch_id]||0)+1 })
+          setLiveWorkers(counts)
+        }
+        // Get soul records per branch
+        const { data: souls } = await supabase.from('soul_records').select('branch_id')
+        if (souls) {
+          const counts: Record<string,number> = {}
+          souls.forEach((s:any) => { counts[s.branch_id] = (counts[s.branch_id]||0)+1 })
+          setLiveSouls(counts)
+        }
+        // Get prayer requests per branch
+        const { data: prayers } = await supabase.from('prayer_requests').select('branch_id')
+        if (prayers) {
+          const counts: Record<string,number> = {}
+          prayers.forEach((p:any) => { counts[p.branch_id] = (counts[p.branch_id]||0)+1 })
+          setLivePrayers(counts)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
   const [selected, setSelected] = useState<string>('lekki')
   const branch = branches.find(b => b.id === selected)!
   const wf = BRANCH_WORKFORCE[selected]
+  // Override with real Supabase counts where available
+  const realWorkers = liveWorkers[selected]
+  const realSouls = liveSouls[selected]
+  const realPrayers = livePrayers[selected]
+  const displayWorkforce = realWorkers || wf.totalWorkforce
+  const displaySoulsVal = realSouls !== undefined ? realSouls : wf.newSouls
+  const displayPrayers = realPrayers !== undefined ? realPrayers : wf.prayerRequests
+  const isLive = realWorkers !== undefined
   const cohort = retentionCohorts.find(r => r.id === selected)
   const monthlyAvg = Math.round(
     memberGrowthMonthly.reduce((sum, m) => sum + (m[selected as keyof typeof m] as number || 0), 0) / memberGrowthMonthly.length
@@ -104,11 +150,11 @@ export default function BranchDashboard() {
           { l:'Total members',       v:branch.members.toLocaleString(),  sub:'Registered',             accent:branch.color },
           { l:'Monthly avg (new)',   v:monthlyAvg.toLocaleString(),      sub:'Jan–May average',         accent:'var(--gold)' },
           { l:'Weekly attendance',   v:`${branch.attendance}%`,          sub:'Of total members',        accent:'var(--teal)' },
-          { l:'Total workforce',     v:wf.totalWorkforce.toLocaleString(),sub:'Serving in departments', accent:'var(--brand)' },
+          { l:'Total workforce',     v:displayWorkforce.toLocaleString(),sub:'Serving in departments', accent:'var(--brand)' },
           { l:'Active workforce',    v:wf.activeWorkforce.toLocaleString(),sub:'Served this month',     accent:'var(--green)' },
           { l:'3m retention',        v:`${cohort?.r3m||0}%`,            sub:'Members retained',        accent:'var(--brand)' },
-          { l:'New souls (May)',      v:wf.newSouls,                     sub:'Recorded this month',     accent:'var(--gold)' },
-          { l:'Prayer requests',     v:wf.prayerRequests,               sub:'Active on prayer wall',   accent:'var(--teal)' },
+          { l:'New souls (May)',      v:displaySoulsVal,                     sub:'Recorded this month',     accent:'var(--gold)' },
+          { l:'Prayer requests',     v:displayPrayers,               sub:'Active on prayer wall',   accent:'var(--teal)' },
         ].map(m => (
           <div key={m.l} className="metric-tile" style={{ borderTop:`3px solid ${m.accent}` }}>
             <div className="metric-label">{m.l}</div>

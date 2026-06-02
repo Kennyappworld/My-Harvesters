@@ -44,8 +44,7 @@ export default function Members({ onNavigate }: { onNavigate:(p:string)=>void })
             phone: w.phone || '—', email: w.email, growth: 0, attendance: 0,
             birthday: '', photo: w.avatar_url || '',
           }))
-          setMembers(mapped)
-          persist('hicc_members' as any, mapped)
+          setMembers(mapped)  // No PII cache — load fresh each session
         }
       } catch {}
       setLoading(false)

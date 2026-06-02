@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useSession, hasRole } from '@/lib/useSession'
+import { checkSoulFollowUpReminders, requestNotificationPermission } from '@/lib/notifications'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import PoweredBy from '@/lib/PoweredBy'
@@ -192,6 +193,44 @@ export default function Dashboard() {
   const { user } = useSession()
   const [page, setPage] = useState('overview')
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+
+  // Request notification permission and check soul follow-up reminders
+  useEffect(() => {
+    if (!user?.id) return
+    const setup = async () => {
+      const granted = await requestNotificationPermission()
+      if (granted) {
+        // Check for overdue soul follow-ups once per session
+        const lastCheck = sessionStorage.getItem('hicc_followup_check')
+        const now = Date.now()
+        if (!lastCheck || now - parseInt(lastCheck) > 4 * 60 * 60 * 1000) {
+          sessionStorage.setItem('hicc_followup_check', String(now))
+          await checkSoulFollowUpReminders(user.id)
+        }
+      }
+    }
+    setup()
+  }, [user?.id])
+
+  // Session inactivity timeout — 30 minutes
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    const TIMEOUT = 30 * 60 * 1000 // 30 minutes
+    const reset = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        sessionStorage.clear()
+        window.location.href = '/login?expired=1'
+      }, TIMEOUT)
+    }
+    const events = ['mousedown','keydown','touchstart','scroll']
+    events.forEach(e => window.addEventListener(e, reset, { passive:true }))
+    reset()
+    return () => {
+      clearTimeout(timer)
+      events.forEach(e => window.removeEventListener(e, reset))
+    }
+  }, [])
   useEffect(() => {
     const on = () => setIsOnline(true)
     const off = () => setIsOnline(false)

@@ -120,7 +120,7 @@ function SignupForm() {
             <h3 style={{fontSize:15,fontWeight:700,marginBottom:16}}>Personal details</h3>
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5}}>Full name *</label>
-              <input className="input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Your full name" required autoFocus/>
+              <input className="input" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Your full name" maxLength={80} required autoFocus/>
             </div>
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5}}>Phone number *</label>

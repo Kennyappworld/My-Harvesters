@@ -52,8 +52,7 @@ export default function SoulTracker({ onNavigate }: { onNavigate: (p: string) =>
             status: s.follow_up_stage===1?'active':s.follow_up_stage===2?'wk2sent':s.follow_up_stage===3?'wk4sent':'complete',
             step: s.follow_up_stage, phone: s.phone||'—', feedback: false, prayer: false,
           }))
-          setSouls(mapped)
-          persist('hicc_souls' as any, mapped)
+          setSouls(mapped)  // No PII cache — load fresh each session
         }
       } catch {}
     }

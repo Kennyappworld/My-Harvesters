@@ -160,7 +160,7 @@ export default function LoginPage() {
         const name = session.user.user_metadata?.full_name
           || session.user.email?.split('@')[0]
           || 'Welcome'
-        localStorage.setItem('hicc_biometric_email', session.user.email || '')
+        sessionStorage.setItem('hicc_biometric_email', session.user.email || '')
         afterAuth(name, session.user.email || '')
       }
     })
@@ -188,7 +188,7 @@ export default function LoginPage() {
         const name = data.user?.user_metadata?.full_name
           || data.user?.email?.split('@')[0]
           || 'Welcome'
-        localStorage.setItem('hicc_biometric_email', safeEmail)
+        sessionStorage.setItem('hicc_biometric_email', safeEmail)
         afterAuth(name, safeEmail)
       } else {
         // Fallback demo mode when Supabase is not yet configured
@@ -204,7 +204,7 @@ export default function LoginPage() {
           setBusy(false)
           return
         }
-        localStorage.setItem('hicc_biometric_email', safeEmail)
+        sessionStorage.setItem('hicc_biometric_email', safeEmail)
         afterAuth(DEMO[safeEmail], safeEmail)
       }
     } catch {
@@ -217,7 +217,7 @@ export default function LoginPage() {
     setBioLoading(true)
     try {
       await new Promise<void>(res => setTimeout(res, 900))
-      const linked = localStorage.getItem('hicc_biometric_email')
+      const linked = sessionStorage.getItem('hicc_biometric_email')
       if (!linked) {
         setErr('Please sign in with your password first to register biometric login.')
         setBioLoading(false)

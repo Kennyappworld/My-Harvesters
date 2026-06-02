@@ -67,22 +67,28 @@ function SignupForm() {
 
   if (done) return (
     <div style={{textAlign:'center',padding:'3rem 1.5rem'}}>
-      <div style={{fontSize:56,marginBottom:20}}>🙌</div>
-      <div style={{fontFamily:'var(--font-display)',fontSize:28,fontWeight:800,color:'var(--t-1)',marginBottom:10}}>Welcome to the family!</div>
-      <div style={{fontSize:15,color:'var(--t-2)',lineHeight:1.7,marginBottom:24,maxWidth:400,margin:'0 auto 24px'}}>
-        {form.name}, your registration is complete. Your campus coordinator at <strong style={{color:'var(--brand)'}}>{BRANCHES[form.branch]||branchName}</strong> will be in touch within 2 weeks.
+      <div style={{fontSize:52,marginBottom:20}}>{'\U0001F64C'}</div>
+      <div style={{fontFamily:'var(--font-display)',fontSize:26,fontWeight:800,color:'var(--t-1)',marginBottom:10}}>Welcome to the family!</div>
+      <div style={{fontSize:15,color:'var(--t-2)',lineHeight:1.75,marginBottom:24,maxWidth:380,margin:'0 auto 24px'}}>
+        Hi <strong style={{color:'var(--brand)'}}>{form.name}</strong> — welcome to {BRANCHES[form.branch]||branchName}! Your admin will review your registration and send you your login details shortly.
       </div>
-      <div style={{background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.15)',borderRadius:14,padding:'16px 20px',maxWidth:320,margin:'0 auto 24px',textAlign:'left'}}>
+      <div style={{background:'var(--s-3)',border:'1px solid var(--border-md)',borderRadius:14,padding:'16px 20px',maxWidth:360,margin:'0 auto 24px',textAlign:'left'}}>
         <div style={{fontSize:11,fontWeight:700,color:'var(--brand)',marginBottom:10,letterSpacing:'0.06em',textTransform:'uppercase'}}>What happens next</div>
-        {['2 weeks — Personalised welcome message','4 weeks — Small group invitation','3 months — Growth Track enrolment','4 months — Membership pathway'].map((s,i)=>(
-          <div key={i} style={{display:'flex',gap:10,padding:'6px 0',borderBottom:'0.5px solid var(--border)',fontSize:12.5,color:'var(--t-2)'}}>
-            <span style={{color:'var(--brand)',fontWeight:700,flexShrink:0}}>{i+1}.</span>{s}
+        {[
+          'Admin reviews your registration',
+          'Your login credentials are sent to you',
+          'You will receive a WhatsApp message with your password',
+          'Log in and change your password on first login',
+        ].map((s,i)=>(
+          <div key={i} style={{display:'flex',gap:10,padding:'7px 0',borderBottom:'0.5px solid var(--border)',fontSize:12.5,color:'var(--t-2)',alignItems:'center'}}>
+            <span style={{fontWeight:700,color:'var(--brand)',flexShrink:0}}>{i+1}.</span>{s}
           </div>
         ))}
       </div>
       <Link href="/" className="btn btn-brand">Back to home</Link>
     </div>
   )
+
 
   return (
     <div style={{width:'100%',maxWidth:440}}>

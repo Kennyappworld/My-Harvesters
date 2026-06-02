@@ -374,6 +374,7 @@ export default function Settings() {
   const [qrDept,   setQrDept]   = useState('')
   const [qrMode,   setQrMode]   = useState<'branch'|'dept'|'combined'>('branch')
   const [deleteConfirm, setDeleteConfirm] = useState<string|null>(null)
+  const [credModal, setCredModal] = useState<{user:any; tempPass:string; sent:boolean}|null>(null)
   const [branchDeleteConfirm, setBranchDeleteConfirm] = useState<string|null>(null)
 
   const [userForm, setUserForm] = useState({ name:'', email:'', role:'member', branch:'lekki', dept:'ushering' })
@@ -390,9 +391,35 @@ export default function Settings() {
     setUserForm({ name:'', email:'', role:'member', branch:'lekki', dept:'ushering' }); setShowAddUser(false)
   }
 
+  const genTempPass = () => {
+    const adj = ['Grace','Faith','Hope','Light','Joy','Peace','Love','Worthy']
+    const num = Math.floor(Math.random()*900)+100
+    return adj[Math.floor(Math.random()*adj.length)] + num + '!'
+  }
+
   const approveUser = async (id: string) => {
-    setUsers(prev => prev.map(u => u.id===id ? {...u,status:'active'} : u))
-    if (supabase) await supabase.from('workers').update({ role:'worker' }).eq('id', id)
+    const u = users.find(x=>x.id===id)
+    if (!u) return
+    const tempPass = genTempPass()
+    // Mark active in local state
+    setUsers(prev => prev.map(x => x.id===id ? {...x, status:'active'} : x))
+    if (supabase) {
+      // Update worker record
+      await supabase.from('workers').update({ status:'active', role:'worker' }).eq('id', id).then(()=>{})
+      // If they have an email, create their Supabase auth account
+      if (u.email) {
+        try {
+          await supabase.auth.admin?.createUser({
+            email: u.email,
+            password: tempPass,
+            email_confirm: true,
+            user_metadata: { full_name: u.name, branch_id: u.branch, department: u.dept, role: 'worker' }
+          })
+        } catch {}
+      }
+    }
+    // Show credential modal with temp password
+    setCredModal({ user: u, tempPass, sent: false })
   }
   const deleteUser = async (id: string) => {
     setUsers(prev => prev.filter(u => u.id !== id))
@@ -812,6 +839,117 @@ export default function Settings() {
       {/* ── GENERAL ── */}
       {tab === 'general' && (
         <GeneralSettings/>
+      )}
+
+      {/* ── CREDENTIAL MODAL ── */}
+      {credModal && (
+        <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem', background:'rgba(0,0,0,0.55)', backdropFilter:'blur(4px)' }}>
+          <div className="card card-p" style={{ maxWidth:420, width:'100%', position:'relative' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
+              <div>
+                <div style={{ fontWeight:800, fontSize:16 }}>{credModal.sent ? '✅ Credentials issued' : '🔑 Issue login credentials'}</div>
+                <div style={{ fontSize:12, color:'var(--t-2)', marginTop:2 }}>for {credModal.user.name}</div>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setCredModal(null)}>✕</button>
+            </div>
+
+            {!credModal.sent ? (
+              <>
+                <div style={{ padding:'14px 16px', background:'var(--s-3)', borderRadius:'var(--r)', marginBottom:16 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--t-3)', letterSpacing:'.08em', textTransform:'uppercase', marginBottom:8 }}>Temporary password</div>
+                  <div style={{ fontFamily:'var(--font-mono)', fontSize:22, fontWeight:800, color:'var(--brand)', letterSpacing:'0.05em', marginBottom:8 }}>{credModal.tempPass}</div>
+                  <div style={{ fontSize:12, color:'var(--t-3)' }}>They must change this on first login</div>
+                </div>
+
+                {credModal.user.email ? (
+                  <>
+                    <div style={{ padding:'10px 14px', background:'rgba(27,158,90,0.08)', border:'1px solid rgba(27,158,90,0.2)', borderRadius:'var(--r)', marginBottom:14, fontSize:12.5, color:'var(--t-2)' }}>
+                      ✉ An account has been created. Share the password below with <strong>{credModal.user.name}</strong> via WhatsApp or in person.
+                    </div>
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', marginBottom:6 }}>Message to share:</div>
+                      <textarea
+                        readOnly
+                        className="input"
+                        rows={5}
+                        style={{ fontFamily:'var(--font-mono)', fontSize:12, resize:'none' }}
+                        value={`Hi ${credModal.user.name},
+
+Your Harvesters Workforce Community account is ready.
+
+Login: ${credModal.user.email}
+Password: ${credModal.tempPass}
+
+Visit: https://my-harvesters.vercel.app/login
+
+Please change your password after first login.`}
+                      />
+                    </div>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <button className="btn btn-brand" style={{ flex:1, justifyContent:'center' }} onClick={()=>{
+                        const msg = `Hi ${credModal.user.name},
+
+Your Harvesters Workforce Community account is ready.
+
+Login: ${credModal.user.email}
+Password: ${credModal.tempPass}
+
+Visit: https://my-harvesters.vercel.app/login
+
+Please change your password after first login.`
+                        const wa = `https://wa.me/${credModal.user.phone?.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`
+                        window.open(wa,'_blank','noopener')
+                        setCredModal(c=>c?{...c,sent:true}:null)
+                      }}>
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347"/></svg>
+                        Send via WhatsApp
+                      </button>
+                      <button className="btn btn-sm" onClick={()=>{
+                        navigator.clipboard.writeText(credModal.tempPass)
+                        notify.success('Password copied')
+                      }}>Copy password</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ padding:'10px 14px', background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.25)', borderRadius:'var(--r)', marginBottom:14, fontSize:12.5, color:'var(--t-2)' }}>
+                      ⚠ No email on file. Share this temporary password with <strong>{credModal.user.name}</strong> in person or via WhatsApp. They can use their phone number as their login username if email auth is enabled later.
+                    </div>
+                    <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+                      <button className="btn btn-brand" style={{ flex:1, justifyContent:'center' }} onClick={()=>{
+                        const msg = `Hi ${credModal.user.name},
+
+Your Harvesters Workforce Community account is ready.
+
+Temporary password: ${credModal.tempPass}
+
+Visit: https://my-harvesters.vercel.app/login
+
+Contact your branch admin for your login email.`
+                        const wa = `https://wa.me/${credModal.user.phone?.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`
+                        window.open(wa,'_blank','noopener')
+                        setCredModal(c=>c?{...c,sent:true}:null)
+                      }}>
+                        Send via WhatsApp
+                      </button>
+                      <button className="btn btn-sm" onClick={()=>{
+                        navigator.clipboard.writeText(credModal.tempPass)
+                        notify.success('Password copied')
+                      }}>Copy</button>
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <div style={{ textAlign:'center', padding:'1rem 0' }}>
+                <div style={{ fontSize:40, marginBottom:12 }}>✅</div>
+                <div style={{ fontWeight:700, fontSize:15, marginBottom:6 }}>Credentials sent to {credModal.user.name}</div>
+                <div style={{ fontSize:13, color:'var(--t-2)', marginBottom:20 }}>They can now log in with their temporary password and will be prompted to change it.</div>
+                <button className="btn btn-brand btn-sm" onClick={()=>setCredModal(null)}>Done</button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )

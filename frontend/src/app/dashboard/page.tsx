@@ -35,97 +35,303 @@ function L() {
 }
 
 // ── Broadcast Modal ──────────────────────────────────────────────────────────
-function BroadcastModal({ onClose }: { onClose: () => void }) {
-  const [form, setForm] = useState({ message:'', scope:'all', channel:'platform', branch:'all' })
-  const [sent, setSent] = useState(false)
-  const BRANCHES = ['All branches','Lekki HQ','Gbagada','Ikeja','Anthony Village','Abuja','Port Harcourt','Ibadan','London UK','Houston USA']
+type AudienceGroup = {
+  id: string; name: string; color: string; type: 'preset'|'custom'
+  branches: string[]; depts: string[]; roles: string[]; count: number
+}
 
-  const send = (e: React.FormEvent) => {
+const PRESET_AUDIENCES: AudienceGroup[] = [
+  { id:'all',        name:'Everyone',       color:'#1B4332', type:'preset', branches:['all'],     depts:['all'], roles:['all'],                            count:83400 },
+  { id:'leadership', name:'Leadership',     color:'#C9A84C', type:'preset', branches:['all'],     depts:['all'], roles:['senior_pastor','pastor','admin'],  count:24    },
+  { id:'pastors',    name:'All Pastors',    color:'#6B46C1', type:'preset', branches:['all'],     depts:['all'], roles:['senior_pastor','pastor'],          count:18    },
+  { id:'unit_heads', name:'Unit Heads',     color:'#0D9488', type:'preset', branches:['all'],     depts:['all'], roles:['unit_head'],                      count:86    },
+  { id:'workers',    name:'All Workers',    color:'#2B6CB0', type:'preset', branches:['all'],     depts:['all'], roles:['worker'],                         count:1240  },
+  { id:'lekki',      name:'Lekki HQ',       color:'#1B4332', type:'preset', branches:['lekki'],   depts:['all'], roles:['all'],                            count:18200 },
+  { id:'london',     name:'London UK',      color:'#3B82F6', type:'preset', branches:['london'],  depts:['all'], roles:['all'],                            count:6200  },
+  { id:'houston',    name:'Houston USA',    color:'#14B8A6', type:'preset', branches:['houston'], depts:['all'], roles:['all'],                            count:4100  },
+]
+
+const BRANCH_NAMES_MAP: Record<string,string> = { lekki:'Lekki HQ',gbagada:'Gbagada',ikeja:'Ikeja',anthony:'Anthony Village',abuja:'Abuja',portharcourt:'Port Harcourt',ibadan:'Ibadan',london:'London UK',houston:'Houston USA' }
+const BROADCAST_DEPTS = [['ushering','Ushering'],['worship','Worship'],['media','Media'],['kids','KidsHouse'],['protocol','Protocol'],['welfare','Welfare'],['outreach','Outreach'],['prayer','Prayer'],['security','Security'],['drama','Drama'],['IT','IT'],['admin','Admin']]
+const BROADCAST_ROLES = [['senior_pastor','Senior Pastor'],['pastor','Branch Pastor'],['admin','Admin'],['unit_head','Unit Head'],['worker','Worker']]
+
+function BroadcastModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState<'compose'|'audience'|'confirm'|'sent'>('compose')
+  const [message, setMessage] = useState('')
+  const [title, setTitle] = useState('')
+  const [channel, setChannel] = useState<'platform'|'whatsapp'|'sms'|'all'>('platform')
+  const [selected, setSelected] = useState<AudienceGroup[]>([])
+  const [customGroups, setCustomGroups] = useState<AudienceGroup[]>(() => {
+    try { return JSON.parse(localStorage.getItem('hicc_custom_audiences')||'[]') } catch { return [] }
+  })
+  const [showNewGroup, setShowNewGroup] = useState(false)
+  const [newGroup, setNewGroup] = useState({ name:'', branches:[] as string[], depts:[] as string[], roles:[] as string[] })
+  const [sending, setSending] = useState(false)
+
+  const toggleAudience = (g: AudienceGroup) =>
+    setSelected(prev => prev.find(a=>a.id===g.id) ? prev.filter(a=>a.id!==g.id) : [...prev, g])
+
+  const totalReach = selected.reduce((a,g)=>a+g.count,0)
+
+  const saveGroup = (e: React.FormEvent) => {
     e.preventDefault()
-    // If WhatsApp channel selected, open WhatsApp Web with pre-filled message
-    if (form.channel === 'whatsapp' || form.channel === 'all') {
-      const text = encodeURIComponent(`📣 HARVESTERS WORKFORCE COMMUNITY\n\n${form.message}\n\n— Leadership`)
-      window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener')
+    const g: AudienceGroup = {
+      id:`cg_${Date.now()}`, name:newGroup.name, color:'#1B4332', type:'custom',
+      branches:newGroup.branches, depts:newGroup.depts, roles:newGroup.roles, count:0,
     }
-    setSent(true)
-    setTimeout(() => { setSent(false); onClose() }, 2500)
+    const updated = [...customGroups, g]
+    setCustomGroups(updated)
+    localStorage.setItem('hicc_custom_audiences', JSON.stringify(updated))
+    setSelected(prev=>[...prev,g])
+    setShowNewGroup(false)
+    setNewGroup({ name:'', branches:[], depts:[], roles:[] })
   }
 
+  const deleteGroup = (id: string) => {
+    const updated = customGroups.filter(g=>g.id!==id)
+    setCustomGroups(updated)
+    localStorage.setItem('hicc_custom_audiences', JSON.stringify(updated))
+    setSelected(prev=>prev.filter(a=>a.id!==id))
+  }
+
+  const send = async () => {
+    setSending(true)
+    if (channel==='whatsapp'||channel==='all') {
+      const names = selected.map(a=>a.name).join(', ')
+      window.open(`https://wa.me/?text=${encodeURIComponent(`📣 HARVESTERS WORKFORCE COMMUNITY
+
+${message}
+
+To: ${names}
+— Leadership`)}`, '_blank', 'noopener')
+    }
+    try {
+      const { createClient } = await import('@supabase/supabase-js')
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      if (url && key) {
+        await createClient(url,key).from('announcements').insert({
+          title: title||'Broadcast', body: message,
+          scope: selected.some(a=>a.id==='all')?'all':'branch',
+        })
+      }
+    } catch {}
+    setSending(false); setStep('sent')
+    setTimeout(()=>onClose(), 2800)
+  }
+
+  const ChipToggle = ({ label, active, onClick }: { label:string; active:boolean; onClick:()=>void }) => (
+    <button type="button" onClick={onClick} style={{padding:'4px 10px',borderRadius:100,border:`1px solid ${active?'var(--brand)':'var(--border-md)'}`,background:active?'var(--brand-soft)':'transparent',fontSize:11.5,fontWeight:active?700:400,color:active?'var(--brand)':'var(--t-2)',cursor:'pointer',transition:'all .1s'}}>{label}</button>
+  )
+
   return (
-    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(26,18,69,0.6)',backdropFilter:'blur(4px)',padding:16}} onClick={onClose}>
-      <div style={{background:'white',borderRadius:20,width:'100%',maxWidth:480,boxShadow:'0 20px 60px rgba(124,58,237,0.25)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+    <div style={{position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.65)',backdropFilter:'blur(5px)',padding:16}} onClick={onClose}>
+      <div style={{background:'var(--s-2)',borderRadius:20,width:'100%',maxWidth:560,maxHeight:'90vh',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.35)',overflow:'hidden'}} onClick={e=>e.stopPropagation()}>
+
         {/* Header */}
-        <div style={{background:'var(--grad-brand)',padding:'18px 22px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={{background:'linear-gradient(135deg,#1B4332,#0A2B1A)',padding:'16px 20px',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            <div style={{width:36,height:36,borderRadius:10,background:'rgba(255,255,255,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="18" height="18"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+            <div style={{width:34,height:34,borderRadius:9,background:'rgba(255,255,255,0.12)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
             </div>
             <div>
-              <div style={{fontWeight:800,fontSize:15,color:'white',fontFamily:'var(--font-display)'}}>Broadcast message</div>
-              <div style={{fontSize:11.5,color:'rgba(255,255,255,0.65)'}}>Send to your congregation</div>
+              <div style={{fontWeight:800,fontSize:14,color:'white',fontFamily:'var(--font-display)'}}>Broadcast message</div>
+              <div style={{fontSize:10.5,color:'rgba(255,255,255,0.5)',marginTop:1}}>
+                {step==='sent'?'Sent ✓':step==='confirm'?'Step 3: Review & send':step==='audience'?'Step 2: Select audience':'Step 1: Compose'}
+              </div>
             </div>
           </div>
-          <button onClick={onClose} style={{background:'rgba(255,255,255,0.15)',border:'none',borderRadius:8,width:32,height:32,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'white'}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {step!=='sent' && (
+              <div style={{display:'flex',gap:3}}>
+                {['compose','audience','confirm'].map((s,i)=>(
+                  <div key={s} style={{width:18,height:3,borderRadius:2,background:['compose','audience','confirm'].indexOf(step)>=i?'#C9A84C':'rgba(255,255,255,0.2)',transition:'background .2s'}}/>
+                ))}
+              </div>
+            )}
+            <button onClick={onClose} style={{background:'rgba(255,255,255,0.1)',border:'none',borderRadius:7,width:28,height:28,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',color:'white'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
         </div>
 
-        <div style={{padding:'20px 22px'}}>
-          {sent ? (
-            <div style={{textAlign:'center',padding:'2rem'}}>
-              <div style={{fontSize:48,marginBottom:12}}>✅</div>
-              <div style={{fontWeight:800,fontSize:16,color:'var(--brand)',fontFamily:'var(--font-display)',marginBottom:6}}>Broadcast sent!</div>
-              <div style={{fontSize:13,color:'var(--t-2)'}}>Your message has been dispatched to the selected audience.</div>
+        {/* Body */}
+        <div style={{padding:'18px 20px',overflowY:'auto',flex:1}}>
+
+          {/* SENT */}
+          {step==='sent' && (
+            <div style={{textAlign:'center',padding:'2.5rem 1rem'}}>
+              <div style={{fontSize:52,marginBottom:12}}>{'\u2705'}</div>
+              <div style={{fontWeight:800,fontSize:17,color:'var(--brand)',fontFamily:'var(--font-display)',marginBottom:8}}>Broadcast sent!</div>
+              <div style={{fontSize:13,color:'var(--t-2)',lineHeight:1.7}}>
+                Saved to platform for <strong>{selected.map(a=>a.name).join(', ')}</strong>.
+                {(channel==='whatsapp'||channel==='all')&&' WhatsApp opened for dispatch.'}
+              </div>
             </div>
-          ) : (
-            <form onSubmit={send}>
-              <div style={{marginBottom:14}}>
-                <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Message *</label>
-                <textarea style={{width:'100%',padding:'10px 14px',border:'1.5px solid var(--border-md)',borderRadius:10,fontSize:13.5,background:'var(--s-1)',color:'var(--t-1)',fontFamily:'var(--font-body)',outline:'none',resize:'vertical'}} rows={4} placeholder="Type your broadcast message…" value={form.message} onChange={e=>setForm(f=>({...f,message:e.target.value}))} required/>
-              </div>
+          )}
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
-                <div>
-                  <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Audience</label>
-                  <select style={{width:'100%',padding:'10px 14px',border:'1.5px solid var(--border-md)',borderRadius:10,fontSize:13,background:'var(--s-1)',color:'var(--t-1)',fontFamily:'var(--font-body)',outline:'none'}} value={form.scope} onChange={e=>setForm(f=>({...f,scope:e.target.value}))}>
-                    <option value="all">🌍 All branches</option>
-                    <option value="branch">🏛 Specific branch</option>
-                    <option value="leadership">👑 Leadership only</option>
-                    <option value="workforce">🤝 Workforce only</option>
-                  </select>
-                </div>
-                {form.scope==='branch' && (
-                  <div>
-                    <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:6,letterSpacing:'0.04em',textTransform:'uppercase'}}>Branch</label>
-                    <select style={{width:'100%',padding:'10px 14px',border:'1.5px solid var(--border-md)',borderRadius:10,fontSize:13,background:'var(--s-1)',color:'var(--t-1)',fontFamily:'var(--font-body)',outline:'none'}} value={form.branch} onChange={e=>setForm(f=>({...f,branch:e.target.value}))}>
-                      {BRANCHES.map(b=><option key={b}>{b}</option>)}
-                    </select>
-                  </div>
-                )}
+          {/* STEP 1: COMPOSE */}
+          {step==='compose' && (
+            <div>
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:11,fontWeight:700,color:'var(--t-3)',display:'block',marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Title (optional)</label>
+                <input className="input" placeholder="e.g. Sunday Service Update" value={title} onChange={e=>setTitle(e.target.value)} style={{marginBottom:10}}/>
+                <label style={{fontSize:11,fontWeight:700,color:'var(--t-3)',display:'block',marginBottom:5,letterSpacing:'.06em',textTransform:'uppercase'}}>Message *</label>
+                <textarea className="input" rows={5} placeholder="Type your broadcast message…" value={message} onChange={e=>setMessage(e.target.value.slice(0,2000))} style={{resize:'vertical'}}/>
+                <div style={{fontSize:11,color:'var(--t-3)',marginTop:4,textAlign:'right'}}>{message.length}/2000</div>
               </div>
-
-              <div style={{marginBottom:18}}>
-                <label style={{fontSize:11.5,fontWeight:700,color:'var(--t-2)',display:'block',marginBottom:8,letterSpacing:'0.04em',textTransform:'uppercase'}}>Send via</label>
-                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                  {[['platform','📱 Platform'],['whatsapp','💬 WhatsApp'],['sms','📟 SMS'],['all','🔔 All channels']].map(([v,l])=>(
-                    <button key={v} type="button" onClick={()=>setForm(f=>({...f,channel:v}))} style={{padding:'8px 14px',borderRadius:10,border:`1.5px solid ${form.channel===v?'var(--brand)':'var(--border-md)'}`,background:form.channel===v?'var(--brand-soft)':'white',cursor:'pointer',fontSize:12.5,fontWeight:form.channel===v?700:500,color:form.channel===v?'var(--brand)':'var(--t-2)',transition:'all .12s',fontFamily:'var(--font-body)'}}>
-                      {l}
+              <div style={{marginBottom:16}}>
+                <label style={{fontSize:11,fontWeight:700,color:'var(--t-3)',display:'block',marginBottom:8,letterSpacing:'.06em',textTransform:'uppercase'}}>Deliver via</label>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+                  {([['platform','📱','Platform','Visible on app feed'],['whatsapp','💬','WhatsApp','Opens WhatsApp'],['sms','📟','SMS','Via gateway'],['all','🔔','All channels','Platform + WA + SMS']] as const).map(([v,icon,l,desc])=>(
+                    <button key={v} type="button" onClick={()=>setChannel(v)} style={{padding:'9px 12px',borderRadius:9,border:`2px solid ${channel===v?'var(--brand)':'var(--border-md)'}`,background:channel===v?'var(--brand-soft)':'var(--s-1)',cursor:'pointer',textAlign:'left'}}>
+                      <div style={{fontSize:15,marginBottom:2}}>{icon}</div>
+                      <div style={{fontSize:12,fontWeight:700,color:channel===v?'var(--brand)':'var(--t-1)'}}>{l}</div>
+                      <div style={{fontSize:10.5,color:'var(--t-3)',marginTop:1}}>{desc}</div>
                     </button>
                   ))}
                 </div>
               </div>
-
-              <button type="submit" style={{width:'100%',padding:'13px',background:'var(--grad-brand)',color:'white',border:'none',borderRadius:12,fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:'var(--font-display)',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:'var(--sh-brand)'}}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
-                Send broadcast
+              <button onClick={()=>message.trim()&&setStep('audience')} disabled={!message.trim()} className="btn btn-brand" style={{width:'100%',justifyContent:'center',padding:'11px',fontSize:13.5,opacity:message.trim()?1:0.5}}>
+                Next: Choose audience →
               </button>
-            </form>
+            </div>
           )}
+
+          {/* STEP 2: AUDIENCE */}
+          {step==='audience' && (
+            <div>
+              <div style={{fontWeight:700,fontSize:13.5,marginBottom:4}}>Select audience groups</div>
+              <div style={{fontSize:12.5,color:'var(--t-2)',marginBottom:14,lineHeight:1.6}}>Choose one or more groups. Create custom groups by combining specific branches, departments, and roles.</div>
+
+              <div style={{fontSize:10.5,fontWeight:700,color:'var(--t-3)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:8}}>Preset groups</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:14}}>
+                {PRESET_AUDIENCES.map(g=>{
+                  const on = !!selected.find(a=>a.id===g.id)
+                  return (
+                    <button key={g.id} type="button" onClick={()=>toggleAudience(g)} style={{padding:'9px 12px',borderRadius:9,border:`2px solid ${on?g.color:'var(--border-md)'}`,background:on?`${g.color}10`:'var(--s-1)',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:8,transition:'all .12s'}}>
+                      <div style={{width:8,height:8,borderRadius:'50%',background:on?g.color:'var(--s-4)',flexShrink:0}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:12,fontWeight:700,color:on?g.color:'var(--t-1)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{g.name}</div>
+                        <div style={{fontSize:10.5,color:'var(--t-3)'}}>{g.count.toLocaleString()}</div>
+                      </div>
+                      {on&&<svg viewBox="0 0 24 24" fill="none" stroke={g.color} strokeWidth="2.5" width="13" height="13"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {customGroups.length>0&&(
+                <>
+                  <div style={{fontSize:10.5,fontWeight:700,color:'var(--t-3)',letterSpacing:'.1em',textTransform:'uppercase',marginBottom:8}}>Your custom groups</div>
+                  <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:12}}>
+                    {customGroups.map(g=>{
+                      const on = !!selected.find(a=>a.id===g.id)
+                      return (
+                        <div key={g.id} style={{display:'flex',alignItems:'center',gap:8,padding:'9px 12px',borderRadius:9,border:`2px solid ${on?'var(--brand)':'var(--border-md)'}`,background:on?'var(--brand-soft)':'var(--s-1)'}}>
+                          <button type="button" onClick={()=>toggleAudience(g)} style={{flex:1,background:'none',border:'none',cursor:'pointer',textAlign:'left',display:'flex',alignItems:'center',gap:8}}>
+                            <div style={{width:8,height:8,borderRadius:'50%',background:on?'var(--brand)':'var(--s-4)',flexShrink:0}}/>
+                            <div>
+                              <div style={{fontSize:12,fontWeight:700,color:on?'var(--brand)':'var(--t-1)'}}>{g.name}</div>
+                              <div style={{fontSize:10.5,color:'var(--t-3)'}}>{g.branches.length?g.branches.map(b=>BRANCH_NAMES_MAP[b]||b).join(', '):'All branches'} · {g.roles.length?g.roles.join(', '):'All roles'}</div>
+                            </div>
+                          </button>
+                          <button type="button" onClick={()=>deleteGroup(g.id)} style={{background:'var(--red-lt)',border:'none',borderRadius:6,width:24,height:24,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" width="11" height="11"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+
+              {!showNewGroup ? (
+                <button type="button" onClick={()=>setShowNewGroup(true)} className="btn btn-sm" style={{width:'100%',justifyContent:'center',marginBottom:14,borderStyle:'dashed'}}>+ Create custom audience group</button>
+              ) : (
+                <form onSubmit={saveGroup} style={{background:'var(--s-3)',borderRadius:10,padding:'14px 16px',marginBottom:12,border:'1px solid var(--border-md)'}}>
+                  <div style={{fontWeight:700,fontSize:13,marginBottom:10}}>New custom group</div>
+                  <input className="input" placeholder="Group name e.g. Lagos Worship Leaders" value={newGroup.name} onChange={e=>setNewGroup(f=>({...f,name:e.target.value}))} style={{marginBottom:10}} required/>
+                  <div style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',marginBottom:5}}>Branches (empty = all)</div>
+                  <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
+                    {Object.entries(BRANCH_NAMES_MAP).map(([id,name])=><ChipToggle key={id} label={name} active={newGroup.branches.includes(id)} onClick={()=>setNewGroup(f=>({...f,branches:f.branches.includes(id)?f.branches.filter(x=>x!==id):[...f.branches,id]}))}/>)}
+                  </div>
+                  <div style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',marginBottom:5}}>Departments (empty = all)</div>
+                  <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
+                    {BROADCAST_DEPTS.map(([id,name])=><ChipToggle key={id} label={name} active={newGroup.depts.includes(id)} onClick={()=>setNewGroup(f=>({...f,depts:f.depts.includes(id)?f.depts.filter(x=>x!==id):[...f.depts,id]}))}/>)}
+                  </div>
+                  <div style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',marginBottom:5}}>Roles (empty = all)</div>
+                  <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:12}}>
+                    {BROADCAST_ROLES.map(([id,name])=><ChipToggle key={id} label={name} active={newGroup.roles.includes(id)} onClick={()=>setNewGroup(f=>({...f,roles:f.roles.includes(id)?f.roles.filter(x=>x!==id):[...f.roles,id]}))}/>)}
+                  </div>
+                  <div style={{display:'flex',gap:8}}>
+                    <button type="submit" className="btn btn-brand btn-sm" style={{flex:1,justifyContent:'center'}} disabled={!newGroup.name.trim()}>Save group</button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setShowNewGroup(false)}>Cancel</button>
+                  </div>
+                </form>
+              )}
+
+              {selected.length>0&&(
+                <div style={{padding:'9px 12px',background:'var(--brand-soft)',border:'1px solid var(--border-md)',borderRadius:9,marginBottom:12,fontSize:12.5}}>
+                  <span style={{fontWeight:700,color:'var(--brand)'}}>Selected: </span>
+                  <span style={{color:'var(--t-2)'}}>{selected.map(a=>a.name).join(' + ')}</span>
+                  <span style={{color:'var(--t-3)',marginLeft:6}}>· ~{totalReach.toLocaleString()}</span>
+                </div>
+              )}
+
+              <div style={{display:'flex',gap:8}}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setStep('compose')} style={{flexShrink:0}}>← Back</button>
+                <button type="button" onClick={()=>selected.length>0&&setStep('confirm')} disabled={selected.length===0} className="btn btn-brand" style={{flex:1,justifyContent:'center',opacity:selected.length>0?1:0.5}}>
+                  Review & send →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: CONFIRM */}
+          {step==='confirm' && (
+            <div>
+              <div style={{fontWeight:700,fontSize:13.5,marginBottom:14}}>Confirm broadcast</div>
+              <div className="card card-p" style={{marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:700,color:'var(--t-3)',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:5}}>Message</div>
+                {title&&<div style={{fontWeight:700,fontSize:13,marginBottom:4}}>{title}</div>}
+                <div style={{fontSize:13,color:'var(--t-2)',lineHeight:1.7,whiteSpace:'pre-wrap'}}>{message}</div>
+              </div>
+              <div className="card card-p" style={{marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:700,color:'var(--t-3)',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:8}}>Audience</div>
+                {selected.map(a=>(
+                  <div key={a.id} style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}>
+                    <div style={{width:7,height:7,borderRadius:'50%',background:a.color,flexShrink:0}}/>
+                    <span style={{fontSize:12.5,fontWeight:600,flex:1}}>{a.name}</span>
+                    <span style={{fontSize:11.5,color:'var(--t-3)'}}>~{a.count.toLocaleString()}</span>
+                  </div>
+                ))}
+                <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--border)',display:'flex',justifyContent:'space-between',fontSize:12.5}}>
+                  <span style={{color:'var(--t-2)'}}>Est. total reach</span>
+                  <span style={{fontWeight:800,color:'var(--brand)'}}>{totalReach.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="card card-p" style={{marginBottom:14}}>
+                <div style={{fontSize:10,fontWeight:700,color:'var(--t-3)',letterSpacing:'.08em',textTransform:'uppercase',marginBottom:5}}>Channel</div>
+                <div style={{fontSize:13,fontWeight:600}}>{channel==='platform'?'📱 Platform':channel==='whatsapp'?'💬 WhatsApp':channel==='sms'?'📟 SMS':'🔔 All channels'}</div>
+                {(channel!=='platform')&&<div style={{fontSize:11.5,color:'#92610A',marginTop:6,padding:'5px 9px',background:'rgba(245,158,11,0.08)',borderRadius:6}}>⚠ External gateway not configured — saved to platform regardless.</div>}
+              </div>
+              <div style={{display:'flex',gap:8}}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setStep('audience')} style={{flexShrink:0}}>← Back</button>
+                <button type="button" onClick={send} disabled={sending} className="btn btn-brand" style={{flex:1,justifyContent:'center',padding:'11px',fontSize:13,fontWeight:700}}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><path d="M22 2L11 13"/><path d="M22 2L15 22 11 13 2 9l20-7z"/></svg>
+                  {sending?'Sending…':`Send to ${selected.map(a=>a.name).join(' + ')}`}
+                </button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
   )
 }
+
 
 
 

@@ -240,6 +240,17 @@ export default function Dashboard() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
   }, [])
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [memberSearch, setMemberSearch] = useState('')
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { page: p, search } = (e as CustomEvent).detail || {}
+      if (p) setPage(p)
+      if (search) setMemberSearch(search)
+    }
+    window.addEventListener('hicc-navigate', handler)
+    return () => window.removeEventListener('hicc-navigate', handler)
+  }, [])
   const [showBroadcast, setShowBroadcast] = useState(false)
   const meta = TITLES[page] || {title:page, sub:'', emoji:'📋'}
   const Page = PAGES[page]
@@ -362,7 +373,7 @@ export default function Dashboard() {
             </div>
           )}
           <div key={pageKey} className="page-enter" style={{minHeight:'100%'}}>
-          {Page ? <Page onNavigate={setPage}/> : (
+          {Page ? <Page onNavigate={setPage} memberSearch={page==='members'?memberSearch:''} onMemberSearchConsumed={()=>setMemberSearch('')}/> : (
             <div style={{textAlign:'center',padding:'4rem',color:'var(--t-3)'}}>
               <div style={{fontSize:40,marginBottom:16}}>🔧</div>
               <div style={{fontWeight:700,fontSize:16,color:'var(--t-1)',textTransform:'capitalize',marginBottom:8}}>{page}</div>

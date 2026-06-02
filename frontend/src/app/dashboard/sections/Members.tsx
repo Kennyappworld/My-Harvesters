@@ -16,11 +16,18 @@ const FALLBACK_MEMBERS = [
   { id:'m3', name:'Ngozi Kalu',       branch:'lekki',  dept:'worship',  role:'Member',    status:'active',  joined:'Oct 2024', phone:'+234 706 333 4444', email:'ngozi.k@hicc.org',    growth:3, attendance:95, birthday:'Feb 5',  photo:'' },
 ]
 
-export default function Members({ onNavigate }: { onNavigate:(p:string)=>void }) {
+export default function Members({ onNavigate, memberSearch, onMemberSearchConsumed }: { onNavigate:(p:string)=>void; memberSearch?:string; onMemberSearchConsumed?:()=>void }) {
   const { user } = useSession()
   const [members, setMembers] = useState<any[]>(() => hydrate('hicc_members' as any, FALLBACK_MEMBERS))
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    if (memberSearch) {
+      setSearch(memberSearch)
+      onMemberSearchConsumed?.()
+    }
+  }, [memberSearch])
   const [filterBranch, setFilterBranch] = useState('all')
   const [filterDept, setFilterDept] = useState('all')
   const [selected, setSelected] = useState<any>(null)

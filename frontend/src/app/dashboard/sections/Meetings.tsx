@@ -383,30 +383,34 @@ export default function Meetings() {
                 </button>
               )}
             </div>
-            <table className="tbl">
-              <thead><tr><th>#</th><th>Name</th><th>Role</th><th>Email</th><th>Phone</th><th>Status</th></tr></thead>
-              <tbody>
+            <div style={{display:'flex',flexDirection:'column',gap:6}}>
                 {selected.attendants.map((a,i) => (
-                  <tr key={i}>
-                    <td style={{fontSize:11,color:'var(--t-3)'}}>{i+1}</td>
-                    <td style={{fontWeight:600}}>{a.name}</td>
-                    <td style={{fontSize:12,color:'var(--t-2)'}}>{a.role}</td>
-                    <td style={{fontSize:11.5,fontFamily:'var(--font-mono)',color:'var(--t-3)'}}>{a.email||'—'}</td>
-                    <td style={{fontSize:11.5,fontFamily:'var(--font-mono)',color:'var(--t-3)'}}>{a.phone||'—'}</td>
-                    <td>
-                      {editingAttendants ? (
-                        <div style={{display:'flex',gap:6}}>
-                          <button className="btn btn-sm" style={{background:a.present?'var(--green-lt)':'var(--s-3)',color:a.present?'var(--green)':'var(--t-3)',border:`1px solid ${a.present?'rgba(16,185,129,0.3)':'var(--border)'}`,fontSize:11,padding:'3px 8px'}} onClick={()=>markAttendance(selected.id,i,true)}>✓</button>
-                          <button className="btn btn-sm" style={{background:!a.present?'rgba(239,68,68,0.1)':'var(--s-3)',color:!a.present?'#EF4444':'var(--t-3)',border:`1px solid ${!a.present?'rgba(239,68,68,0.3)':'var(--border)'}`,fontSize:11,padding:'3px 8px'}} onClick={()=>markAttendance(selected.id,i,false)}>✗</button>
-                        </div>
-                      ) : (
-                        <span style={{fontWeight:700,fontSize:12,color:a.present?'var(--green)':'#EF4444'}}>{a.present?'✓ Present':'✗ Absent'}</span>
-                      )}
-                    </td>
-                  </tr>
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'9px 12px',background:'var(--s-2)',borderRadius:'var(--r)',border:'0.5px solid var(--border)'}}>
+                    <div style={{width:32,height:32,borderRadius:'50%',background:a.present?'var(--brand)':'var(--s-4)',color:a.present?'#fff':'var(--t-3)',fontSize:11,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,border:`1.5px solid ${a.present?'var(--brand)':'var(--border)'}`}}>
+                      {a.name.split(' ').map((w:string)=>w[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontWeight:700,fontSize:13,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{a.name}</div>
+                      <div style={{fontSize:11,color:'var(--t-3)',marginTop:1}}>{a.role}</div>
+                    </div>
+                    {editingAttendants ? (
+                      <div style={{display:'flex',gap:5,flexShrink:0}}>
+                        <button className="btn btn-sm" style={{background:a.present?'var(--green-lt)':'var(--s-3)',color:a.present?'var(--green)':'var(--t-3)',border:`1px solid ${a.present?'rgba(16,185,129,0.3)':'var(--border)'}`,fontSize:11,padding:'3px 10px'}} onClick={()=>markAttendance(selected.id,i,true)}>✓</button>
+                        <button className="btn btn-sm" style={{background:!a.present?'rgba(239,68,68,0.1)':'var(--s-3)',color:!a.present?'#EF4444':'var(--t-3)',border:`1px solid ${!a.present?'rgba(239,68,68,0.3)':'var(--border)'}`,fontSize:11,padding:'3px 10px'}} onClick={()=>markAttendance(selected.id,i,false)}>✗</button>
+                      </div>
+                    ) : (
+                      <span style={{fontWeight:700,fontSize:11.5,color:a.present?'var(--green)':'#EF4444',flexShrink:0}}>{a.present?'✓ Present':'✗ Absent'}</span>
+                    )}
+                    <button
+                      title={`Search ${a.name} in Members`}
+                      style={{width:28,height:28,borderRadius:'50%',background:'var(--s-3)',border:'0.5px solid var(--border)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,cursor:'pointer'}}
+                      onClick={()=>{ if(typeof window!=='undefined'){ window.dispatchEvent(new CustomEvent('hicc-navigate',{detail:{page:'members',search:a.name}})) } }}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="var(--t-3)" strokeWidth="2" width="13" height="13"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    </button>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
           </div>
         </div>
       )}

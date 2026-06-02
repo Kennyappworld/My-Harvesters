@@ -33,44 +33,35 @@ function SignupForm() {
 
   const [busy, setBusy] = useState(false)
   const [signupErr, setSignupErr] = useState('')
-  const [tempPassword, setTempPassword] = useState('')
 
   const next = (e:React.FormEvent) => { e.preventDefault(); setStep(2) }
   const submit = async (e:React.FormEvent) => {
     e.preventDefault()
     setBusy(true)
     setSignupErr('')
-    // Generate a temporary password the user must change on first login
-    const tmp = Math.random().toString(36).slice(-8) + 'Hi1!'
-    setTempPassword(tmp)
     try {
       if (supabase) {
-        const { error } = await supabase.auth.signUp({
-          email: form.email.trim().toLowerCase(),
-          password: tmp,
-          options: {
-            data: {
-              full_name: form.name,
-              phone: form.phone,
-              branch_id: form.branch,
-              department: form.dept,
-              role: 'worker',
-            },
-            emailRedirectTo: window.location.origin + '/login',
-          }
+        // Save directly to workers table — no Supabase auth email triggered
+        await supabase.from('workers').insert({
+          full_name: form.name,
+          phone: form.phone,
+          email: form.email.trim().toLowerCase() || null,
+          branch_id: form.branch,
+          department: form.dept,
+          role: 'worker',
+          first_timer: form.firstTimer === 'yes',
+          dob: form.dob || null,
+          status: 'pending',
         })
-        if (error) { setSignupErr(error.message); setBusy(false); return }
-      }
-      // Notify admins of pending approval
-      if (supabase) {
+        // Notify admins
         await supabase.from('announcements').insert({
-          title: `New worker registration: ${form.name}`,
-          body: `${form.name} (${form.email}) registered as a worker at ${form.branch} — ${form.dept}. Pending admin approval.`,
+          title: `New registration: ${form.name}`,
+          body: `${form.name} joined ${BRANCHES[form.branch]||form.branch} · ${form.dept||'No dept selected'}. Pending admin approval.`,
           scope: 'admin',
-        }).then(() => {})
+        })
       }
       setDone(true)
-    } catch { setSignupErr('Registration failed. Please try again.') }
+    } catch { setSignupErr('Registration failed — please check your details and try again.') }
     finally { setBusy(false) }
   }
 

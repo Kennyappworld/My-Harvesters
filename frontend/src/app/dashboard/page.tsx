@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useSession, hasRole } from '@/lib/useSession'
 import { checkSoulFollowUpReminders, requestNotificationPermission } from '@/lib/notifications'
 import dynamic from 'next/dynamic'
@@ -395,6 +395,73 @@ const PAGES: Record<string,any> = {
   reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash, network:Network,
 }
 
+const Sidebar = React.memo(function Sidebar({
+  page, user, setPage, setMobileOpen
+}: {
+  page: string
+  user: any
+  setPage: (p: string) => void
+  setMobileOpen: (v: boolean) => void
+}) {
+  return (
+    <>
+      {/* Sidebar header */}
+      <div style={{padding:'16px 14px 14px', borderBottom:'1px solid rgba(255,255,255,0.07)', background:'rgba(0,0,0,0.15)'}}>
+        <div style={{display:'flex', alignItems:'center', gap:10}}>
+          <div style={{width:36,height:36,background:'linear-gradient(135deg, var(--brand-md) 0%, var(--brand) 100%)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 4px 14px rgba(27,67,50,0.6), inset 0 1px 0 rgba(255,255,255,0.15)'}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          </div>
+          <div>
+            <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>Harvesters International Christian Centre</div>
+            <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>Workforce Community</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{padding:'10px 10px',flex:1,overflowY:'auto'}}>
+        {NAV.map(sec=>(
+          <div key={sec.section}>
+            <div style={{fontSize:8.5,color:'rgba(201,168,76,0.55)',padding:'14px 12px 5px',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700,display:'flex',alignItems:'center',gap:8}}><div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/>{sec.section}<div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/></div>
+            {sec.items.filter((item:any) => !item.minRole || !user || hasRole(user.role, item.minRole)).map((item:any)=>(
+              <div key={item.key} className={`nav-link ${page===item.key?'active':''}`} onClick={()=>{setPage(item.key);setMobileOpen(false)}}>
+                <span style={{width:28,height:28,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,background:page===item.key?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.06)',transition:'background .12s'}}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d={item.icon}/></svg>
+                </span>
+                <span style={{flex:1,fontSize:12.5}}>{item.label}</span>
+                {item.badge && <span className={`nav-badge ${item.bc||'nb-red'}`}>{item.badge}</span>}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* User info — bottom of dark sidebar */}
+      <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,0.08)',background:'rgba(0,0,0,0.15)'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+          <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--brand-md),var(--brand-lt))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0,boxShadow:'0 2px 8px rgba(27,67,50,0.5)',border:'2px solid rgba(255,255,255,0.15)'}}>{(user?.name||'W').slice(0,2).toUpperCase()}</div>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:'white'}}>{user?.name || 'Worker'}</div>
+            <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>{user?.role?.replace(/_/g,' ') || 'worker'} · {user?.branch_id || 'Lekki'}</div>
+          </div>
+        </div>
+        <button onClick={async()=>{
+          if (!window.confirm('Sign out of the Workforce Community?')) return
+          document.cookie='hicc_session=; path=/; max-age=0'
+          sessionStorage.clear()
+          const sUrl=process.env.NEXT_PUBLIC_SUPABASE_URL
+          const sKey=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          if(sUrl&&sKey){try{const{createClient}=await import('@supabase/supabase-js');await createClient(sUrl,sKey).auth.signOut()}catch{}}
+          window.location.href='/login'
+        }} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'rgba(255,255,255,0.35)',background:'none',border:'none',cursor:'pointer',fontFamily:'var(--font-body)',padding:0}}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign out
+        </button>
+      </div>
+      <PoweredBy dark={true}/>
+    </>
+  )
+})
+
 export default function Dashboard() {
   const { user } = useSession()
   const [page, setPage] = useState('overview')
@@ -469,76 +536,17 @@ export default function Dashboard() {
     }
   }, [page])
 
-  function SidebarInner() {
-    return (
-      <>
-        {/* Sidebar header */}
-        <div style={{padding:'16px 14px 14px', borderBottom:'1px solid rgba(255,255,255,0.07)', background:'rgba(0,0,0,0.15)'}}>
-          <div style={{display:'flex', alignItems:'center', gap:10}}>
-            <div style={{width:36,height:36,background:'linear-gradient(135deg, var(--brand-md) 0%, var(--brand) 100%)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 4px 14px rgba(27,67,50,0.6), inset 0 1px 0 rgba(255,255,255,0.15)'}}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-            </div>
-            <div>
-              <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>Harvesters International Christian Centre</div>
-              <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>Workforce Community</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{padding:'10px 10px',flex:1,overflowY:'auto'}}>
-          {NAV.map(sec=>(
-            <div key={sec.section}>
-              <div style={{fontSize:8.5,color:'rgba(201,168,76,0.55)',padding:'14px 12px 5px',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700,display:'flex',alignItems:'center',gap:8}}><div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/>{sec.section}<div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/></div>
-              {sec.items.filter((item:any) => !item.minRole || !user || hasRole(user.role, item.minRole)).map((item:any)=>(
-                <div key={item.key} className={`nav-link ${page===item.key?'active':''}`} onClick={()=>{setPage(item.key);setMobileOpen(false)}}>
-                  <span style={{width:28,height:28,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,background:page===item.key?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.06)',transition:'background .12s'}}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d={item.icon}/></svg>
-                  </span>
-                  <span style={{flex:1,fontSize:12.5}}>{item.label}</span>
-                  {item.badge && <span className={`nav-badge ${item.bc||'nb-red'}`}>{item.badge}</span>}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* User info — bottom of dark sidebar */}
-        <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,0.08)',background:'rgba(0,0,0,0.15)'}}>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--brand-md),var(--brand-lt))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0,boxShadow:'0 2px 8px rgba(27,67,50,0.5)',border:'2px solid rgba(255,255,255,0.15)'}}>{(user?.name||'W').slice(0,2).toUpperCase()}</div>
-            <div>
-              <div style={{fontSize:12,fontWeight:700,color:'white'}}>{user?.name || 'Worker'}</div>
-              <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>{user?.role?.replace(/_/g,' ') || 'worker'} · {user?.branch_id || 'Lekki'}</div>
-            </div>
-          </div>
-          <button onClick={async()=>{
-            if (!window.confirm('Sign out of the Workforce Community?')) return
-            document.cookie='hicc_session=; path=/; max-age=0'
-            sessionStorage.clear()
-            const sUrl=process.env.NEXT_PUBLIC_SUPABASE_URL
-            const sKey=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-            if(sUrl&&sKey){try{const{createClient}=await import('@supabase/supabase-js');await createClient(sUrl,sKey).auth.signOut()}catch{}}
-            window.location.href='/login'
-          }} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'rgba(255,255,255,0.35)',background:'none',border:'none',cursor:'pointer',fontFamily:'var(--font-body)',padding:0}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Sign out
-          </button>
-        </div>
-        <PoweredBy dark={true}/>
-      </>
-    )
-  }
 
   return (
     <div style={{display:'flex',height:'100vh',overflow:'hidden',background:'var(--s-1)'}}>
       {showBroadcast && <BroadcastModal onClose={()=>setShowBroadcast(false)}/>}
       {/* Dark sidebar */}
-      <aside className="sidebar"><SidebarInner/></aside>
+      <aside className="sidebar"><Sidebar page={page} user={user} setPage={setPage} setMobileOpen={setMobileOpen}/></aside>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div style={{position:'fixed',inset:0,zIndex:50,display:'flex'}}>
-          <div style={{width:216,background:'var(--dark)',display:'flex',flexDirection:'column'}}><SidebarInner/></div>
+          <div style={{width:216,background:'var(--dark)',display:'flex',flexDirection:'column'}}><Sidebar page={page} user={user} setPage={setPage} setMobileOpen={setMobileOpen}/></div>
           <div style={{flex:1,background:'rgba(0,0,0,0.5)'}} onClick={()=>setMobileOpen(false)}/>
         </div>
       )}

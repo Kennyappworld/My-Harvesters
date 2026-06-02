@@ -3,8 +3,8 @@ import { useEffect } from 'react'
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    // In production: send to error monitoring (Sentry, Datadog, etc.)
-    // console.error(error) intentionally removed — never log errors to browser console in prod
+    // Log to console so runtime errors are visible during debugging
+    console.error('[HICC Error]', error)
   }, [error])
 
   return (

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { weeklyAttendance, memberGrowthMonthly, retentionCohorts, retentionMonthly, branches, SERVICE_RECORDS } from '@/lib/data'
 
@@ -101,6 +101,25 @@ function NewMembersModal({ onClose }: { onClose:()=>void }) {
   )
 }
 
+// Animated number countup
+function CountUp({ to, duration=900, suffix='' }: { to:number; duration?:number; suffix?:string }) {
+  const [val, setVal] = useState(0)
+  const started = useRef(false)
+  useEffect(() => {
+    if (started.current) return
+    started.current = true
+    const start = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min((now-start)/duration, 1)
+      const eased = 1 - Math.pow(1-p, 3)
+      setVal(Math.round(to * eased))
+      if (p < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [to, duration])
+  return <>{val.toLocaleString()}{suffix}</>
+}
+
 export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }) {
   const [showNewMembers, setShowNewMembers] = useState(false)
   const quiet = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
@@ -128,18 +147,20 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
       {/* KPIs */}
       <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:14 }}>
         {[
-          { l:'Total members',       v:'83,400',          sub:'↑ 12% this quarter', up:true,  click:'members'  },
-          { l:'Weekly attendance',   v:'71,200',          sub:'↑ 5% vs last month', up:true,  click:'attendance'},
-          { l:'Active branches',     v:'9',               sub:'NG · UK · USA'                                  },
-          { l:'New this week',       v:String(totalNewThisWeek), sub:'Click for breakdown →', up:true, clickFn:()=>setShowNewMembers(true) },
-          { l:'New members (May)',   v:'1,810',           sub:'↑ 8% vs April →',   up:true,  click:'growth'   },
-          { l:'Avg retention',       v:`${avgR}%`,        sub:'↑ 1.1pts →',         up:true,  click:'growth'   },
+          { l:'Total members',     n:83400,  suffix:'',    sub:'↑ 12% this quarter', up:true,  click:'members'   },
+          { l:'Weekly attendance', n:71200,  suffix:'',    sub:'↑ 5% vs last month', up:true,  click:'attendance'},
+          { l:'Active branches',   n:9,      suffix:'',    sub:'NG · UK · USA',                                  },
+          { l:'New this week',     n:totalNewThisWeek, suffix:'', sub:'Click for breakdown →', up:true, clickFn:()=>setShowNewMembers(true) },
+          { l:'New members (May)', n:1810,   suffix:'',    sub:'↑ 8% vs April →',   up:true,  click:'growth'    },
+          { l:'Avg retention',     n:parseFloat(avgR), suffix:'%', sub:'↑ 1.1pts →', up:true, click:'growth'    },
         ].map(m=>(
           <div key={m.l} className={`metric-tile${m.up?' metric-tile-accent':''} ${(m.click||m.clickFn)?'card-hover':''}`}
             style={{ cursor:(m.click||m.clickFn)?'pointer':undefined }}
             onClick={()=>{ if((m as any).clickFn)(m as any).clickFn(); else if(m.click)onNavigate(m.click) }}>
             <div className="metric-label">{m.l}</div>
-            <div className="metric-value" style={{ fontSize:'1.4rem' }}>{m.v}</div>
+            <div className="metric-value" style={{ fontSize:'1.4rem' }}>
+              <CountUp to={m.n} suffix={m.suffix||''}/>
+            </div>
             <div className={`metric-sub ${m.up?'up':'flat'}`}>{m.sub}</div>
           </div>
         ))}

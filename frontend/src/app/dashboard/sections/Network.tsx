@@ -206,7 +206,7 @@ export default function Network() {
       name: user?.name || 'Worker',
       branch: user?.branch_id || 'lekki',
       email: user?.email || '',
-      phone: '', // Loaded from workers table
+      phone: '',
       ...profForm,
       skills: profForm.skills.split(',').map(s=>s.trim()).filter(Boolean),
       joinedYear: myProfile?.joinedYear || new Date().getFullYear().toString(),
@@ -216,11 +216,18 @@ export default function Network() {
       : [...profiles, updated]
     setProfiles(next)
     persist('hicc_network_profiles' as any, next)
-    // Sync to Supabase workers metadata
+    // Sync to Supabase network_profiles table
     if (supabase && user?.id) {
-      await supabase.from('workers').update({
-        department: profForm.profession, // Reuse dept field for profession
-      }).eq('id', user.id)
+      await supabase.from('network_profiles').upsert({
+        worker_id: user.id,
+        profession: profForm.profession, industry: profForm.industry,
+        company: profForm.company, bio: profForm.bio,
+        passions: profForm.passions,
+        skills: profForm.skills.split(',').map((s:string)=>s.trim()).filter(Boolean),
+        linkedin: profForm.linkedin, job_status: profForm.jobStatus,
+        show_phone: profForm.showPhone, show_email: profForm.showEmail,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'worker_id' })
     }
     setProfSaved(true)
     setTimeout(() => setProfSaved(false), 2500)
@@ -245,6 +252,38 @@ export default function Network() {
     setOppSaved(true)
     setTimeout(() => setOppSaved(false), 3000)
   }
+
+  // Load profiles from Supabase on mount
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        const { data } = await supabase
+          .from('network_profiles')
+          .select('*, workers(full_name, branch_id, email)')
+        if (data && data.length > 0) {
+          const mapped = data.map((p:any) => ({
+            id: p.id, name: p.workers?.full_name || 'Worker',
+            branch: p.workers?.branch_id || 'lekki',
+            email: p.workers?.email || '',
+            profession: p.profession || '', industry: p.industry || '',
+            company: p.company || '', bio: p.bio || '',
+            passions: p.passions || [], skills: p.skills || [],
+            linkedin: p.linkedin || '', jobStatus: p.job_status || 'none',
+            showPhone: p.show_phone || false, showEmail: p.show_email || true,
+            joinedYear: new Date(p.created_at).getFullYear().toString(),
+          }))
+          // Merge with sample profiles, deduping by email
+          setProfiles(prev => {
+            const emails = new Set(mapped.map((m:Profile) => m.email))
+            const sampleOnly = prev.filter((p:Profile) => !emails.has(p.email))
+            return [...mapped, ...sampleOnly]
+          })
+        }
+      } catch {}
+    }
+    load()
+  }, [])
 
   const filteredProfiles = profiles.filter(p => {
     const q = search.toLowerCase()

@@ -70,6 +70,28 @@ export default function Chat() {
   const ch = channels.find(c => c.id === active) || channels[0]
 
   // Membership check — super admin always has access
+  // Load channel memberships from Supabase for cross-device access
+  useEffect(() => {
+    if (!supabase || !user?.id) return
+    const load = async () => {
+      try {
+        const { data } = await supabase
+          .from('channel_members')
+          .select('channel_id')
+          .eq('worker_id', user.id)
+        if (data && data.length > 0) {
+          const memberOfIds = data.map((r:any) => r.channel_id)
+          setChannels(prev => prev.map(c =>
+            memberOfIds.includes(c.id) && !c.members?.includes(user.id)
+              ? {...c, members: [...(c.members||[]), user.id]}
+              : c
+          ))
+        }
+      } catch {}
+    }
+    load()
+  }, [user?.id])
+
   const isMember = useCallback((channel: Channel): boolean => {
     if (isSuperAdmin) return true
     if (!channel.members || channel.members.length === 0) return true // legacy/pre-membership channels
@@ -150,6 +172,13 @@ export default function Chat() {
     const next = [...channels, grp]
     setChannels(next); persist('hicc_chat_channels_v2', next)
     setActive(id); setShowCreate(false); setNewGroup({ name:'', scope:'unit' })
+    // Write creator membership to Supabase
+    if (supabase && user?.id) {
+      supabase.from('channel_members').insert({
+        channel_id: id, channel_name: newGroup.name,
+        worker_id: user.id, added_by: user.id,
+      }).then(() => {})
+    }
   }
 
   const deleteGroup = () => {
@@ -188,6 +217,13 @@ export default function Chat() {
   const approveAccessRequest = (reqId: string) => {
     const req = accessRequests.find(r => r.id===reqId)
     if (!req) return
+    // Save to Supabase channel_members for cross-device persistence
+    if (supabase && req) {
+      supabase.from('channel_members').insert({
+        channel_id: req.channelId, channel_name: req.channelName,
+        worker_id: req.requesterId, added_by: user?.id||'',
+      }).then(() => {})
+    }
     // Add requester to channel members
     setChannels(prev => {
       const next = prev.map(c => c.id===req.channelId

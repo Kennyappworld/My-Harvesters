@@ -22,9 +22,21 @@ const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabase
 function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
   const [vis, setVis] = useState(false)
   const [word] = useState(() => DAILY_WORDS[Math.floor(Math.random() * DAILY_WORDS.length)])
+  const [phase, setPhase] = useState(0) // 0=hidden 1=cross 2=grace words 3=name 4=scripture 5=buttons
 
-  useEffect(() => { requestAnimationFrame(() => setVis(true)) }, [])
+  useEffect(() => {
+    requestAnimationFrame(() => setVis(true))
+    const timers = [
+      setTimeout(() => setPhase(1), 200),
+      setTimeout(() => setPhase(2), 600),
+      setTimeout(() => setPhase(3), 1400),
+      setTimeout(() => setPhase(4), 1900),
+      setTimeout(() => setPhase(5), 2600),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
 
+  const graceWords = ['Grace!', 'Grace!!', 'Grace!!!']
   const dismiss = () => { setVis(false); setTimeout(onDone, 350) }
 
   return (
@@ -40,32 +52,41 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
         </div>
 
-        {/* Grace headline */}
-        <div style={{ marginBottom:6 }}>
-          <span style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,7vw,3.2rem)', fontWeight:800, color:'var(--gold)', letterSpacing:'-0.02em', lineHeight:1, display:'block', textShadow:'0 0 60px rgba(201,168,76,0.4)' }}>
-            Grace! Grace!! Grace!!!
-          </span>
+        {/* Grace words — stagger in one by one */}
+        <div style={{ marginBottom:6, display:'flex', gap:'0.4em', justifyContent:'center', flexWrap:'wrap' }}>
+          {graceWords.map((w, i) => (
+            <span key={w} style={{
+              fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,6vw,3rem)', fontWeight:800,
+              color:'var(--gold)', letterSpacing:'-0.02em', lineHeight:1,
+              textShadow:'0 0 60px rgba(201,168,76,0.4)',
+              opacity: phase >= 2 ? 1 : 0,
+              transform: phase >= 2 ? 'translateY(0)' : 'translateY(14px)',
+              transition: `opacity 0.5s ease ${i*180}ms, transform 0.5s cubic-bezier(0.22,1,0.36,1) ${i*180}ms`,
+            }}>{w}</span>
+          ))}
         </div>
-        <p style={{ fontSize:12, fontWeight:600, color:'rgba(201,168,76,0.6)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:18 }}>This is my story</p>
+        <p style={{ fontSize:12, fontWeight:600, color:'rgba(201,168,76,0.6)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:18, opacity:phase>=2?1:0, transition:'opacity 0.5s ease 560ms' }}>This is my story</p>
 
         {/* Name */}
-        <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.2rem,3.5vw,1.6rem)', fontWeight:700, color:'white', marginBottom:24, letterSpacing:'-0.01em' }}>
+        <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.2rem,3.5vw,1.6rem)', fontWeight:700, color:'white', marginBottom:24, letterSpacing:'-0.01em', opacity:phase>=3?1:0, transform:phase>=3?'translateY(0)':'translateY(10px)', transition:'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)' }}>
           Welcome back, <span style={{ color:'var(--gold)' }}>{name}</span>
         </h1>
 
         {/* Scripture card */}
-        <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', borderLeft:'3px solid rgba(201,168,76,0.6)', borderRadius:14, padding:'1.2rem 1.4rem', marginBottom:28, textAlign:'left' }}>
+        <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', borderLeft:'3px solid rgba(201,168,76,0.6)', borderRadius:14, padding:'1.2rem 1.4rem', marginBottom:28, textAlign:'left', opacity:phase>=4?1:0, transform:phase>=4?'translateY(0)':'translateY(10px)', transition:'opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1)' }}>
           <p style={{ fontSize:13.5, fontStyle:'italic', color:'rgba(255,255,255,.78)', lineHeight:1.8, marginBottom:10 }}>"{word.verse}"</p>
           <p style={{ fontSize:11, color:'var(--gold)', fontWeight:700, letterSpacing:'.08em', textAlign:'right' }}>— {word.ref}</p>
         </div>
 
         {/* Buttons */}
-        <button onClick={dismiss} className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'14px', fontSize:15, fontWeight:700, marginBottom:12, letterSpacing:'0.02em', boxShadow:'0 0 30px rgba(27,67,50,0.6)' }}>
-          Enter the platform →
-        </button>
-        <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.25)', fontSize:12, fontFamily:'var(--font-body)', letterSpacing:'.04em' }}>
-          Skip for now
-        </button>
+        <div style={{ opacity:phase>=5?1:0, transform:phase>=5?'translateY(0)':'translateY(8px)', transition:'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
+          <button onClick={dismiss} className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'14px', fontSize:15, fontWeight:700, marginBottom:12, letterSpacing:'0.02em', boxShadow:'0 0 30px rgba(27,67,50,0.6)' }}>
+            Enter the platform →
+          </button>
+          <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.25)', fontSize:12, fontFamily:'var(--font-body)', letterSpacing:'.04em' }}>
+            Skip for now
+          </button>
+        </div>
       </div>
     </div>
   )

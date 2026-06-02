@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSession, hasRole } from '@/lib/useSession'
 import { checkSoulFollowUpReminders, requestNotificationPermission } from '@/lib/notifications'
 import dynamic from 'next/dynamic'
@@ -242,6 +242,14 @@ export default function Dashboard() {
   const [showBroadcast, setShowBroadcast] = useState(false)
   const meta = TITLES[page] || {title:page, sub:'', emoji:'📋'}
   const Page = PAGES[page]
+  const [pageKey, setPageKey] = useState(0)
+  const prevPage = useRef(page)
+  useEffect(() => {
+    if (page !== prevPage.current) {
+      prevPage.current = page
+      setPageKey(k => k+1)
+    }
+  }, [page])
 
   function SidebarInner() {
     return (
@@ -343,6 +351,7 @@ export default function Dashboard() {
               You're offline — showing cached data. Changes will sync when reconnected.
             </div>
           )}
+          <div key={pageKey} className="page-enter" style={{minHeight:'100%'}}>
           {Page ? <Page onNavigate={setPage}/> : (
             <div style={{textAlign:'center',padding:'4rem',color:'var(--t-3)'}}>
               <div style={{fontSize:40,marginBottom:16}}>🔧</div>
@@ -350,6 +359,7 @@ export default function Dashboard() {
               <div style={{fontSize:13}}>This section is coming soon.</div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Bottom nav bar — matches guide exactly */}

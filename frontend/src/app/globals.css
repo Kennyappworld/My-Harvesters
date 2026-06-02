@@ -453,3 +453,116 @@ body {
   padding: 8px 16px; font-size: 12.5px; font-weight: 600;
   text-align: center; letter-spacing: .02em;
 }
+
+/* ── Page entrance animation ─────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+@keyframes scaleIn {
+  from { opacity:0; transform:scale(0.94); }
+  to   { opacity:1; transform:scale(1); }
+}
+@keyframes slideRight {
+  from { opacity:0; transform:translateX(-12px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes breathe {
+  0%,100% { opacity:0.35; transform:scale(1); }
+  50%      { opacity:0.55; transform:scale(1.06); }
+}
+@keyframes toastIn {
+  0%   { opacity:0; transform:translateY(20px) scale(0.92); }
+  70%  { transform:translateY(-3px) scale(1.01); }
+  100% { opacity:1; transform:translateY(0) scale(1); }
+}
+@keyframes drawLine {
+  from { stroke-dashoffset: 1000; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes goldPulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(201,168,76,0); }
+  50%      { box-shadow:0 0 0 8px rgba(201,168,76,0.12); }
+}
+@keyframes wordIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.page-enter { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+.page-enter-delay-1 { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 60ms both; }
+.page-enter-delay-2 { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 120ms both; }
+.page-enter-delay-3 { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 180ms both; }
+.page-enter-delay-4 { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 240ms both; }
+.page-enter-delay-5 { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) 300ms both; }
+
+.fade-in  { animation: fadeIn  0.4s ease both; }
+.scale-in { animation: scaleIn 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+.slide-right { animation: slideRight 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+.toast-in { animation: toastIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+.word-in  { animation: wordIn 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Card hover depth ────────────────────────────────────────────────────── */
+.card {
+  transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s cubic-bezier(0.22,1,0.36,1);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(13,31,22,0.10), 0 2px 6px rgba(13,31,22,0.06);
+  border-color: var(--border-md);
+}
+
+/* ── Progress bar animated fill ─────────────────────────────────────────── */
+.progress-fill {
+  height: 100%; border-radius: 100px;
+  transition: width 0.7s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ── Metric tile pulse on load ───────────────────────────────────────────── */
+.metric-tile { animation: fadeUp 0.4s cubic-bezier(0.22,1,0.36,1) both; }
+.metric-tile:nth-child(1) { animation-delay: 0ms; }
+.metric-tile:nth-child(2) { animation-delay: 55ms; }
+.metric-tile:nth-child(3) { animation-delay: 110ms; }
+.metric-tile:nth-child(4) { animation-delay: 165ms; }
+.metric-tile:nth-child(5) { animation-delay: 220ms; }
+.metric-tile:nth-child(6) { animation-delay: 275ms; }
+
+/* ── Nav link active breathe ─────────────────────────────────────────────── */
+.nav-link.active .nav-glow {
+  animation: breathe 4s ease-in-out infinite;
+}
+
+/* ── Gold pulse for CTAs ─────────────────────────────────────────────────── */
+.btn-brand { animation: none; }
+.btn-brand:focus-visible { animation: goldPulse 1.5s ease infinite; }
+
+/* ── Table row entrance ──────────────────────────────────────────────────── */
+.tbl tbody tr {
+  animation: fadeIn 0.3s ease both;
+}
+.tbl tbody tr:nth-child(1)  { animation-delay: 20ms; }
+.tbl tbody tr:nth-child(2)  { animation-delay: 50ms; }
+.tbl tbody tr:nth-child(3)  { animation-delay: 80ms; }
+.tbl tbody tr:nth-child(4)  { animation-delay: 110ms; }
+.tbl tbody tr:nth-child(5)  { animation-delay: 140ms; }
+.tbl tbody tr:nth-child(6)  { animation-delay: 170ms; }
+.tbl tbody tr:nth-child(7)  { animation-delay: 200ms; }
+.tbl tbody tr:nth-child(8)  { animation-delay: 230ms; }
+.tbl tbody tr:nth-child(9)  { animation-delay: 260ms; }
+.tbl tbody tr:nth-child(10) { animation-delay: 290ms; }
+
+/* ── Recharts line draw-on ───────────────────────────────────────────────── */
+.recharts-line-curve {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 1.4s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+.recharts-area-curve {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 1.2s cubic-bezier(0.22,1,0.36,1) forwards;
+}

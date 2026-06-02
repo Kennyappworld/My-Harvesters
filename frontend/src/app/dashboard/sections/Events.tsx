@@ -1,7 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { branches, DEPARTMENTS } from '@/lib/data'
 import { persist, hydrate } from '@/lib/store'
+import { useSession } from '@/lib/useSession'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const SAMPLE_EVENTS = [
   { id:'e1', title:'Sunday Communion Service', branch:'All branches', branchId:'all', date:'Jun 1 2026', time:'8:00 AM', type:'Service', status:'approved', registrations:0, capacity:0, organiser:'Senior Pastor', desc:'Special communion service across all campuses. Members encouraged to come fasting.' },
@@ -13,6 +19,28 @@ const SAMPLE_EVENTS = [
 const TYPE_COL: Record<string,string> = { Service:'#1B4332', Programme:'#10B981', Conference:'#F59E0B', 'Praise Night':'#C9A84C', Seminar:'#3B82F6' }
 
 export default function Events() {
+  const { user } = useSession()
+
+  // Load events from Supabase on mount
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('events').select('*').order('event_date', { ascending: true })
+        if (data && data.length > 0) {
+          const mapped = data.map((e:any) => ({
+            id: e.id, title: e.title, branch: branches.find(b=>b.id===e.branch_id)?.name||e.branch_id,
+            branchId: e.branch_id, date: e.event_date, time: e.event_time,
+            type: e.type, status: e.status, registrations: 0,
+            capacity: e.capacity||0, organiser: e.organiser||'', desc: e.description||'',
+          }))
+          setEvents(mapped)
+          persist('hicc_events' as any, mapped)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
   const [events, setEvents] = useState(() => hydrate('hicc_events' as any, SAMPLE_EVENTS))
   const [tab, setTab] = useState<'all'|'create'>('all')
   const [filter, setFilter] = useState('all')

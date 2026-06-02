@@ -1,7 +1,13 @@
 'use client'
 import { notify } from '@/lib/toast'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { persist, hydrate } from '@/lib/store'
+import { useSession } from '@/lib/useSession'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const SAMPLE_MEETINGS = [
   { id:'mt1', title:'Senior Pastors Council', type:'Leadership', date:'Jun 1 2026', time:'9:00 AM', duration:60, attendees:9, attended:9, meetCode:'', status:'completed', summary:'Communion logistics confirmed for all campuses. Ikeja pastor appointment target date set. London Q2 report reviewed.' },
@@ -12,6 +18,27 @@ const SAMPLE_MEETINGS = [
 const TYPE_COL: Record<string,string> = { Leadership:'var(--brand)', Peer:'var(--teal)', Discipleship:'var(--purple)', Pastoral:'var(--red)' }
 
 export default function Meetings() {
+  const { user } = useSession()
+
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('meetings').select('*').order('meeting_date', { ascending: true })
+        if (data && data.length > 0) {
+          const mapped = data.map((m:any) => ({
+            id: m.id, title: m.title, type: m.type,
+            date: m.meeting_date, time: m.meeting_time,
+            duration: m.duration_mins||60, attendees: 9, attended: 0,
+            meetCode: m.meet_code||'', status: m.status||'upcoming', summary: m.summary||'',
+          }))
+          setMeetings(mapped)
+          persist('hicc_meetings' as any, mapped)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
   const [tab, setTab] = useState<'meetings'|'schedule'|'instant'|'summaries'>('meetings')
   const [meetings, setMeetings] = useState(() => hydrate('hicc_meetings' as any, SAMPLE_MEETINGS))
   const [form, setForm] = useState({ title:'', type:'Leadership', date:'', time:'10:00', duration:'60', agenda:'' })
@@ -36,7 +63,7 @@ export default function Meetings() {
     navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(()=>setCopied(null), 1800); notify.copy() })
   }
 
-  const scheduleNew = (e: React.FormEvent) => {
+  const scheduleNew = async (e: React.FormEvent) => {
     e.preventDefault()
     const code = genMeetCode()
     const newMtg = {
@@ -45,6 +72,14 @@ export default function Meetings() {
       attendees: 9, attended: 0, meetCode: code, status:'upcoming', summary:''
     }
     setMeetings(prev => { const n=[...prev,newMtg]; persist('hicc_meetings' as any, n); return n })
+    if (supabase && user?.id) {
+      await supabase.from('meetings').insert({
+        title: form.title, type: form.type,
+        meeting_date: form.date, meeting_time: form.time,
+        duration_mins: Number(form.duration), meet_code: code,
+        agenda: form.agenda, status: 'upcoming', created_by: user.id,
+      })
+    }
     setScheduled(true)
     setTimeout(()=>{ setScheduled(false); setTab('meetings') }, 2500)
     setForm({ title:'', type:'Leadership', date:'', time:'10:00', duration:'60', agenda:'' })

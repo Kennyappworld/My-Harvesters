@@ -126,3 +126,80 @@ create policy "Workers can read and create announcements" on public.announcement
 alter publication supabase_realtime add table public.chat_messages;
 alter publication supabase_realtime add table public.prayer_requests;
 
+
+-- Events table
+create table if not exists public.events (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  type text default 'Service',
+  branch_id text not null default 'all',
+  event_date date,
+  event_time text,
+  capacity int default 0,
+  description text,
+  organiser text,
+  status text default 'pending',
+  created_by uuid references public.workers(id),
+  created_at timestamptz default now()
+);
+alter table public.events enable row level security;
+create policy "Authenticated workers can manage events"
+  on public.events for all using (auth.uid() is not null);
+
+-- Meetings table
+create table if not exists public.meetings (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  type text default 'Leadership',
+  meeting_date date,
+  meeting_time text,
+  duration_mins int default 60,
+  meet_code text,
+  agenda text,
+  status text default 'upcoming',
+  summary text,
+  created_by uuid references public.workers(id),
+  created_at timestamptz default now()
+);
+alter table public.meetings enable row level security;
+create policy "Authenticated workers can manage meetings"
+  on public.meetings for all using (auth.uid() is not null);
+
+-- Network professional profiles
+create table if not exists public.network_profiles (
+  id uuid primary key default gen_random_uuid(),
+  worker_id uuid references public.workers(id) on delete cascade,
+  profession text,
+  industry text,
+  company text,
+  bio text,
+  passions text[],
+  skills text[],
+  linkedin text,
+  job_status text default 'none',
+  show_phone boolean default false,
+  show_email boolean default true,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+alter table public.network_profiles enable row level security;
+create policy "Authenticated workers can read profiles"
+  on public.network_profiles for select using (auth.uid() is not null);
+create policy "Workers can manage their own profile"
+  on public.network_profiles for all using (auth.uid() = worker_id);
+
+-- Chat channel memberships (persistent cross-device)
+create table if not exists public.channel_members (
+  id uuid primary key default gen_random_uuid(),
+  channel_id text not null,
+  channel_name text not null,
+  worker_id uuid references public.workers(id) on delete cascade,
+  added_by uuid references public.workers(id),
+  added_at timestamptz default now(),
+  unique(channel_id, worker_id)
+);
+alter table public.channel_members enable row level security;
+create policy "Workers can see channel memberships"
+  on public.channel_members for select using (auth.uid() is not null);
+create policy "Workers can manage their own memberships"
+  on public.channel_members for all using (auth.uid() = worker_id or auth.uid() = added_by);

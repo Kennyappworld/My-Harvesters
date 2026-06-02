@@ -1,53 +1,75 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
-// Routes that require authentication
 const PROTECTED = ['/dashboard']
+const PUBLIC_ONLY = ['/login', '/signup']
 
-// Routes that should redirect authenticated users away (login, landing)
-const AUTH_ONLY = ['/login']
-
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Check for session — this is a client-side app so we check a session flag
-  // In production: verify a signed httpOnly session cookie here instead
-  const sessionCookie = req.cookies.get('hicc_session')
-  const isAuthenticated = !!sessionCookie?.value
+  // Static files — always allow
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/icon-') ||
+    pathname.startsWith('/manifest') ||
+    pathname.startsWith('/sw.js') ||
+    pathname.startsWith('/workbox')
+  ) return NextResponse.next()
 
-  // Block direct /dashboard access without session
-  // Since this is a static export app, we redirect to login
-  // The client-side sessionStorage check provides the actual guard
-  if (PROTECTED.some(p => pathname.startsWith(p)) && !isAuthenticated) {
-    // Allow through — client-side guard handles this for static export
-    // In a server-rendered production app, redirect here instead:
-    // return NextResponse.redirect(new URL('/login', req.url))
-    return NextResponse.next()
+  const isProtected = PROTECTED.some(p => pathname.startsWith(p))
+  const isPublicOnly = PUBLIC_ONLY.some(p => pathname.startsWith(p))
+
+  // Check Supabase session via cookie
+  let isAuthenticated = false
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      // Supabase stores session in cookies with sb- prefix
+      const cookieHeader = req.headers.get('cookie') || ''
+      const hasSupabaseSession = cookieHeader.includes('sb-') && cookieHeader.includes('-auth-token')
+      isAuthenticated = hasSupabaseSession
+    } catch {}
   }
 
-  // Security: prevent access to internal Next.js internals
-  if (pathname.startsWith('/_next/server') || pathname.startsWith('/api/internal')) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  // Fallback: check for our session marker cookie
+  if (!isAuthenticated) {
+    const sessionCookie = req.cookies.get('hicc_session')
+    isAuthenticated = !!sessionCookie?.value
   }
 
-  // Add extra security headers not possible via next.config.js
+  // Redirect unauthenticated users away from protected routes
+  if (isProtected && !isAuthenticated) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('from', pathname)
+    return NextResponse.redirect(url)
+  }
+
+  // Redirect authenticated users away from login/signup
+  if (isPublicOnly && isAuthenticated) {
+    const url = req.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
   const response = NextResponse.next()
 
-  // Prevent the app from being loaded in an iframe on ANY domain
+  // Security headers
   response.headers.set('X-Frame-Options', 'DENY')
+  response.headers.set('X-Content-Type-Options', 'nosniff')
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
 
-  // Tell the browser not to cache responses that contain user data
-  if (PROTECTED.some(p => pathname.startsWith(p))) {
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  if (isProtected) {
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
     response.headers.set('Pragma', 'no-cache')
-    response.headers.set('Expires', '0')
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    // Match all paths except static files and images
-    '/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png|manifest.json|sw.js|workbox-.*).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png|manifest.json|sw.js|workbox-.*).*)',],
 }

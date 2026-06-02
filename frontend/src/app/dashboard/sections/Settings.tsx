@@ -1,19 +1,16 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 import { getOrgSettings, saveOrgSettings } from '@/lib/orgSettings'
 import { notify } from '@/lib/toast'
 import { branches, DEPARTMENTS } from '@/lib/data'
 import { QRCodeSVG } from 'qrcode.react'
 
-const INITIAL_USERS = [
-  { id:'u1', name:'Pastor Bolaji Idowu',  email:'pastor@hicc.org',         role:'senior_pastor', branch:'lekki',  dept:'admin',    status:'active',  joined:'Jan 2024' },
-  { id:'u2', name:'Pastor Kanmi Adeyemi', email:'pastor.ikeja@hicc.org',   role:'branch_pastor', branch:'ikeja',  dept:'admin',    status:'active',  joined:'Jan 2024' },
-  { id:'u3', name:'Pastor James Osei',    email:'pastor.london@hicc.org',  role:'branch_pastor', branch:'london', dept:'admin',    status:'active',  joined:'Jan 2024' },
-  { id:'u4', name:'Segun Adeyemi',        email:'segun.a@hicc.org',        role:'unit_head',     branch:'lekki',  dept:'ushering', status:'active',  joined:'Mar 2024' },
-  { id:'u5', name:'Tosin Obi',            email:'tosin.o@hicc.org',        role:'unit_head',     branch:'gbagada',dept:'kids',     status:'active',  joined:'Apr 2024' },
-  { id:'u6', name:'Emeka Nwosu',          email:'emeka.n@hicc.org',        role:'member',        branch:'lekki',  dept:'worship',  status:'pending', joined:'May 2024' },
-  { id:'u7', name:'Ngozi Kalu',           email:'ngozi.k@hicc.org',        role:'member',        branch:'lekki',  dept:'prayer',   status:'pending', joined:'May 2024' },
-]
+const INITIAL_USERS: any[] = []
 
 const ROLE_LABELS: Record<string,string> = { senior_pastor:'Senior Pastor', branch_pastor:'Branch Pastor', unit_head:'Unit Head', member:'Member' }
 const ROLE_COLORS: Record<string,string> = { senior_pastor:'var(--brand)', branch_pastor:'var(--purple)', unit_head:'var(--teal)', member:'var(--green)' }
@@ -185,7 +182,30 @@ function GeneralSettings() {
 
 export default function Settings() {
   const [tab, setTab] = useState<'users'|'branches'|'departments'|'qr'|'general'>('users')
-  const [users, setUsers] = useState(INITIAL_USERS)
+  const [users, setUsers] = useState<any[]>(INITIAL_USERS)
+  const [usersLoading, setUsersLoading] = useState(false)
+
+  // Load real workers from Supabase
+  useEffect(() => {
+    if (!supabase) return
+    setUsersLoading(true)
+    const loadUsers = async () => {
+      try {
+        const { data } = await supabase.from('workers').select('*').order('created_at', { ascending: false })
+        if (data && data.length > 0) {
+          const mapped = data.map((w:any) => ({
+            id: w.id, name: w.full_name, email: w.email,
+            role: w.role || 'worker', branch: w.branch_id,
+            dept: w.department || 'general', status: 'active',
+            joined: new Date(w.created_at).toLocaleDateString('en-US',{month:'short',year:'numeric'}),
+          }))
+          setUsers(mapped)
+        }
+      } catch {}
+      setUsersLoading(false)
+    }
+    loadUsers()
+  }, [])
   const [depts, setDepts] = useState(DEPARTMENTS)
   const [branchList, setBranchList] = useState(branches)
   const [showAddUser, setShowAddUser] = useState(false)
@@ -210,8 +230,15 @@ export default function Settings() {
     setUserForm({ name:'', email:'', role:'member', branch:'lekki', dept:'ushering' }); setShowAddUser(false)
   }
 
-  const approveUser = (id: string) => setUsers(prev => prev.map(u => u.id===id ? {...u,status:'active'} : u))
-  const deleteUser  = (id: string) => { setUsers(prev => prev.filter(u => u.id !== id)); setDeleteConfirm(null) }
+  const approveUser = async (id: string) => {
+    setUsers(prev => prev.map(u => u.id===id ? {...u,status:'active'} : u))
+    if (supabase) await supabase.from('workers').update({ role:'worker' }).eq('id', id)
+  }
+  const deleteUser = async (id: string) => {
+    setUsers(prev => prev.filter(u => u.id !== id))
+    setDeleteConfirm(null)
+    if (supabase) await supabase.from('workers').delete().eq('id', id)
+  }
 
   const addDept = (e: React.FormEvent) => {
     e.preventDefault()

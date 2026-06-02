@@ -1,6 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { branches } from '@/lib/data'
+import { persist, hydrate } from '@/lib/store'
+import { useSession } from '@/lib/useSession'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const FOLLOW_UP_SCHEDULE = [
   { interval: '2 weeks',  label: 'Wk 2',  message: 'Personalised welcome + branch info', status: 'sent' },
@@ -27,18 +34,50 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
 }
 
 export default function SoulTracker({ onNavigate }: { onNavigate: (p: string) => void }) {
+  const { user } = useSession()
   const [tab, setTab] = useState<'tracker'|'capture'|'schedule'>('tracker')
-  const [souls, setSouls] = useState(SAMPLE_SOULS)
+  const [souls, setSouls] = useState(() => hydrate('hicc_souls' as any, SAMPLE_SOULS))
+
+  // Load real souls from Supabase on mount
+  useEffect(() => {
+    if (!supabase) return
+    const loadSouls = async () => {
+      try {
+        const { data } = await supabase.from('soul_records').select('*').order('created_at', { ascending: false }).limit(100)
+        if (data && data.length > 0) {
+          const mapped = data.map((s:any) => ({
+            id: s.id, name: `${s.first_name} ${s.last_name}`,
+            branch: branches.find(b=>b.id===s.branch_id)?.name || s.branch_id,
+            date: new Date(s.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}),
+            status: s.follow_up_stage===1?'active':s.follow_up_stage===2?'wk2sent':s.follow_up_stage===3?'wk4sent':'complete',
+            step: s.follow_up_stage, phone: s.phone||'—', feedback: false, prayer: false,
+          }))
+          setSouls(mapped)
+          persist('hicc_souls' as any, mapped)
+        }
+      } catch {}
+    }
+    loadSouls()
+  }, [])
   const [filterBranch, setFilterBranch] = useState('All')
   const [form, setForm] = useState({ name:'', phone:'', email:'', branch:'Lekki HQ', date: new Date().toISOString().slice(0,10), notes:'' })
   const [saved, setSaved] = useState(false)
 
   const filtered = filterBranch === 'All' ? souls : souls.filter(s => s.branch === filterBranch)
 
-  const handleCapture = (e: React.FormEvent) => {
+  const handleCapture = async (e: React.FormEvent) => {
     e.preventDefault()
+    const nameParts = form.name.trim().split(' ')
+    const first = nameParts[0]; const last = nameParts.slice(1).join(' ') || '—'
     const newSoul = { id:`s${Date.now()}`, name:form.name, branch:form.branch, date:form.date, status:'active', step:1, phone:form.phone, feedback:false, prayer:false }
-    setSouls(prev => [newSoul, ...prev])
+    setSouls((prev:any[]) => { const n=[newSoul,...prev]; persist('hicc_souls' as any, n); return n })
+    if (supabase && user?.id) {
+      await supabase.from('soul_records').insert({
+        first_name: first, last_name: last, phone: form.phone, email: form.email,
+        branch_id: branches.find(b=>b.name===form.branch)?.id || 'lekki',
+        led_by: user.id, service_date: form.date, follow_up_stage: 1, notes: form.notes,
+      })
+    }
     setSaved(true)
     setTimeout(() => { setSaved(false); setTab('tracker') }, 2000)
     setForm({ name:'', phone:'', email:'', branch:'Lekki HQ', date:new Date().toISOString().slice(0,10), notes:'' })

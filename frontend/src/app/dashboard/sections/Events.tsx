@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { branches, DEPARTMENTS } from '@/lib/data'
+import { persist, hydrate } from '@/lib/store'
 
 const SAMPLE_EVENTS = [
   { id:'e1', title:'Sunday Communion Service', branch:'All branches', branchId:'all', date:'Jun 1 2026', time:'8:00 AM', type:'Service', status:'approved', registrations:0, capacity:0, organiser:'Senior Pastor', desc:'Special communion service across all campuses. Members encouraged to come fasting.' },
@@ -12,7 +13,7 @@ const SAMPLE_EVENTS = [
 const TYPE_COL: Record<string,string> = { Service:'#1B4332', Programme:'#10B981', Conference:'#F59E0B', 'Praise Night':'#C9A84C', Seminar:'#3B82F6' }
 
 export default function Events() {
-  const [events, setEvents] = useState(SAMPLE_EVENTS)
+  const [events, setEvents] = useState(() => hydrate('hicc_events' as any, SAMPLE_EVENTS))
   const [tab, setTab] = useState<'all'|'create'>('all')
   const [filter, setFilter] = useState('all')
   const [form, setForm] = useState({ title:'', type:'Service', branch:'all', date:'', time:'09:00', capacity:'', desc:'', organiser:'' })

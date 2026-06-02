@@ -1,6 +1,7 @@
 'use client'
 import { notify } from '@/lib/toast'
 import { useState } from 'react'
+import { persist, hydrate } from '@/lib/store'
 
 const SAMPLE_MEETINGS = [
   { id:'mt1', title:'Senior Pastors Council', type:'Leadership', date:'Jun 1 2026', time:'9:00 AM', duration:60, attendees:9, attended:9, meetCode:'', status:'completed', summary:'Communion logistics confirmed for all campuses. Ikeja pastor appointment target date set. London Q2 report reviewed.' },
@@ -12,7 +13,7 @@ const TYPE_COL: Record<string,string> = { Leadership:'var(--brand)', Peer:'var(-
 
 export default function Meetings() {
   const [tab, setTab] = useState<'meetings'|'schedule'|'instant'|'summaries'>('meetings')
-  const [meetings, setMeetings] = useState(SAMPLE_MEETINGS)
+  const [meetings, setMeetings] = useState(() => hydrate('hicc_meetings' as any, SAMPLE_MEETINGS))
   const [form, setForm] = useState({ title:'', type:'Leadership', date:'', time:'10:00', duration:'60', agenda:'' })
   const [scheduled, setScheduled] = useState(false)
   const [copied, setCopied] = useState<string|null>(null)
@@ -43,7 +44,7 @@ export default function Meetings() {
       date: form.date, time: form.time, duration: Number(form.duration),
       attendees: 9, attended: 0, meetCode: code, status:'upcoming', summary:''
     }
-    setMeetings(prev => [...prev, newMtg])
+    setMeetings(prev => { const n=[...prev,newMtg]; persist('hicc_meetings' as any, n); return n })
     setScheduled(true)
     setTimeout(()=>{ setScheduled(false); setTab('meetings') }, 2500)
     setForm({ title:'', type:'Leadership', date:'', time:'10:00', duration:'60', agenda:'' })

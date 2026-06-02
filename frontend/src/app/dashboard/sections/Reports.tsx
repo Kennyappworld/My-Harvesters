@@ -1,11 +1,36 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { branches, memberGrowthMonthly, retentionCohorts, weeklyAttendance } from '@/lib/data'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const MONTHS = ['January','February','March','April','May']
 
 export default function Reports() {
   const [tab, setTab] = useState<'monthly'|'generate'>('monthly')
+  const [liveStats, setLiveStats] = useState<{totalWorkers:number; totalSouls:number; totalAttendance:number} | null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        const [{ count: workers }, { count: souls }, { data: attendance }] = await Promise.all([
+          supabase.from('workers').select('*', { count:'exact', head:true }),
+          supabase.from('soul_records').select('*', { count:'exact', head:true }),
+          supabase.from('attendance_logs').select('count').limit(1),
+        ])
+        setLiveStats({
+          totalWorkers: workers || 0,
+          totalSouls: souls || 0,
+          totalAttendance: 0,
+        })
+      } catch {}
+    }
+    load()
+  }, [])
   const [selectedBranch, setSelectedBranch] = useState('all')
   const [selectedMonth, setSelectedMonth] = useState('May')
   const [generated, setGenerated] = useState(false)
@@ -55,6 +80,14 @@ export default function Reports() {
       </div>
 
       {generated && <div style={{padding:'10px 16px',background:'var(--green-lt)',borderRadius:'var(--r)',fontSize:13,color:'var(--green)',marginBottom:14,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>✓ CSV downloaded to your device — open in Excel or Google Sheets.</div>}
+
+      {liveStats && (
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16,padding:'14px 16px',background:'var(--brand-soft)',borderRadius:12,border:'1px solid rgba(27,67,50,0.12)'}}>
+          <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:'var(--brand)',fontFamily:'var(--font-display)'}}>{liveStats.totalWorkers}</div><div style={{fontSize:11,color:'var(--t-3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'.04em',marginTop:3}}>Live workers in DB</div></div>
+          <div style={{textAlign:'center',borderLeft:'0.5px solid var(--border)',borderRight:'0.5px solid var(--border)'}}><div style={{fontSize:22,fontWeight:800,color:'var(--brand)',fontFamily:'var(--font-display)'}}>{liveStats.totalSouls}</div><div style={{fontSize:11,color:'var(--t-3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'.04em',marginTop:3}}>Souls recorded</div></div>
+          <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:'var(--brand)',fontFamily:'var(--font-display)'}}>Live</div><div style={{fontSize:11,color:'var(--t-3)',fontWeight:600,textTransform:'uppercase',letterSpacing:'.04em',marginTop:3}}>Supabase connected</div></div>
+        </div>
+      )}
 
       <div className="tabs" style={{marginBottom:16}}>
         {([['monthly','Monthly report'],['generate','Branch summary']] as const).map(([k,l])=>(

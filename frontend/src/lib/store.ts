@@ -13,6 +13,7 @@ type StorageKey =
   | 'hicc_meetings'
   | 'hicc_network_profiles'
   | 'hicc_network_opps'
+  | 'hicc_verif_members'
   | 'hicc_attendance'
   | 'hicc_devotional_plans'
   | 'hicc_chat_channels_v2'
@@ -20,8 +21,6 @@ type StorageKey =
   | 'hicc_wa_numbers'
   | 'hicc_members'
   | 'hicc_souls'
-  | 'hicc_events'
-  | 'hicc_meetings'
 
 export function persist<T>(key: StorageKey, data: T): void {
   if (typeof window === 'undefined') return

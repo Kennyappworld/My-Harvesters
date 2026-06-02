@@ -1,5 +1,10 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 // ------------------------------------------------------------------
 // Types
@@ -23,7 +28,50 @@ type Insight = {
 }
 
 // ------------------------------------------------------------------
-// Simulated pastoral intelligence data
+// Pastoral intelligence — blends real Supabase data with smart defaults
+// ------------------------------------------------------------------
+async function fetchRealAlerts(): Promise<Alert[]> {
+  if (!supabase) return []
+  const alerts: Alert[] = []
+  try {
+    // Check for recently registered workers (last 7 days)
+    const weekAgo = new Date(Date.now() - 7*24*60*60*1000).toISOString()
+    const { count: newWorkers } = await supabase
+      .from('workers').select('*', { count:'exact', head:true })
+      .gte('created_at', weekAgo)
+    if (newWorkers && newWorkers > 0) {
+      alerts.push({ id:'live_1', urgency:'low', category:'growth', branch:'All branches',
+        headline: `${newWorkers} new worker${newWorkers>1?'s':''} registered this week`,
+        detail: `${newWorkers} worker account${newWorkers>1?'s':''} created in the last 7 days. Check Settings → Users to review and assign roles.`,
+        action: 'Review in Settings', count: newWorkers })
+    }
+    // Check for soul records needing follow-up
+    const { count: souls } = await supabase
+      .from('soul_records').select('*', { count:'exact', head:true })
+      .eq('follow_up_stage', 1)
+    if (souls && souls > 0) {
+      alerts.push({ id:'live_2', urgency:'medium', category:'pastoral', branch:'All branches',
+        headline: `${souls} new soul${souls>1?'s':''} awaiting first follow-up`,
+        detail: `${souls} convert${souls>1?'s':''} recorded at stage 1 — the 2-week welcome message hasn't been marked sent yet.`,
+        action: 'Open Soul Tracker', count: souls })
+    }
+    // Check prayer wall activity
+    const dayAgo = new Date(Date.now() - 24*60*60*1000).toISOString()
+    const { count: prayers } = await supabase
+      .from('prayer_requests').select('*', { count:'exact', head:true })
+      .gte('created_at', dayAgo)
+    if (prayers && prayers > 2) {
+      alerts.push({ id:'live_3', urgency:'low', category:'pastoral', branch:'All branches',
+        headline: `${prayers} prayer requests in the last 24 hours`,
+        detail: 'Workers are actively using the prayer wall. Consider acknowledging them in the next service or sending an encouragement broadcast.',
+        action: 'View Prayer Wall', count: prayers })
+    }
+  } catch {}
+  return alerts
+}
+
+// ------------------------------------------------------------------
+// Simulated pastoral intelligence data (fallback)
 // ------------------------------------------------------------------
 const ALERTS: Alert[] = [
   {
@@ -107,6 +155,13 @@ export default function PastoralPulse() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all')
   const [dismissed, setDismissed] = useState<string[]>([])
+  const [liveAlerts, setLiveAlerts] = useState<Alert[]>([])
+
+  useEffect(() => {
+    fetchRealAlerts().then(alerts => { if (alerts.length > 0) setLiveAlerts(alerts) })
+  }, [])
+
+  const ALL_ALERTS = [...liveAlerts, ...ALERTS]
 
   // Simulate async data load — mimics a real API call
   useEffect(() => {
@@ -114,12 +169,12 @@ export default function PastoralPulse() {
     return () => clearTimeout(t)
   }, [])
 
-  const visible = ALERTS
+  const visible = ALL_ALERTS
     .filter(a => !dismissed.includes(a.id))
     .filter(a => filter === 'all' || a.urgency === filter)
 
-  const highCount  = ALERTS.filter(a => a.urgency === 'high'   && !dismissed.includes(a.id)).length
-  const medCount   = ALERTS.filter(a => a.urgency === 'medium' && !dismissed.includes(a.id)).length
+  const highCount  = ALL_ALERTS.filter(a => a.urgency === 'high'   && !dismissed.includes(a.id)).length
+  const medCount   = ALL_ALERTS.filter(a => a.urgency === 'medium' && !dismissed.includes(a.id)).length
 
   return (
     <div>
@@ -165,7 +220,7 @@ export default function PastoralPulse() {
       <div className="tabs" style={{ marginBottom: 14 }}>
         {(['all', 'high', 'medium', 'low'] as const).map(f => (
           <button key={f} className={`tab ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-            {f === 'all' ? `All (${ALERTS.filter(a => !dismissed.includes(a.id)).length})` : URGENCY_LABELS[f]}
+            {f === 'all' ? `All (${ALL_ALERTS.filter(a => !dismissed.includes(a.id)).length})` : URGENCY_LABELS[f]}
           </button>
         ))}
       </div>

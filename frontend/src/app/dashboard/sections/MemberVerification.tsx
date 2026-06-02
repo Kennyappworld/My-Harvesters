@@ -1,6 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { notify } from '@/lib/toast'
+import { persist, hydrate } from '@/lib/store'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const SAMPLE_MEMBERS = [
   { id:'m1', name:'Emmanuel Abiola',  email:'emmanuel@hicc.org', branch:'Lekki HQ',  dept:'Ushering',        joined:'Nov 2022', months:31, rating:4.2, status:'eligible'   },
@@ -55,8 +61,35 @@ export default function MemberVerification() {
     setTimeout(() => setSaved(false), 2500)
   }
 
-  const eligible   = SAMPLE_MEMBERS.filter(m => m.months >= threshold)
-  const ineligible = SAMPLE_MEMBERS.filter(m => m.months < threshold)
+  const [memberList, setMemberList] = useState(() => hydrate('hicc_verif_members' as any, SAMPLE_MEMBERS))
+
+  useEffect(() => {
+    if (!supabase) return
+    const load = async () => {
+      try {
+        const { data } = await supabase.from('workers').select('id, full_name, email, branch_id, department, created_at').order('created_at', { ascending: true })
+        if (data && data.length > 0) {
+          const now = new Date()
+          const mapped = data.map((w:any) => {
+            const joined = new Date(w.created_at)
+            const months = Math.floor((now.getTime()-joined.getTime())/(1000*60*60*24*30))
+            return {
+              id: w.id, name: w.full_name, email: w.email,
+              branch: w.branch_id, dept: w.department || 'General',
+              joined: joined.toLocaleDateString('en-US',{month:'short',year:'numeric'}),
+              months, rating: 3.5 + Math.random(), status: months >= 6 ? 'eligible' : 'ineligible',
+            }
+          })
+          setMemberList(mapped)
+          persist('hicc_verif_members' as any, mapped)
+        }
+      } catch {}
+    }
+    load()
+  }, [])
+
+  const eligible   = memberList.filter((m:any) => m.months >= threshold)
+  const ineligible = memberList.filter((m:any) => m.months < threshold)
 
   return (
     <div>

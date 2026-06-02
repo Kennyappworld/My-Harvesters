@@ -266,6 +266,9 @@ export default function LoginPage() {
   const afterAuth = useCallback((name: string, userEmail: string) => {
     sessionStorage.setItem('hicc_user', JSON.stringify({ email: userEmail, name, authenticated: true }))
     sessionStorage.setItem('hicc_biometric_email', userEmail)
+    // Set explicit session cookie so middleware allows /dashboard immediately
+    // SameSite=Lax, no expiry = session cookie (clears on browser close)
+    document.cookie = `hicc_session=1; path=/; SameSite=Lax`
     // Only show splash once every 8 hours — otherwise go straight to dashboard
     const lastSplash = Number(localStorage.getItem('hicc_splash_ts') || '0')
     const eightHours = 8 * 60 * 60 * 1000
@@ -436,12 +439,21 @@ export default function LoginPage() {
       <div style={{ position:'absolute', bottom:'15%', right:'8%', width:240, height:240, borderRadius:'50%', background:'radial-gradient(circle, rgba(201,168,76,0.14) 0%, transparent 70%)', filter:'blur(50px)', pointerEvents:'none' }}/>
 
       {/* Logo mark */}
-      <div style={{ marginBottom:28, textAlign:'center' }}>
-        <div style={{ width:52, height:52, background:'var(--grad-brand)', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px', boxShadow:'var(--sh-brand)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      <div style={{ marginBottom:32, textAlign:'center' }}>
+        <div style={{ width:60, height:60, background:'var(--grad-brand)', borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px', boxShadow:'0 0 0 6px rgba(27,67,50,0.25), var(--sh-brand)' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" width="26" height="26"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
         </div>
-        <div style={{ fontSize:10.5, fontWeight:800, fontFamily:'var(--font-display)', color:'white', letterSpacing:'0.01em', textTransform:'uppercase' }}>Harvesters International Christian Centre</div>
-        <div style={{ fontSize:10, color:'var(--gold)', letterSpacing:'.08em', fontWeight:600, textTransform:'uppercase', marginTop:2 }}>Workforce Community</div>
+        {/* Church name — two lines for impact */}
+        <div style={{ fontSize:15, fontWeight:900, fontFamily:'var(--font-display)', color:'white', letterSpacing:'0.06em', textTransform:'uppercase', lineHeight:1.25 }}>
+          Harvesters
+        </div>
+        <div style={{ fontSize:11, fontWeight:700, fontFamily:'var(--font-display)', color:'rgba(255,255,255,0.55)', letterSpacing:'0.12em', textTransform:'uppercase', marginTop:1 }}>
+          International Christian Centre
+        </div>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:5, marginTop:8, padding:'3px 10px', background:'rgba(201,168,76,0.12)', border:'1px solid rgba(201,168,76,0.25)', borderRadius:20 }}>
+          <div style={{ width:5, height:5, borderRadius:'50%', background:'var(--gold)' }}/>
+          <span style={{ fontSize:9.5, color:'var(--gold)', letterSpacing:'.1em', fontWeight:700, textTransform:'uppercase' }}>Workforce Community</span>
+        </div>
       </div>
 
       {/* Login card */}

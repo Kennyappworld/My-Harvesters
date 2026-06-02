@@ -5,13 +5,62 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 const DAILY_WORDS = [
-  { verse: 'For where two or three gather in my name, there am I with them.', ref: 'Matthew 18:20' },
-  { verse: 'Let us not give up meeting together, but let us encourage one another.', ref: 'Hebrews 10:25' },
-  { verse: "How good and pleasant it is when God's people live together in unity!", ref: 'Psalm 133:1' },
-  { verse: 'The Lord bless you and keep you; the Lord make his face shine on you.', ref: 'Numbers 6:24–25' },
-  { verse: 'I can do all things through Christ who strengthens me.', ref: 'Philippians 4:13' },
-  { verse: 'Trust in the Lord with all your heart and lean not on your own understanding.', ref: 'Proverbs 3:5' },
-  { verse: 'Be strong and courageous. Do not be afraid; do not be discouraged.', ref: 'Joshua 1:9' },
+  {
+    verse: 'The Lord your God is in your midst — a mighty one who will save. He will rejoice over you with gladness; He will quiet you by His love; He will exult over you with loud singing.',
+    ref: 'Zephaniah 3:17 (ESV)',
+  },
+  {
+    verse: 'Can a mother forget the baby at her breast and have no compassion on the child she has borne? Though she may forget, I will not forget you! See, I have engraved you on the palms of my hands.',
+    ref: 'Isaiah 49:15–16 (NIV)',
+  },
+  {
+    verse: 'The LORD appeared to us in the past, saying: I have loved you with an everlasting love; I have drawn you with unfailing kindness.',
+    ref: 'Jeremiah 31:3 (NIV)',
+  },
+  {
+    verse: 'For I am convinced that neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.',
+    ref: 'Romans 8:38–39 (NIV)',
+  },
+  {
+    verse: 'He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who hope in the LORD will renew their strength. They will soar on wings like eagles.',
+    ref: 'Isaiah 40:29–31 (NIV)',
+  },
+  {
+    verse: 'The thief comes only to steal and kill and destroy. I came that they may have life and have it abundantly.',
+    ref: 'John 10:10 (ESV)',
+  },
+  {
+    verse: 'Fear not, for I have redeemed you; I have called you by name, you are mine. When you pass through the waters, I will be with you; and through the rivers, they shall not overwhelm you.',
+    ref: 'Isaiah 43:1–2 (ESV)',
+  },
+  {
+    verse: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us — to him be glory.',
+    ref: 'Ephesians 3:20–21 (NIV)',
+  },
+  {
+    verse: 'Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls.',
+    ref: 'Matthew 11:28–29 (NIV)',
+  },
+  {
+    verse: 'For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.',
+    ref: 'Ephesians 2:10 (NIV)',
+  },
+  {
+    verse: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.',
+    ref: 'Psalm 23:1–3 (ESV)',
+  },
+  {
+    verse: 'But you are a chosen people, a royal priesthood, a holy nation, God's special possession, that you may declare the praises of him who called you out of darkness into his wonderful light.',
+    ref: '1 Peter 2:9 (NIV)',
+  },
+  {
+    verse: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.',
+    ref: 'Philippians 4:6–7 (NIV)',
+  },
+  {
+    verse: 'For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, plans to give you hope and a future.',
+    ref: 'Jeremiah 29:11 (NIV)',
+  },
 ]
 
 // Supabase client — gracefully falls back if env vars not yet set

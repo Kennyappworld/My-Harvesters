@@ -416,3 +416,25 @@ body {
   .hide-mobile { display:none !important; }
   .card-p { padding: 12px 14px !important; }
 }
+
+/* ── Chat bubbles ─────────────────────────────────────────────────────────── */
+.bubble-mine {
+  background: var(--brand);
+  color: #fff;
+  padding: 9px 14px;
+  border-radius: 18px 18px 4px 18px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  box-shadow: 0 2px 8px rgba(27,67,50,0.3);
+}
+.bubble-them {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.92);
+  padding: 9px 14px;
+  border-radius: 18px 18px 18px 4px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  border: 1px solid rgba(255,255,255,0.1);
+}

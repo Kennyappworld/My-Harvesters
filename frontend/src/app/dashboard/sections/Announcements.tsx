@@ -1,6 +1,12 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { announcements, branches, DEPARTMENTS } from '@/lib/data'
+import { persist, hydrate } from '@/lib/store'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 export default function Announcements() {
   const [items, setItems] = useState(announcements)
@@ -8,10 +14,7 @@ export default function Announcements() {
   const [filter, setFilter] = useState('all')
   const [form, setForm] = useState({title:'',body:'',scope:'all',targetBranch:'all',targetDept:'all',channel:'platform'})
   const [saved, setSaved] = useState(false)
-  const [waNumbers, setWaNumbers] = useState<Record<string,string>>({
-    lekki:'+234 810 000 0001', gbagada:'+234 810 000 0002', ikeja:'+234 810 000 0003',
-    anthony:'', abuja:'+234 810 000 0005', portharcourt:'', ibadan:'', london:'+44 798 000 0008', houston:'+1 713 000 0009'
-  })
+  const [waNumbers, setWaNumbers] = useState<Record<string,string>>(() => hydrate('hicc_wa_numbers' as any, {}))
 
   const filtered = filter==='all'?items:filter==='pending'?items.filter(a=>a.status==='pending'):items.filter(a=>a.scope===filter)
 
@@ -183,7 +186,18 @@ export default function Announcements() {
                 <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5,letterSpacing:'0.05em',textTransform:'uppercase'}}>WhatsApp Business number</label>
                 <div style={{display:'flex',gap:8}}>
                   <input className="input" value={waNumbers[b.id]||''} onChange={e=>setWaNumbers(prev=>({...prev,[b.id]:e.target.value}))} placeholder={b.country==='NG'?'+234 800 000 0000':b.country==='UK'?'+44 700 000 0000':'+1 000 000 0000'} style={{fontSize:12,fontFamily:'var(--font-mono)'}}/>
-                  <button className="btn btn-sm" style={{flexShrink:0,background:waNumbers[b.id]?'var(--green-lt)':'var(--s-3)',color:waNumbers[b.id]?'var(--green)':'var(--t-3)',border:`1px solid ${waNumbers[b.id]?'rgba(16,185,129,0.3)':'var(--border)'}`,fontSize:11}}>
+                  <button onClick={async () => {
+                    persist('hicc_wa_numbers' as any, waNumbers)
+                    if (supabase) {
+                      await supabase.from('announcements').upsert({
+                        id: `wa_number_${b.id}`,
+                        title: `WhatsApp number: ${b.name}`,
+                        body: waNumbers[b.id] || '',
+                        scope: 'admin',
+                        branch_id: b.id,
+                      })
+                    }
+                  }} className="btn btn-sm" style={{flexShrink:0,background:waNumbers[b.id]?'var(--green-lt)':'var(--s-3)',color:waNumbers[b.id]?'var(--green)':'var(--t-3)',border:`1px solid ${waNumbers[b.id]?'rgba(16,185,129,0.3)':'var(--border)'}`,fontSize:11}}>
                     {waNumbers[b.id]?'✓ Saved':'Save'}
                   </button>
                 </div>

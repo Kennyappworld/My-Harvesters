@@ -82,6 +82,10 @@ export default function Volunteer({ onNavigate }: { onNavigate:(p:string)=>void 
         <div style={{ display:'flex', gap:8 }}>
           {pending.length > 0 && <span className="chip chip-amber">{pending.length} pending applications</span>}
           <button className="btn btn-brand btn-sm" onClick={()=>setShowNewSlot(v=>!v)}>+ Add slot</button>
+          <button className="btn btn-sm" title="Generate QR signup code" onClick={()=>onNavigate('settings')}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M14 17h3M17 14v3h3"/></svg>
+            QR Signup
+          </button>
         </div>
       </div>
 

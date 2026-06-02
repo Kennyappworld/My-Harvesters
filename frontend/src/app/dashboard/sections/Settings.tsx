@@ -371,6 +371,8 @@ export default function Settings() {
   const [showAddBranch, setShowAddBranch] = useState(false)
   const [userFilter, setUserFilter] = useState('all')
   const [qrBranch, setQrBranch] = useState('lekki')
+  const [qrDept,   setQrDept]   = useState('')
+  const [qrMode,   setQrMode]   = useState<'branch'|'dept'|'combined'>('branch')
   const [deleteConfirm, setDeleteConfirm] = useState<string|null>(null)
   const [branchDeleteConfirm, setBranchDeleteConfirm] = useState<string|null>(null)
 
@@ -415,7 +417,12 @@ export default function Settings() {
     setBranchList(prev => prev.filter(b => b.id !== id)); setBranchDeleteConfirm(null)
   }
 
-  const qrUrl = `https://my-harvesters.vercel.app/signup?branch=${qrBranch}&ref=${Date.now().toString(36)}`
+  const BASE = 'https://my-harvesters.vercel.app/signup'
+  const qrUrl = qrMode === 'branch'
+    ? `${BASE}?branch=${qrBranch}`
+    : qrMode === 'dept'
+    ? `${BASE}?dept=${qrDept}`
+    : `${BASE}?branch=${qrBranch}&dept=${qrDept}`
 
   return (
     <div>
@@ -631,43 +638,170 @@ export default function Settings() {
       {tab === 'qr' && (
         <div>
           <div style={{ fontWeight:700, fontSize:14, marginBottom:4 }}>QR Code Signup</div>
-          <div style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:18, lineHeight:1.65, maxWidth:520 }}>
-            Print this QR code and place it at the entrance of each branch. Members and new converts scan it to register, selecting their name, phone, department, and unit. Data flows directly into the platform.
+          <div style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:18, lineHeight:1.65, maxWidth:580 }}>
+            Generate a QR code for any branch, department, or a specific branch+department combination. Members and new converts scan it to self-register — their branch and unit are pre-filled automatically.
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, maxWidth:640 }}>
-            <div className="card card-p">
-              <div style={{ fontWeight:700, fontSize:13, marginBottom:12 }}>Select branch</div>
-              {branchList.map(b => (
-                <div key={b.id} onClick={()=>setQrBranch(b.id)} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 0', borderBottom:'0.5px solid var(--border)', cursor:'pointer' }}>
-                  <div style={{ width:18, height:18, borderRadius:'50%', border:`2px solid ${qrBranch===b.id?b.color:'var(--border-md)'}`, background: qrBranch===b.id?b.color:'transparent', transition:'all .15s', flexShrink:0 }}/>
-                  <span style={{ fontSize:13, fontWeight: qrBranch===b.id?700:400, color: qrBranch===b.id?'var(--t-1)':'var(--t-2)' }}>{b.name}</span>
+
+          {/* Mode selector */}
+          <div style={{ display:'flex', gap:8, marginBottom:20, flexWrap:'wrap' }}>
+            {([['branch','🏛 By Branch'],['dept','📂 By Department'],['combined','🎯 Branch + Department']] as const).map(([k,l]) => (
+              <button key={k} className={`btn btn-sm ${qrMode===k?'btn-brand':''}`} onClick={()=>setQrMode(k)}>{l}</button>
+            ))}
+          </div>
+
+          <div style={{ display:'grid', gridTemplateColumns:'minmax(200px,1fr) minmax(200px,1fr)', gap:16, maxWidth:700 }}>
+
+            {/* LEFT — selector */}
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+
+              {/* Branch selector — shown for branch and combined modes */}
+              {(qrMode==='branch' || qrMode==='combined') && (
+                <div className="card card-p">
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Select branch</div>
+                  {branchList.map(b => (
+                    <div key={b.id} onClick={()=>setQrBranch(b.id)} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', borderBottom:'0.5px solid var(--border)', cursor:'pointer' }}>
+                      <div style={{ width:14, height:14, borderRadius:'50%', border:`2px solid ${qrBranch===b.id?b.color:'var(--border-md)'}`, background:qrBranch===b.id?b.color:'transparent', transition:'all .15s', flexShrink:0 }}/>
+                      <span style={{ fontSize:12.5, fontWeight:qrBranch===b.id?700:400, color:qrBranch===b.id?'var(--t-1)':'var(--t-2)' }}>{b.name}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+
+              {/* Dept selector — shown for dept and combined modes */}
+              {(qrMode==='dept' || qrMode==='combined') && (
+                <div className="card card-p">
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:10 }}>Select department</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
+                    {DEPARTMENTS.map(d => (
+                      <div key={d.id} onClick={()=>setQrDept(d.id)} style={{ display:'flex', alignItems:'center', gap:10, padding:'7px 10px', borderRadius:'var(--r)', cursor:'pointer', background:qrDept===d.id?'var(--brand-lt)':'transparent', border:`1px solid ${qrDept===d.id?'var(--brand)':'transparent'}`, transition:'all .12s' }}>
+                        <span style={{ fontSize:15 }}>{d.icon}</span>
+                        <span style={{ fontSize:12.5, fontWeight:qrDept===d.id?700:400, color:qrDept===d.id?'var(--brand)':'var(--t-2)' }}>{d.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="card card-p" style={{ textAlign:'center' }}>
-              <div style={{ fontWeight:700, fontSize:13, marginBottom:12 }}>{branchList.find(b=>b.id===qrBranch)?.name}</div>
-              <div style={{ display:'flex', justifyContent:'center', marginBottom:14 }}>
-                <QRCodeWidget value={qrUrl} size={160}/>
+            {/* RIGHT — QR display */}
+            <div className="card card-p" style={{ textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center' }}>
+              {/* Label */}
+              <div style={{ marginBottom:14, textAlign:'center' }}>
+                <div style={{ fontWeight:800, fontSize:14, marginBottom:3 }}>
+                  {qrMode==='branch' && (branchList.find(b=>b.id===qrBranch)?.name || 'Branch')}
+                  {qrMode==='dept'   && (DEPARTMENTS.find(d=>d.id===qrDept)?.icon + ' ' + (DEPARTMENTS.find(d=>d.id===qrDept)?.name || 'Select a department'))}
+                  {qrMode==='combined' && (branchList.find(b=>b.id===qrBranch)?.name + ' · ' + (DEPARTMENTS.find(d=>d.id===qrDept)?.name || 'Select department'))}
+                </div>
+                <div style={{ fontSize:11, color:'var(--t-3)' }}>
+                  {qrMode==='branch' && 'Scan to join this branch — pick your unit on form'}
+                  {qrMode==='dept'   && 'Scan to join this department — pick your branch on form'}
+                  {qrMode==='combined' && 'Scan to join this exact branch & department'}
+                </div>
               </div>
-              <div style={{ fontSize:10.5, color:'var(--t-3)', marginBottom:14, wordBreak:'break-all', fontFamily:'var(--font-mono)' }}>{qrUrl}</div>
-              <div style={{ display:'flex', gap:8, flexDirection:'column' }}>
-                <button className="btn btn-brand btn-sm" style={{ justifyContent:'center' }} onClick={()=>window.print()}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                  Print QR code
-                </button>
-                <button className="btn btn-sm" style={{ justifyContent:'center' }} onClick={()=>navigator.clipboard.writeText(qrUrl)}>Copy signup link</button>
-              </div>
+
+              {/* QR Code */}
+              {(qrMode==='branch' || (qrMode==='dept' && qrDept) || (qrMode==='combined' && qrDept)) ? (
+                <>
+                  <div style={{ padding:12, background:'white', borderRadius:12, marginBottom:12, boxShadow:'0 2px 12px rgba(0,0,0,0.1)' }}>
+                    <QRCodeWidget value={qrUrl} size={180}/>
+                  </div>
+                  <div style={{ fontSize:10, color:'var(--t-3)', marginBottom:14, wordBreak:'break-all', fontFamily:'var(--font-mono)', textAlign:'left', maxWidth:220 }}>{qrUrl}</div>
+                  <div style={{ display:'flex', gap:8, flexDirection:'column', width:'100%' }}>
+                    <button className="btn btn-brand btn-sm" style={{ justifyContent:'center' }} onClick={()=>{
+                      const win = window.open('','_blank','width=600,height=700')
+                      if(!win) return
+                      const brName = branchList.find(b=>b.id===qrBranch)?.name || ''
+                      const dptName = DEPARTMENTS.find(d=>d.id===qrDept)?.name || ''
+                      const title = qrMode==='branch' ? brName : qrMode==='dept' ? dptName : `${brName} · ${dptName}`
+                      win.document.write(`<!DOCTYPE html><html><head><title>QR — ${title}</title>
+                      <style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;font-family:Arial,sans-serif}
+                      .card{text-align:center;padding:40px;max-width:380px;border:1px solid #eee;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+                      h2{color:#1B3A2A;font-size:22px;margin:0 0 4px}p{color:#666;font-size:13px;margin:0 0 24px}
+                      .url{font-size:10px;color:#aaa;word-break:break-all;margin-top:20px;font-family:monospace}
+                      .badge{display:inline-block;background:#1B3A2A;color:#C9A84C;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px}
+                      @media print{.no-print{display:none}body{min-height:unset}}</style></head>
+                      <body><div class="card">
+                      <div class="badge">Harvesters International Christian Centre</div>
+                      <h2>${title}</h2>
+                      <p>Scan to register as a worker in this ${qrMode==='branch'?'branch':qrMode==='dept'?'department':'branch & department'}</p>
+                      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}" width="220" height="220" style="border-radius:8px"/>
+                      <div class="url">${qrUrl}</div>
+                      <p class="no-print" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 24px;background:#1B3A2A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Print / Save as PDF</button></p>
+                      </div></body></html>`)
+                      win.document.close()
+                    }}>
+                      🖨 Print / Save PDF
+                    </button>
+                    <button className="btn btn-sm" style={{ justifyContent:'center' }} onClick={()=>navigator.clipboard.writeText(qrUrl).then(()=>notify.success('Link copied!'))}>
+                      📋 Copy signup link
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div style={{ padding:'2rem', color:'var(--t-3)', fontSize:13 }}>
+                  {qrMode==='dept' ? 'Select a department to generate QR' : 'Select a branch and department'}
+                </div>
+              )}
             </div>
           </div>
 
-          <div style={{ marginTop:20, padding:'14px 18px', background:'var(--s-3)', borderRadius:'var(--r-lg)', border:'0.5px solid var(--border)', maxWidth:640 }}>
-            <div style={{ fontWeight:700, fontSize:13, marginBottom:6 }}>What members fill in when they scan:</div>
+          {/* Print all QRs for a branch */}
+          {qrMode==='combined' && qrDept && (
+            <div style={{ marginTop:20, padding:'16px 20px', background:'var(--s-3)', borderRadius:'var(--r-lg)', border:'0.5px solid var(--border)', maxWidth:700 }}>
+              <div style={{ fontWeight:700, fontSize:13, marginBottom:6 }}>📄 Print all departments for {branchList.find(b=>b.id===qrBranch)?.name}</div>
+              <div style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:12 }}>Generate a full print sheet with one QR per department for this branch — print and post at each unit's station.</div>
+              <button className="btn btn-brand btn-sm" onClick={()=>{
+                const brName = branchList.find(b=>b.id===qrBranch)?.name || ''
+                const win = window.open('','_blank','width=900,height=800')
+                if(!win) return
+                const cards = DEPARTMENTS.map(d => {
+                  const url = `https://my-harvesters.vercel.app/signup?branch=${qrBranch}&dept=${d.id}`
+                  return `<div class="qr-card">
+                    <div class="badge">${d.icon} ${d.name}</div>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}" width="160" height="160"/>
+                    <div class="sub">${brName}</div>
+                    <div class="url">${url}</div>
+                  </div>`
+                }).join('')
+                win.document.write(`<!DOCTYPE html><html><head><title>QR Sheet — ${brName}</title>
+                <style>
+                  body{font-family:Arial,sans-serif;background:#fff;padding:24px;color:#1a1a1a}
+                  h1{text-align:center;color:#1B3A2A;font-size:18px;margin:0 0 4px}
+                  .sub-hdr{text-align:center;font-size:12px;color:#888;margin-bottom:24px}
+                  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+                  .qr-card{border:1px solid #e5e7eb;border-radius:12px;padding:16px;text-align:center}
+                  .badge{font-size:13px;font-weight:700;color:#1B3A2A;margin-bottom:10px}
+                  .sub{font-size:11px;color:#888;margin-top:8px}
+                  .url{font-size:9px;color:#bbb;word-break:break-all;margin-top:4px;font-family:monospace}
+                  @media print{@page{margin:12mm}button{display:none}}
+                </style></head><body>
+                <h1>Harvesters International Christian Centre</h1>
+                <div class="sub-hdr">${brName} — Department QR Signup Codes</div>
+                <div class="grid">${cards}</div>
+                <p style="text-align:center;margin-top:20px"><button onclick="window.print()" style="padding:10px 24px;background:#1B3A2A;color:#fff;border:none;border-radius:8px;cursor:pointer">Print Sheet</button></p>
+                </body></html>`)
+                win.document.close()
+              }}>
+                Print all {DEPARTMENTS.length} department QRs for this branch
+              </button>
+            </div>
+          )}
+
+          {/* What members fill in */}
+          <div style={{ marginTop:16, padding:'14px 18px', background:'var(--s-3)', borderRadius:'var(--r-lg)', border:'0.5px solid var(--border)', maxWidth:700 }}>
+            <div style={{ fontWeight:700, fontSize:13, marginBottom:8 }}>What members fill in when they scan</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
-              {['Full name','Phone number','Email (optional)','Branch (pre-filled)','Department / Unit','Whether they are a first-timer'].map(f => (
+              {[
+                ['Full name','always required'],
+                ['Phone number','always required'],
+                ['Email','optional'],
+                ['Branch','pre-filled if branch QR'],
+                ['Department / Unit','pre-filled if dept QR'],
+                ['First timer?','yes / no toggle'],
+              ].map(([f,n]) => (
                 <div key={f} style={{ display:'flex', alignItems:'center', gap:6, fontSize:12.5, color:'var(--t-2)' }}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
-                  {f}
+                  <span><strong>{f}</strong> <span style={{color:'var(--t-3)',fontSize:11}}>— {n}</span></span>
                 </div>
               ))}
             </div>

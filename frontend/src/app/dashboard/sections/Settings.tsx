@@ -163,6 +163,90 @@ function ScriptureManager() {
   )
 }
 
+
+// ── Profile Editor ────────────────────────────────────────────────────────────
+function ProfileEditor() {
+  const { user } = useSession()
+  const [form, setForm] = useState({ name: user?.name||'', phone: '', dept: user?.department||'' })
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [pwForm, setPwForm] = useState({ next:'', confirm:'' })
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwErr, setPwErr] = useState('')
+  const [pwDone, setPwDone] = useState(false)
+
+  const saveProfile = async (e: React.FormEvent) => {
+    e.preventDefault(); setSaving(true)
+    if (supabase && user?.id) {
+      await supabase.from('workers').update({
+        full_name: form.name, phone: form.phone, department: form.dept,
+      }).eq('id', user.id)
+    }
+    setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2500)
+  }
+
+  const changePassword = async (e: React.FormEvent) => {
+    e.preventDefault(); setPwErr(''); setPwSaving(true)
+    if (pwForm.next !== pwForm.confirm) { setPwErr('Passwords do not match'); setPwSaving(false); return }
+    if (pwForm.next.length < 8) { setPwErr('Minimum 8 characters'); setPwSaving(false); return }
+    if (!/[A-Z]/.test(pwForm.next) || !/[0-9]/.test(pwForm.next)) { setPwErr('Must include an uppercase letter and a number'); setPwSaving(false); return }
+    if (supabase) {
+      const { error } = await supabase.auth.updateUser({ password: pwForm.next })
+      if (error) { setPwErr(error.message); setPwSaving(false); return }
+      try { await supabase.from('workers').update({ must_change_password: false }).eq('id', user?.id||'') } catch {}
+    }
+    setPwSaving(false); setPwDone(true); setPwForm({ next:'', confirm:'' })
+    setTimeout(()=>setPwDone(false), 3000)
+  }
+
+  return (
+    <div style={{ marginBottom:24 }}>
+      <div style={{ fontWeight:700, fontSize:14, marginBottom:14 }}>My Profile</div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:14 }}>
+        <div className="card card-p">
+          <div style={{ fontWeight:600, fontSize:13, marginBottom:12 }}>Personal details</div>
+          {saved && <div style={{ padding:'8px 12px', background:'var(--green-lt)', borderRadius:'var(--r)', fontSize:12, color:'var(--green)', marginBottom:12, fontWeight:600 }}>✓ Profile updated</div>}
+          <form onSubmit={saveProfile}>
+            {[['Full name','name','text'],['Phone','phone','tel']].map(([l,k,t])=>(
+              <div key={k} style={{ marginBottom:10 }}>
+                <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>{l}</label>
+                <input className="input" type={t} value={(form as any)[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={k==='phone'?'+234 800 000 0000':undefined}/>
+              </div>
+            ))}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Department</label>
+              <select className="input" value={form.dept} onChange={e=>setForm(f=>({...f,dept:e.target.value}))}>
+                <option value="">Select department</option>
+                {DEPARTMENTS.map(d=><option key={d.id} value={d.id}>{d.icon} {d.name}</option>)}
+              </select>
+            </div>
+            <button type="submit" className="btn btn-brand btn-sm" style={{ justifyContent:'center', width:'100%' }} disabled={saving}>
+              {saving ? 'Saving…' : 'Save profile'}
+            </button>
+          </form>
+        </div>
+        <div className="card card-p">
+          <div style={{ fontWeight:600, fontSize:13, marginBottom:12 }}>Change password</div>
+          {pwErr && <div style={{ padding:'8px 12px', background:'var(--red-lt)', borderRadius:'var(--r)', fontSize:12, color:'var(--red)', marginBottom:12 }}>{pwErr}</div>}
+          {pwDone && <div style={{ padding:'8px 12px', background:'var(--green-lt)', borderRadius:'var(--r)', fontSize:12, color:'var(--green)', marginBottom:12, fontWeight:600 }}>✓ Password changed successfully</div>}
+          <form onSubmit={changePassword}>
+            {[['New password','next'],['Confirm password','confirm']].map(([l,k])=>(
+              <div key={k} style={{ marginBottom:10 }}>
+                <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>{l}</label>
+                <input className="input" type="password" value={(pwForm as any)[k]} onChange={e=>setPwForm(f=>({...f,[k]:e.target.value}))} minLength={8} required placeholder="Min 8 chars, 1 uppercase, 1 number"/>
+              </div>
+            ))}
+            <div style={{ marginBottom:14, fontSize:11.5, color:'var(--t-3)' }}>Minimum 8 characters · 1 uppercase · 1 number</div>
+            <button type="submit" className="btn btn-brand btn-sm" style={{ justifyContent:'center', width:'100%' }} disabled={pwSaving}>
+              {pwSaving ? 'Updating…' : 'Change password'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── General Settings — fully editable ──────────────────────────────────────
 function GeneralSettings() {
   const [platformName, setPlatformName] = useState('Harvesters International Christian Centre Workforce Community')
@@ -406,7 +490,7 @@ export default function Settings() {
     setUsers(prev => prev.map(x => x.id===id ? {...x, status:'active'} : x))
     if (supabase) {
       // Update worker record
-      await supabase.from('workers').update({ status:'active', role:'worker' }).eq('id', id).then(()=>{})
+      await supabase.from('workers').update({ status:'active', role:'worker' }).eq('id', id)
       // If they have an email, create their auth account via secure server-side API
       if (u.email) {
         try {
@@ -437,21 +521,43 @@ export default function Settings() {
     if (supabase) await supabase.from('workers').delete().eq('id', id)
   }
 
-  const addDept = (e: React.FormEvent) => {
+  const addDept = async (e: React.FormEvent) => {
     e.preventDefault()
-    setDepts(prev => [...prev, { id:`d${Date.now()}`, name:deptForm.name, color:deptForm.color, icon:deptForm.icon, head:deptForm.head }])
+    const newDept = { id:`d${Date.now()}`, name:deptForm.name, color:deptForm.color, icon:deptForm.icon, head:deptForm.head }
+    setDepts(prev => [...prev, newDept])
+    // Persist to Supabase
+    if (supabase) {
+      await supabase.from('departments').upsert({
+        dept_id: newDept.id, name: newDept.name, color: newDept.color,
+        icon: newDept.icon, head: newDept.head,
+      })
+    }
     setDeptForm({ name:'', icon:'📋', color:'#1B4332', head:'' }); setShowAddDept(false)
+    notify.success?.('Department added')
   }
 
-  const addBranch = (e: React.FormEvent) => {
+  const addBranch = async (e: React.FormEvent) => {
     e.preventDefault()
-    setBranchList(prev => [...prev, { id:`br${Date.now()}`, name:branchForm.name, short:branchForm.name.split(' ')[0], location:branchForm.location, country:branchForm.country as any, type:'branch', pastor:branchForm.pastor, members:0, attendance:0, services:1, color:'#1B4332', founded:new Date().getFullYear() }])
+    const newBr = { id:`br${Date.now()}`, name:branchForm.name, short:branchForm.name.split(' ')[0], location:branchForm.location, country:branchForm.country as any, type:'branch', pastor:branchForm.pastor, members:0, attendance:0, services:1, color:'#1B4332', founded:new Date().getFullYear() }
+    setBranchList(prev => [...prev, newBr])
+    // Persist to Supabase
+    if (supabase) {
+      await supabase.from('branch_config').upsert({
+        branch_id: newBr.id, name: newBr.name, location: newBr.location,
+        country: newBr.country, pastor: newBr.pastor, color: '#1B4332',
+        founded: newBr.founded,
+      })
+    }
     setBranchForm({ name:'', location:'', country:'NG', pastor:'' }); setShowAddBranch(false)
+    notify.success?.('Branch added')
   }
 
-  const deleteBranch = (id: string) => {
-    if (currentUser?.role !== 'senior_pastor') { notify.error('Only the Super Admin can delete a branch.'); return }
+  const deleteBranch = async (id: string) => {
+    if (currentUser?.role !== 'senior_pastor') { notify.error?.('Only the Super Admin can delete a branch.'); return }
     setBranchList(prev => prev.filter(b => b.id !== id)); setBranchDeleteConfirm(null)
+    if (supabase) {
+      await supabase.from('branch_config').delete().eq('branch_id', id)
+    }
   }
 
   const BASE = 'https://my-harvesters.vercel.app/signup'
@@ -848,7 +954,10 @@ export default function Settings() {
 
       {/* ── GENERAL ── */}
       {tab === 'general' && (
-        <GeneralSettings/>
+        <>
+          <ProfileEditor/>
+          <GeneralSettings/>
+        </>
       )}
 
       {/* ── CREDENTIAL MODAL ── */}

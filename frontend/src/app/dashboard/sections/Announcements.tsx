@@ -185,8 +185,15 @@ export default function Announcements() {
               )}
             </div>
 
+            {(form.channel==='whatsapp'||form.channel==='sms'||form.channel==='all_channels') && (
+              <div style={{padding:'10px 14px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:'var(--r)',marginBottom:14,fontSize:12.5,color:'#92610A',lineHeight:1.65}}>
+                ⚠ <strong>WhatsApp/SMS gateway not yet connected.</strong> The announcement will be saved to the platform feed. To enable real WhatsApp delivery, connect your WhatsApp Business API credentials in Settings → Integrations.
+              </div>
+            )}
             <div style={{display:'flex',gap:10}}>
-              <button type="submit" className="btn btn-brand" style={{flex:1,justifyContent:'center',padding:'10px'}}>Publish announcement</button>
+              <button type="submit" className="btn btn-brand" style={{flex:1,justifyContent:'center',padding:'10px'}}>
+                {form.channel==='platform'?'Publish to platform feed':'Save & queue for delivery'}
+              </button>
               <button type="button" className="btn btn-ghost" onClick={()=>setTab('feed')}>Cancel</button>
             </div>
           </form>

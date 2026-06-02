@@ -1,188 +1,211 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { createClient } from '@supabase/supabase-js'
+import { useSession } from '@/lib/useSession'
+import { branches, DEPARTMENTS } from '@/lib/data'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) : null
 
 type CardHolder = {
-  id: string
-  name: string
-  email: string
-  role: string
-  branch: string
-  dept: string
-  memberSince: string
-  growthLevel: number
-  photo?: string
-  verified: boolean
+  id: string; name: string; email: string; role: string
+  branch_id: string; branch_name: string; dept: string
+  memberSince: string; phone: string; status: string
 }
 
-const DEMO_MEMBERS: CardHolder[] = [
-  { id: 'M001', name: 'Pastor Bolaji Idowu',  email: 'pastor@hicc.org',        role: 'Senior Pastor',   branch: 'Lekki HQ',   dept: 'Leadership',       memberSince: 'Jan 2018', growthLevel: 5, verified: true },
-  { id: 'M002', name: 'Pastor Kanmi Adeyemi', email: 'pastor.ikeja@hicc.org',  role: 'Branch Pastor',   branch: 'Ikeja',       dept: 'Leadership',       memberSince: 'Mar 2019', growthLevel: 5, verified: true },
-  { id: 'M003', name: 'Segun Adeyemi',        email: 'segun@hicc.org',         role: 'Unit Head',       branch: 'Lekki HQ',   dept: 'Ushering',         memberSince: 'Jun 2021', growthLevel: 3, verified: true },
-  { id: 'M004', name: 'Tosin Obi',            email: 'tosin@hicc.org',         role: 'Unit Head',       branch: 'Gbagada',    dept: 'KidsHouse',        memberSince: 'Sep 2020', growthLevel: 4, verified: true },
-  { id: 'M005', name: 'Chika Obi',            email: 'chika@hicc.org',         role: 'Member',          branch: 'Abuja',      dept: 'Worship & Music',  memberSince: 'Feb 2022', growthLevel: 2, verified: true },
-  { id: 'M006', name: 'Ngozi Kalu',           email: 'ngozi@hicc.org',         role: 'Member',          branch: 'Lekki HQ',   dept: 'Prayer',           memberSince: 'Nov 2023', growthLevel: 1, verified: false },
-]
-
-const GROWTH_LABELS = ['', 'Foundation', 'Discipleship', 'Ministry', 'Leadership', 'Ambassador']
-
-const BRANCH_COLORS: Record<string, string> = {
-  'Lekki HQ':   '#1B4332',
-  'Gbagada':    '#1D9E75',
-  'Ikeja':      '#185FA5',
-  'Abuja':      '#D85A30',
-  'Port Harcourt': '#993556',
-  'London UK':  '#3C3489',
-  'Houston USA':'#854F0B',
+const ROLE_DISPLAY: Record<string,string> = {
+  senior_pastor:'Senior Pastor', pastor:'Branch Pastor', admin:'Administrator',
+  unit_head:'Unit Head', worker:'Worker', guest:'Guest',
+}
+const BRANCH_COLOR: Record<string,string> = {
+  lekki:'#1B4332', gbagada:'#1D9E75', ikeja:'#185FA5', anthony:'#6B7280',
+  abuja:'#D85A30', portharcourt:'#993556', ibadan:'#C05621', london:'#3C3489', houston:'#854F0B',
 }
 
-function initials(name: string) {
-  return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
-}
+function initials(name:string) { return name.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase() }
 
-function MemberCard({ holder, onClose }: { holder: CardHolder; onClose: () => void }) {
+function MemberCard({ holder, onClose }: { holder:CardHolder; onClose:()=>void }) {
   const cardRef = useRef<HTMLDivElement>(null)
-  const branchColor = BRANCH_COLORS[holder.branch] || '#1B4332'
-  const qrData = JSON.stringify({ id: holder.id, name: holder.name, branch: holder.branch, verified: holder.verified, ts: Date.now() })
-
-  const handlePrint = () => window.print()
+  const branchColor = BRANCH_COLOR[holder.branch_id] || '#1B4332'
+  const dept = DEPARTMENTS.find(d=>d.name===holder.dept||d.id===holder.dept)
+  const qrData = JSON.stringify({ id:holder.id, name:holder.name, branch:holder.branch_id, role:holder.role, ts:Date.now() })
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(15,10,46,.85)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420 }}>
-        <div ref={cardRef} style={{ background: `linear-gradient(135deg, ${branchColor} 0%, #1a1040 100%)`, borderRadius: 20, padding: 28, position: 'relative', overflow: 'hidden', boxShadow: `0 20px 60px ${branchColor}55` }}>
-          {/* Background watermark cross */}
-          <div style={{ position: 'absolute', top: -20, right: -20, width: 160, height: 160, opacity: .04 }}>
-            <svg viewBox="0 0 24 24" fill="white" width="160" height="160"><line x1="12" y1="2" x2="12" y2="22" stroke="white" strokeWidth="2"/><line x1="2" y1="12" x2="22" y2="12" stroke="white" strokeWidth="2"/></svg>
-          </div>
+    <div style={{ position:'fixed', inset:0, zIndex:100, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:400 }}>
 
-          {/* Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22 }}>
+        {/* Card */}
+        <div ref={cardRef} style={{ background:`linear-gradient(135deg, ${branchColor} 0%, #0D1F16 100%)`, borderRadius:20, padding:28, position:'relative', overflow:'hidden', boxShadow:`0 24px 64px ${branchColor}66` }}>
+          {/* Watermark cross */}
+          <div style={{ position:'absolute', top:-20, right:-20, opacity:0.04, pointerEvents:'none' }}>
+            <svg viewBox="0 0 120 120" width="160" height="160" fill="white"><rect x="54" y="6" width="12" height="108"/><rect x="6" y="54" width="108" height="12"/></svg>
+          </div>
+          {/* Gold top bar */}
+          <div style={{ position:'absolute', top:0, left:0, right:0, height:3, background:'linear-gradient(90deg,transparent,#C9A84C,transparent)' }}/>
+
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:22 }}>
             <div>
-              <p style={{ fontSize: 9, fontWeight: 700, color: 'rgba(245,158,11,.85)', letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 3 }}>Harvesters International</p>
-              <p style={{ fontSize: 15, fontWeight: 800, color: 'white', letterSpacing: '.05em' }}>Christian Centre</p>
+              <div style={{ fontSize:9, fontWeight:700, color:'rgba(201,168,76,0.8)', letterSpacing:'.16em', textTransform:'uppercase', marginBottom:3 }}>Harvesters Intl Christian Centre</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', letterSpacing:'.06em', textTransform:'uppercase' }}>Workforce Community</div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: holder.verified ? '#10b981' : '#f59e0b', boxShadow: holder.verified ? '0 0 8px #10b98180' : '0 0 8px #f59e0b80' }}/>
-              <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,.6)', fontWeight: 600 }}>{holder.verified ? 'Verified' : 'Pending'}</span>
+            <div style={{ textAlign:'right' }}>
+              <div style={{ width:10, height:10, borderRadius:'50%', background:holder.status==='active'?'#22c55e':'#f59e0b', boxShadow:`0 0 8px ${holder.status==='active'?'#22c55e':'#f59e0b'}`, marginLeft:'auto', marginBottom:3 }}/>
+              <div style={{ fontSize:9, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'.06em' }}>{holder.status}</div>
             </div>
           </div>
 
-          {/* Avatar + name */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 22 }}>
-            {holder.photo
-              ? <img src={holder.photo} alt={holder.name} style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover', border: '2px solid rgba(255,255,255,.25)' }}/>
-              : <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(255,255,255,.15)', border: '2px solid rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 700, color: 'white', letterSpacing: '.05em' }}>{initials(holder.name)}</div>
-            }
+          <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:20 }}>
+            <div style={{ width:64, height:64, borderRadius:16, background:'rgba(201,168,76,0.15)', border:'1.5px solid rgba(201,168,76,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, fontWeight:800, color:'#C9A84C', flexShrink:0, fontFamily:'var(--font-display)' }}>
+              {initials(holder.name)}
+            </div>
             <div>
-              <p style={{ fontSize: 17, fontWeight: 800, color: 'white', marginBottom: 3, fontFamily: 'var(--font-display)' }}>{holder.name}</p>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', marginBottom: 2 }}>{holder.role} · {holder.dept}</p>
-              <p style={{ fontSize: 12, color: 'rgba(245,158,11,.8)', fontWeight: 600 }}>{holder.branch}</p>
+              <div style={{ fontSize:18, fontWeight:800, color:'#fff', letterSpacing:'-0.01em', marginBottom:4 }}>{holder.name}</div>
+              <div style={{ fontSize:12, color:'rgba(201,168,76,0.85)', fontWeight:600 }}>{ROLE_DISPLAY[holder.role]||holder.role}</div>
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', marginTop:2 }}>{holder.branch_name}</div>
             </div>
           </div>
 
-          {/* Details strip */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 22 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:20 }}>
             {[
-              { label: 'Member ID',    value: holder.id },
-              { label: 'Growth Level', value: `L${holder.growthLevel} · ${GROWTH_LABELS[holder.growthLevel]}` },
-              { label: 'Since',        value: holder.memberSince },
-            ].map(f => (
-              <div key={f.label} style={{ flex: 1, background: 'rgba(255,255,255,.08)', borderRadius: 10, padding: '8px 10px' }}>
-                <p style={{ fontSize: 9, color: 'rgba(255,255,255,.4)', letterSpacing: '.06em', textTransform: 'uppercase', marginBottom: 3 }}>{f.label}</p>
-                <p style={{ fontSize: 11, color: 'white', fontWeight: 600 }}>{f.value}</p>
+              { l:'Department', v: dept?.name||holder.dept||'—' },
+              { l:'Member since', v: holder.memberSince||'—' },
+              { l:'Email', v: holder.email||'—' },
+              { l:'Phone', v: holder.phone||'—' },
+            ].map(f=>(
+              <div key={f.l}>
+                <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.35)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:2 }}>{f.l}</div>
+                <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.75)', fontFamily: f.l==='Email'||f.l==='Phone'?'var(--font-mono)':'var(--font-body)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{f.v}</div>
               </div>
             ))}
           </div>
 
-          {/* QR code */}
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-            <div style={{ background: 'white', padding: 10, borderRadius: 12 }}>
-              <QRCodeSVG value={qrData} size={100} fgColor="#1a1040" bgColor="#ffffff" level="M"/>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-end' }}>
+            <div style={{ fontSize:9, color:'rgba(255,255,255,0.25)', fontFamily:'var(--font-mono)', letterSpacing:'.08em' }}>ID: {holder.id.slice(0,8).toUpperCase()}</div>
+            <div style={{ background:'white', padding:6, borderRadius:8 }}>
+              <QRCodeSVG value={qrData} size={72} fgColor="#0D1F16" bgColor="#fff" level="M"/>
             </div>
           </div>
-
-          {/* Footer */}
-          <p style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,.25)', letterSpacing: '.06em', textTransform: 'uppercase' }}>Scan to verify membership · harvestersng.org</p>
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-          <button className="btn btn-brand" style={{ flex: 1, justifyContent: 'center', padding: '10px' }} onClick={handlePrint}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print card
-          </button>
-          <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px' }} onClick={() => {
-            const url = `${window.location.origin}/verify?id=${holder.id}`
-            navigator.clipboard.writeText(url)
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copy link
-          </button>
-          <button className="btn btn-ghost" style={{ padding: '10px 14px' }} onClick={onClose}>✕</button>
+        <div style={{ display:'flex', gap:10, marginTop:14 }}>
+          <button className="btn btn-brand" style={{ flex:1, justifyContent:'center' }} onClick={()=>window.print()}>🖨 Print card</button>
+          <button className="btn" style={{ flex:1, justifyContent:'center' }} onClick={onClose}>Close</button>
+        </div>
+        <div style={{ textAlign:'center', fontSize:11.5, color:'rgba(255,255,255,0.35)', marginTop:10 }}>
+          QR code verified against live database. Valid only for active members.
         </div>
       </div>
     </div>
   )
 }
 
-// ------------------------------------------------------------------
-// Main section
-// ------------------------------------------------------------------
-export default function MembershipCard() {
-  const [selected, setSelected] = useState<CardHolder | null>(null)
+export default function MembershipCards() {
+  const { user } = useSession()
+  const [workers, setWorkers] = useState<CardHolder[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState<CardHolder|null>(null)
   const [search, setSearch] = useState('')
+  const [filterBranch, setFilterBranch] = useState('all')
 
-  const filtered = DEMO_MEMBERS.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.branch.toLowerCase().includes(search.toLowerCase()) ||
-    m.dept.toLowerCase().includes(search.toLowerCase())
-  )
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      if (supabase) {
+        try {
+          const { data } = await supabase
+            .from('workers')
+            .select('*')
+            .eq('status','active')
+            .order('full_name', { ascending:true })
+            .limit(200)
+          if (data) {
+            setWorkers(data.map((w:any) => ({
+              id: w.id,
+              name: w.full_name || w.name || 'Unknown',
+              email: w.email || '',
+              role: w.role || 'worker',
+              branch_id: w.branch_id || 'lekki',
+              branch_name: branches.find(b=>b.id===w.branch_id)?.name || w.branch_id || 'Lekki HQ',
+              dept: w.department || '',
+              memberSince: w.created_at?.slice(0,7) || '',
+              phone: w.phone || '',
+              status: w.status || 'active',
+            })))
+          }
+        } catch {}
+      }
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  // My own card always first
+  const myCard = workers.find(w=>w.id===user?.id)
+
+  const filtered = workers
+    .filter(w => filterBranch==='all' || w.branch_id===filterBranch)
+    .filter(w => !search || w.name.toLowerCase().includes(search.toLowerCase()) || w.email.toLowerCase().includes(search.toLowerCase()))
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontWeight: 800, fontSize: 17, fontFamily: 'var(--font-display)', color: 'var(--t-1)', marginBottom: 3 }}>Digital Membership Cards</h2>
-        <p style={{ fontSize: 12.5, color: 'var(--t-2)' }}>Tap any member to generate their card. Cards include a scannable QR code for event verification.</p>
+      {selected && <MemberCard holder={selected} onClose={()=>setSelected(null)}/>}
+
+      <div style={{ marginBottom:14 }}>
+        <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)', marginBottom:2 }}>Membership Cards</div>
+        <div style={{ fontSize:12, color:'var(--t-2)' }}>Digital ID cards generated from live database · QR verified</div>
       </div>
 
-      <div style={{ background: 'rgba(124,58,237,.06)', border: '1px solid rgba(124,58,237,.15)', borderRadius: 'var(--r)', padding: '10px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="2" width="15" height="15"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        <p style={{ fontSize: 12, color: 'var(--t-2)', margin: 0 }}>Cards are issued for special events, inter-branch visits, and membership verification. The QR code confirms active membership status when scanned.</p>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <input className="input" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, branch, or department…" style={{ maxWidth: 360 }}/>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
-        {filtered.map(m => {
-          const branchColor = BRANCH_COLORS[m.branch] || '#1B4332'
-          return (
-            <div key={m.id} className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer', transition: 'transform .15s', borderLeft: `3px solid ${branchColor}` }} onClick={() => setSelected(m)}>
-              <div style={{ padding: '14px 18px', display: 'flex', gap: 12, alignItems: 'center' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: `${branchColor}22`, border: `1px solid ${branchColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: branchColor, flexShrink: 0 }}>
-                  {initials(m.name)}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--t-1)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</p>
-                  <p style={{ fontSize: 11.5, color: 'var(--t-2)' }}>{m.role} · {m.branch}</p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-                  <span style={{ fontSize: 10.5, color: m.verified ? 'var(--green)' : '#f59e0b', fontWeight: 700 }}>{m.verified ? '✓ Verified' : '⏳ Pending'}</span>
-                  <span style={{ fontSize: 10.5, color: 'var(--t-3)' }}>L{m.growthLevel}</span>
-                </div>
+      {/* My card */}
+      {myCard && (
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'var(--t-3)', letterSpacing:'.08em', textTransform:'uppercase', marginBottom:8 }}>My card</div>
+          <div className="card card-hover card-p" style={{ maxWidth:320, cursor:'pointer', borderLeft:'3px solid var(--gold)' }} onClick={()=>setSelected(myCard)}>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:'var(--brand)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:14, fontFamily:'var(--font-display)' }}>{initials(myCard.name)}</div>
+              <div>
+                <div style={{ fontWeight:700, fontSize:13 }}>{myCard.name}</div>
+                <div style={{ fontSize:11.5, color:'var(--t-2)' }}>{ROLE_DISPLAY[myCard.role]} · {myCard.branch_name}</div>
               </div>
+              <div style={{ marginLeft:'auto', fontSize:11.5, color:'var(--brand)', fontWeight:600 }}>View →</div>
             </div>
-          )
-        })}
-      </div>
-
-      {filtered.length === 0 && (
-        <p style={{ textAlign: 'center', color: 'var(--t-3)', fontSize: 13, padding: '2rem' }}>No members match your search.</p>
+          </div>
+        </div>
       )}
 
-      {selected && <MemberCard holder={selected} onClose={() => setSelected(null)}/>}
+      {/* Search & filter */}
+      <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' }}>
+        <input className="input" placeholder="Search workers…" value={search} onChange={e=>setSearch(e.target.value)} style={{ flex:1, minWidth:180 }}/>
+        <select className="input" style={{ width:'auto', fontSize:12, padding:'6px 10px' }} value={filterBranch} onChange={e=>setFilterBranch(e.target.value)}>
+          <option value="all">All branches</option>
+          {branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign:'center', padding:'3rem', color:'var(--t-3)' }}>Loading workers…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign:'center', padding:'3rem', color:'var(--t-3)', fontSize:13 }}>
+          {workers.length === 0 ? 'No active workers in database yet.' : 'No workers match your search.'}
+        </div>
+      ) : (
+        <div>
+          <div style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:12 }}>{filtered.length} workers · click any card to generate</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:10 }}>
+            {filtered.map(w => (
+              <div key={w.id} className="card card-hover" style={{ padding:'12px 16px', cursor:'pointer', display:'flex', alignItems:'center', gap:12 }} onClick={()=>setSelected(w)}>
+                <div style={{ width:38, height:38, borderRadius:10, background:BRANCH_COLOR[w.branch_id]||'var(--brand)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontWeight:800, fontSize:12, flexShrink:0 }}>{initials(w.name)}</div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:13, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{w.name}</div>
+                  <div style={{ fontSize:11, color:'var(--t-3)' }}>{ROLE_DISPLAY[w.role]} · {w.branch_name}</div>
+                </div>
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--t-3)" strokeWidth="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M14 17h3M17 14v3h3"/></svg>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

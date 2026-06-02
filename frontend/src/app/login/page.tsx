@@ -395,8 +395,7 @@ export default function LoginPage() {
           password,
         })
         clearTimeout(timeoutId)
-        console.log('[HICC Login] result:', { user: data?.user?.id, error: error?.message, status: error?.status })
-        if (error) {
+if (error) {
           const nc = failCount + 1; setFailCount(nc)
           if (nc >= 5) {
             setLockUntil(Date.now() + 60_000)

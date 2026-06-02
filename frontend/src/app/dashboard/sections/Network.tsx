@@ -247,6 +247,16 @@ export default function Network() {
     const next = [opp, ...opportunities]
     setOpportunities(next)
     persist('hicc_network_opps' as any, next)
+    // Save to Supabase for cross-device visibility
+    if (supabase && user?.id) {
+      supabase.from('network_opportunities').insert({
+        title: opp.title, company: opp.company, industry: opp.industry,
+        location: opp.location, loc_type: opp.locType,
+        description: opp.description, contact: opp.contact,
+        posted_by_id: user.id, posted_by_name: user.name,
+        branch_id: user.branch_id,
+      })
+    }
     setOppForm({ title:'', company:'', industry:'Technology', location:'', locType:'hybrid', description:'', contact:'' })
     setShowOppForm(false)
     setOppSaved(true)

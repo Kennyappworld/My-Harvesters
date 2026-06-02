@@ -353,6 +353,24 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            {/* Global search */}
+            <div style={{position:'relative',display:'flex',alignItems:'center'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--t-3)" strokeWidth="2" width="13" height="13" style={{position:'absolute',left:10,pointerEvents:'none'}}><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input
+                className="input"
+                placeholder="Search members, prayers, souls…"
+                style={{paddingLeft:30,fontSize:12,height:32,width:220,borderRadius:'var(--r)'}}
+                onKeyDown={(e:React.KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === 'Enter') {
+                    const val = (e.target as HTMLInputElement).value.trim()
+                    if (!val) return
+                    // Navigate to members with search pre-filled
+                    window.dispatchEvent(new CustomEvent('hicc-navigate', { detail:{ page:'members', search:val } }))
+                    ;(e.target as HTMLInputElement).value = ''
+                  }
+                }}
+              />
+            </div>
             <button className="btn btn-ghost btn-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="16" height="16"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </button>

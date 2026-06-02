@@ -161,7 +161,12 @@ export default function Chat() {
     if (supabase && user?.id) await supabase.from('chat_messages').insert({ channel:active, sender_id:user.id, sender_name:name, body:text })
   }
 
-  const createGroup = () => {
+  const createGroup = async () => {
+    if (!newGroup.name.trim()) return
+    if (channels.some(ch => ch.label.toLowerCase() === newGroup.name.trim().toLowerCase())) {
+      alert('A channel with that name already exists.')
+      return
+    }
     if (!newGroup.name.trim()) return
     const id = `grp_${Date.now()}`
     const grp: Channel = {
@@ -173,12 +178,15 @@ export default function Chat() {
     const next = [...channels, grp]
     setChannels(next); persist('hicc_chat_channels_v2', next)
     setActive(id); setShowCreate(false); setNewGroup({ name:'', scope:'unit' })
-    // Write creator membership to Supabase
+    // Persist both membership records to Supabase
     if (supabase && user?.id) {
-      supabase.from('channel_members').insert({
-        channel_id: id, channel_name: newGroup.name,
-        worker_id: user.id, added_by: user.id,
-      }).then(() => {})
+      try {
+        await supabase.from('channel_members').insert({
+          channel_id: grp.id, channel_name: grp.label,
+          member_id: user.id, member_name: user.name,
+          invited_by: user.id, scope: newGroup.scope,
+        })
+      } catch {}
     }
   }
 

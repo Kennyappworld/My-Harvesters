@@ -151,9 +151,19 @@ export default function Prayer() {
                 </div>
               </div>
               <p style={{ fontSize:13, color:'var(--t-1)', lineHeight:1.6, marginBottom:8 }}>{r.text}</p>
-              <button onClick={() => toggle(r.id)} style={{ fontSize:12, color: r.isInterceding ? 'var(--brand)' : 'var(--t-3)', background:'none', border:'none', cursor:'pointer', padding:0, fontWeight: r.isInterceding ? 700 : 400 }}>
-                🙏 {r.isInterceding ? 'Interceding' : 'Intercede'} {r.interceding > 0 && `· ${r.interceding}`}
-              </button>
+              <div style={{ display:'flex', gap:12, alignItems:'center', flexWrap:'wrap' }}>
+                <button onClick={() => toggle(r.id)} style={{ fontSize:12, color: r.isInterceding ? 'var(--brand)' : 'var(--t-3)', background:'none', border:'none', cursor:'pointer', padding:0, fontWeight: r.isInterceding ? 700 : 400 }}>
+                  🙏 {r.isInterceding ? 'Interceding' : 'Intercede'} {r.interceding > 0 && `· ${r.interceding}`}
+                </button>
+                {r.elevated && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:100, background:'rgba(201,168,76,0.12)', color:'#92610A', fontWeight:600 }}>⬆ Elevated</span>}
+                <button onClick={async () => {
+                  if (!supabase) return
+                  await supabase.from('prayer_requests').update({ answered: true }).eq('id', r.id)
+                  setRequests((prev: any[]) => prev.filter((p:any) => p.id !== r.id))
+                }} style={{ fontSize:11, color:'var(--green)', background:'var(--green-lt)', border:'1px solid rgba(27,158,90,0.2)', borderRadius:100, padding:'2px 8px', cursor:'pointer', fontWeight:600 }}>
+                  ✓ Answered
+                </button>
+              </div>
             </div>
           </div>
         ))}

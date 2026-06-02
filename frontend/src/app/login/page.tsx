@@ -531,12 +531,12 @@ export default function LoginPage() {
       <div className="glass" style={{ width:'100%', maxWidth:380, padding:'2rem' }}>
         <h1 style={{ fontFamily:'var(--font-display)', fontSize:20, fontWeight:800, color:'white', marginBottom:4, letterSpacing:'-0.02em' }}>Sign in</h1>
         <p style={{ fontSize:13, color:'rgba(255,255,255,.4)', marginBottom:16 }}>Enter your credentials to continue</p>
-        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:18, padding:'6px 10px', background: supabase ? 'rgba(16,185,129,0.08)' : 'rgba(201,168,76,0.08)', border:`1px solid ${supabase ? 'rgba(16,185,129,0.2)' : 'rgba(201,168,76,0.2)'}`, borderRadius:8 }}>
-          <div style={{ width:7, height:7, borderRadius:'50%', background: supabase ? '#10B981' : '#C9A84C', flexShrink:0 }}/>
-          <span style={{ fontSize:11, color: supabase ? '#6EE7B7' : 'var(--gold)' }}>
-            {supabase ? 'Connected to Harvesters database' : 'Demo mode - database not connected'}
-          </span>
-        </div>
+        {!supabase && (
+          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:18, padding:'6px 10px', background:'rgba(201,168,76,0.08)', border:'1px solid rgba(201,168,76,0.2)', borderRadius:8 }}>
+            <div style={{ width:7, height:7, borderRadius:'50%', background:'#C9A84C', flexShrink:0 }}/>
+            <span style={{ fontSize:11, color:'var(--gold)' }}>Database not connected — contact your administrator</span>
+          </div>
+        )}
 
         {err && (
           <div style={{ background:'rgba(197,48,48,.15)', border:'1px solid rgba(197,48,48,.3)', borderRadius:10, padding:'10px 14px', fontSize:13, color:'#FC8181', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>

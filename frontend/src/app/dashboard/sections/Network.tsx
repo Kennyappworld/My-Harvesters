@@ -9,12 +9,12 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   : null
 
-// Job status options — designed for the Kingdom community context
+// Professional job-seeking status — standard employability framing
 const JOB_STATUSES = [
-  { value: 'kingdom',  label: 'Open to Kingdom opportunities', color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
-  { value: 'passive',  label: 'Passively exploring',           color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-  { value: 'connect',  label: 'Open to connect',               color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
-  { value: 'none',     label: 'Not showing status',            color: 'var(--t-3)', bg: 'transparent' },
+  { value: 'active',     label: 'Actively looking',              color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   desc: 'Open to interviews and offers right now' },
+  { value: 'open',       label: 'Open to opportunities',         color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', desc: 'Not urgently searching but would consider the right role' },
+  { value: 'freelance',  label: 'Freelance / Contract available', color: '#a855f7', bg: 'rgba(168,85,247,0.1)', desc: 'Available for project-based or consulting work' },
+  { value: 'none',       label: 'Not looking',                   color: 'var(--t-3)', bg: 'transparent',        desc: 'Default — no badge shown on your profile' },
 ]
 
 const INDUSTRIES = ['Technology','Finance & Banking','Healthcare','Education','Legal','Engineering','Media & Creative','Real Estate','Business & Consulting','Government','Non-profit','Hospitality','Other']
@@ -38,11 +38,11 @@ type Opportunity = {
 
 // Sample profiles to populate on first load
 const SAMPLE_PROFILES: Profile[] = [
-  { id:'p1', name:'Segun Adeyemi', branch:'lekki', email:'segun@hicc.org', phone:'+234 810 111 2222', profession:'Software Engineer', industry:'Technology', company:'Flutterwave', bio:'Building payment infrastructure for Africa. Passionate about tech-enabled church growth.', passions:['Tech for Good','Youth Empowerment'], skills:['React','Node.js','Python','AWS'], linkedin:'linkedin.com/in/segun', jobStatus:'connect', showPhone:false, showEmail:true, joinedYear:'2022' },
-  { id:'p2', name:'Tolu Mensah', branch:'lekki', email:'tolu@hicc.org', profession:'Investment Banker', industry:'Finance & Banking', company:'Stanbic IBTC', bio:'15 years in capital markets. Happy to mentor young professionals in finance.', passions:['Financial Literacy','Leadership & Mentoring'], skills:['Financial Modelling','M&A','Excel'], linkedin:'', jobStatus:'connect', showPhone:false, showEmail:true, joinedYear:'2020' },
+  { id:'p1', name:'Segun Adeyemi', branch:'lekki', email:'segun@hicc.org', phone:'+234 810 111 2222', profession:'Software Engineer', industry:'Technology', company:'Flutterwave', bio:'Building payment infrastructure for Africa. Passionate about tech-enabled church growth.', passions:['Tech for Good','Youth Empowerment'], skills:['React','Node.js','Python','AWS'], linkedin:'linkedin.com/in/segun', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2022' },
+  { id:'p2', name:'Tolu Mensah', branch:'lekki', email:'tolu@hicc.org', profession:'Investment Banker', industry:'Finance & Banking', company:'Stanbic IBTC', bio:'15 years in capital markets. Happy to mentor young professionals in finance.', passions:['Financial Literacy','Leadership & Mentoring'], skills:['Financial Modelling','M&A','Excel'], linkedin:'', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2020' },
   { id:'p3', name:'Ngozi Kalu', branch:'lekki', email:'ngozi@hicc.org', profession:'Medical Doctor', industry:'Healthcare', company:'Lagos University Teaching Hospital', bio:'Paediatrician. Interested in community health outreach.', passions:['Healthcare Outreach','Community Development'], skills:['Paediatrics','Research','Public Health'], linkedin:'', jobStatus:'none', showPhone:false, showEmail:false, joinedYear:'2021' },
-  { id:'p4', name:'Pastor Kanmi Adeyemi', branch:'ikeja', email:'kanmi@hicc.org', profession:'Pastor & Life Coach', industry:'Education', company:'Harvesters International', bio:'Passionate about developing leaders and helping professionals find purpose.', passions:['Leadership & Mentoring','Youth Empowerment'], skills:['Coaching','Leadership','Public Speaking'], linkedin:'', jobStatus:'connect', showPhone:false, showEmail:true, joinedYear:'2019' },
-  { id:'p5', name:'Emeka Obi', branch:'lekki', email:'emeka@hicc.org', profession:'Architect', industry:'Real Estate', company:'Studio Emeka', bio:'Award-winning architect. Looking for Kingdom-aligned real estate projects.', passions:['Community Development','Creative Arts'], skills:['AutoCAD','Revit','Project Management'], linkedin:'linkedin.com/in/emeka', jobStatus:'kingdom', showPhone:false, showEmail:true, joinedYear:'2023' },
+  { id:'p4', name:'Pastor Kanmi Adeyemi', branch:'ikeja', email:'kanmi@hicc.org', profession:'Pastor & Life Coach', industry:'Education', company:'Harvesters International', bio:'Passionate about developing leaders and helping professionals find purpose.', passions:['Leadership & Mentoring','Youth Empowerment'], skills:['Coaching','Leadership','Public Speaking'], linkedin:'', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2019' },
+  { id:'p5', name:'Emeka Obi', branch:'lekki', email:'emeka@hicc.org', profession:'Architect', industry:'Real Estate', company:'Studio Emeka', bio:'Award-winning architect. Looking for Kingdom-aligned real estate projects.', passions:['Community Development','Creative Arts'], skills:['AutoCAD','Revit','Project Management'], linkedin:'linkedin.com/in/emeka', jobStatus:'active', showPhone:false, showEmail:true, joinedYear:'2023' },
 ]
 
 const SAMPLE_OPPORTUNITIES: Opportunity[] = [
@@ -434,9 +434,12 @@ export default function Network() {
             <div style={{ fontSize:12.5,color:'var(--t-3)',marginBottom:12 }}>Let others know if you're open to professional connections</div>
             <div style={{ display:'flex',flexDirection:'column',gap:8 }}>
               {JOB_STATUSES.map(s => (
-                <label key={s.value} style={{ display:'flex',alignItems:'center',gap:10,padding:'10px 12px',borderRadius:10,border:`1.5px solid ${profForm.jobStatus===s.value?s.color:'var(--border)'}`,background:profForm.jobStatus===s.value?s.bg:'transparent',cursor:'pointer',transition:'all .12s' }}>
-                  <input type="radio" name="jobStatus" value={s.value} checked={profForm.jobStatus===s.value} onChange={()=>setProfForm(f=>({...f,jobStatus:s.value}))} style={{ accentColor:s.color }}/>
-                  <span style={{ fontSize:13,color:'var(--t-1)',fontWeight:profForm.jobStatus===s.value?600:400 }}>{s.label}</span>
+                <label key={s.value} style={{ display:'flex',alignItems:'center',gap:12,padding:'11px 14px',borderRadius:10,border:`1.5px solid ${profForm.jobStatus===s.value?s.color:'var(--border)'}`,background:profForm.jobStatus===s.value?s.bg:'transparent',cursor:'pointer',transition:'all .12s' }}>
+                  <input type="radio" name="jobStatus" value={s.value} checked={profForm.jobStatus===s.value} onChange={()=>setProfForm(f=>({...f,jobStatus:s.value}))} style={{ accentColor:s.color,flexShrink:0 }}/>
+                  <div>
+                    <div style={{ fontSize:13,color:'var(--t-1)',fontWeight:profForm.jobStatus===s.value?600:400,marginBottom:1 }}>{s.label}</div>
+                    <div style={{ fontSize:11.5,color:'var(--t-3)' }}>{s.desc}</div>
+                  </div>
                 </label>
               ))}
             </div>

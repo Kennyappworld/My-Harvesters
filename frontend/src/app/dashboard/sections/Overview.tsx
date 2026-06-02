@@ -148,18 +148,30 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
     <div>
       {showNewMembers && <NewMembersModal onClose={()=>setShowNewMembers(false)}/>}
 
-      {/* Mission statement — editorial, cinematic */}
-      <div style={{ marginBottom:18, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(135deg, var(--brand) 0%, #0A2B1A 100%)', padding:'20px 24px 18px', boxShadow:'0 4px 24px rgba(13,31,22,0.18)' }}>
-        {/* Subtle cross watermark */}
-        <div style={{ position:'absolute', right:-10, top:-10, opacity:0.06, pointerEvents:'none' }}>
-          <svg viewBox="0 0 80 80" width="80" height="80" fill="white"><rect x="36" y="4" width="8" height="72"/><rect x="4" y="32" width="72" height="8"/></svg>
+      {/* Mission statement */}
+      <div style={{ marginBottom:20, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(120deg, #0F2D1C 0%, #0A1F13 60%, #0C2518 100%)', padding:'0', boxShadow:'0 2px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+        {/* Faint cross watermark far right */}
+        <div style={{ position:'absolute', right:-30, top:'50%', transform:'translateY(-50%)', opacity:0.04, pointerEvents:'none' }}>
+          <svg viewBox="0 0 120 120" width="180" height="180" fill="white"><rect x="54" y="6" width="12" height="108"/><rect x="6" y="54" width="108" height="12"/></svg>
         </div>
-        {/* Gold top rule */}
-        <div style={{ width:32, height:3, background:'var(--gold)', borderRadius:2, marginBottom:12 }}/>
-        <p style={{ fontSize:10, fontWeight:700, color:'rgba(201,168,76,0.85)', letterSpacing:'.12em', textTransform:'uppercase', marginBottom:8, fontFamily:'var(--font-body)' }}>Our Mission</p>
-        <p style={{ fontSize:14.5, fontWeight:600, color:'white', fontFamily:'var(--font-display)', lineHeight:1.7, letterSpacing:'-0.01em', maxWidth:820 }}>
-          We are changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, influencing culture, and leading every member to become a fully devoted follower of Christ.
-        </p>
+        {/* Gold vertical left accent */}
+        <div style={{ position:'absolute', left:0, top:0, bottom:0, width:4, background:'linear-gradient(to bottom, #C9A84C, rgba(201,168,76,0.3))', borderRadius:'12px 0 0 12px' }}/>
+        <div style={{ padding:'20px 24px 20px 30px', display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
+          {/* Cross badge */}
+          <div style={{ flexShrink:0, width:44, height:44, borderRadius:12, background:'rgba(201,168,76,0.1)', border:'1px solid rgba(201,168,76,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.85)" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="3" x2="12" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>
+          </div>
+          <div style={{ flex:1, minWidth:200 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+              <span style={{ fontSize:10, fontWeight:800, color:'rgba(201,168,76,0.7)', letterSpacing:'.14em', textTransform:'uppercase' }}>Our Mission</span>
+              <div style={{ height:'1px', width:28, background:'rgba(201,168,76,0.25)' }}/>
+            </div>
+            <p style={{ fontSize:14, fontWeight:500, color:'rgba(255,255,255,0.88)', fontFamily:'var(--font-body)', lineHeight:1.75, letterSpacing:'0.005em', margin:0 }}>
+              We are changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, influencing culture, and leading every member to become a{' '}
+              <span style={{ color:'rgba(201,168,76,0.95)', fontWeight:700 }}>fully devoted follower of Christ</span>.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* KPIs */}

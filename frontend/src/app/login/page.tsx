@@ -116,72 +116,136 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
     } catch {}
     return DAILY_WORDS[Math.floor(Math.random() * DAILY_WORDS.length)]
   })
-  const [phase, setPhase] = useState(0) // 0=hidden 1=cross 2=grace words 3=name 4=scripture 5=buttons
+  const [phase, setPhase] = useState(0)
 
   useEffect(() => {
     requestAnimationFrame(() => setVis(true))
-    // Fast sequence — total ~900ms before buttons appear
     const timers = [
-      setTimeout(() => setPhase(1), 80),
-      setTimeout(() => setPhase(2), 220),
-      setTimeout(() => setPhase(3), 550),
-      setTimeout(() => setPhase(4), 720),
-      setTimeout(() => setPhase(5), 900),
+      setTimeout(() => setPhase(1), 100),
+      setTimeout(() => setPhase(2), 350),
+      setTimeout(() => setPhase(3), 650),
+      setTimeout(() => setPhase(4), 900),
+      setTimeout(() => setPhase(5), 1100),
     ]
     return () => timers.forEach(clearTimeout)
   }, [])
 
-  const graceWords = ['Grace!', 'Grace!!', 'Grace!!!']
-  const dismiss = () => { setVis(false); setTimeout(onDone, 350) }
+  const dismiss = () => { setVis(false); setTimeout(onDone, 400) }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:200, background:'var(--dark)', display:'flex', alignItems:'center', justifyContent:'center', padding:'1.5rem', transition:'opacity .5s', opacity: vis ? 1 : 0, overflow:'hidden' }}>
-      {/* Ambient glow layers */}
-      <div style={{ position:'absolute', top:'-5%', left:'-10%', width:420, height:420, borderRadius:'50%', background:'radial-gradient(circle, rgba(27,67,50,0.55) 0%, transparent 70%)', filter:'blur(70px)', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', bottom:'-5%', right:'-8%', width:360, height:360, borderRadius:'50%', background:'radial-gradient(circle, rgba(201,168,76,0.22) 0%, transparent 70%)', filter:'blur(60px)', pointerEvents:'none' }}/>
-      <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width:600, height:300, borderRadius:'50%', background:'radial-gradient(ellipse, rgba(27,67,50,0.2) 0%, transparent 70%)', filter:'blur(80px)', pointerEvents:'none' }}/>
+    <div style={{ position:'fixed', inset:0, zIndex:200, background:'#0B1F14', display:'flex', alignItems:'center', justifyContent:'center', padding:'2rem 1.5rem', transition:'opacity .4s ease', opacity: vis ? 1 : 0, overflow:'hidden' }}>
 
-      <div style={{ maxWidth:440, width:'100%', textAlign:'center', position:'relative' }}>
-        {/* Cross icon */}
-        <div style={{ width:56, height:56, background:'linear-gradient(135deg,rgba(201,168,76,0.25),rgba(201,168,76,0.08))', border:'1px solid rgba(201,168,76,0.35)', borderRadius:18, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 24px', boxShadow:'0 0 40px rgba(201,168,76,0.15)' }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+      {/* Background — deep green with subtle radial glow */}
+      <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse 80% 60% at 50% 40%, rgba(27,67,50,0.9) 0%, #0B1F14 100%)', pointerEvents:'none' }}/>
+      {/* Gold shimmer bottom-right */}
+      <div style={{ position:'absolute', bottom:0, right:0, width:500, height:400, background:'radial-gradient(circle at 80% 90%, rgba(201,168,76,0.12) 0%, transparent 65%)', pointerEvents:'none' }}/>
+      {/* Faint cross watermark — large, centred */}
+      <div style={{ position:'absolute', top:'50%', left:'50%', transform:'translate(-50%,-50%)', opacity:0.035, pointerEvents:'none' }}>
+        <svg viewBox="0 0 200 200" width="520" height="520" fill="white"><rect x="92" y="10" width="16" height="180"/><rect x="10" y="88" width="180" height="16"/></svg>
+      </div>
+
+      <div style={{ maxWidth:480, width:'100%', textAlign:'center', position:'relative', zIndex:1 }}>
+
+        {/* Church name — top label */}
+        <div style={{
+          opacity: phase >= 1 ? 1 : 0,
+          transform: phase >= 1 ? 'translateY(0)' : 'translateY(-10px)',
+          transition: 'opacity 0.5s ease, transform 0.5s ease',
+          marginBottom: 36,
+        }}>
+          <div style={{ display:'inline-flex', alignItems:'center', gap:10, background:'rgba(201,168,76,0.08)', border:'1px solid rgba(201,168,76,0.2)', borderRadius:100, padding:'6px 16px 6px 10px' }}>
+            <div style={{ width:26, height:26, borderRadius:'50%', background:'rgba(201,168,76,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.9)" strokeWidth="2.5" width="13" height="13"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            </div>
+            <span style={{ fontSize:11, fontWeight:700, color:'rgba(201,168,76,0.75)', letterSpacing:'.14em', textTransform:'uppercase' }}>Harvesters International Christian Centre</span>
+          </div>
         </div>
 
-        {/* Grace words - stagger in one by one */}
-        <div style={{ marginBottom:6, display:'flex', gap:'0.4em', justifyContent:'center', flexWrap:'wrap' }}>
-          {graceWords.map((w, i) => (
-            <span key={w} style={{
-              fontFamily:'var(--font-display)', fontSize:'clamp(1.8rem,6vw,3rem)', fontWeight:800,
-              color:'var(--gold)', letterSpacing:'-0.02em', lineHeight:1,
-              textShadow:'0 0 60px rgba(201,168,76,0.4)',
-              opacity: phase >= 2 ? 1 : 0,
-              transform: phase >= 2 ? 'translateY(0)' : 'translateY(14px)',
-              transition: `opacity 0.5s ease ${i*180}ms, transform 0.5s cubic-bezier(0.22,1,0.36,1) ${i*180}ms`,
-            }}>{w}</span>
-          ))}
-        </div>
-        <p style={{ fontSize:12, fontWeight:600, color:'rgba(201,168,76,0.6)', letterSpacing:'.1em', textTransform:'uppercase', marginBottom:18, opacity:phase>=2?1:0, transition:'opacity 0.5s ease 560ms' }}>This is my story</p>
-
-        {/* Name */}
-        <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.2rem,3.5vw,1.6rem)', fontWeight:700, color:'white', marginBottom:24, letterSpacing:'-0.01em', opacity:phase>=3?1:0, transform:phase>=3?'translateY(0)':'translateY(10px)', transition:'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)' }}>
-          Welcome back, <span style={{ color:'var(--gold)' }}>{name}</span>
-        </h1>
-
-        {/* Scripture card */}
-        <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', borderLeft:'3px solid rgba(201,168,76,0.6)', borderRadius:14, padding:'1.2rem 1.4rem', marginBottom:28, textAlign:'left', opacity:phase>=4?1:0, transform:phase>=4?'translateY(0)':'translateY(10px)', transition:'opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1)' }}>
-          <p style={{ fontSize:13.5, fontStyle:'italic', color:'rgba(255,255,255,.78)', lineHeight:1.8, marginBottom:10 }}>"{word.verse}"</p>
-          <p style={{ fontSize:11, color:'var(--gold)', fontWeight:700, letterSpacing:'.08em', textAlign:'right' }}>- {word.ref}</p>
+        {/* Welcome — name prominent */}
+        <div style={{
+          opacity: phase >= 2 ? 1 : 0,
+          transform: phase >= 2 ? 'translateY(0)' : 'translateY(16px)',
+          transition: 'opacity 0.55s ease, transform 0.55s cubic-bezier(0.22,1,0.36,1)',
+          marginBottom: 8,
+        }}>
+          <div style={{ fontSize:'clamp(13px,2.5vw,15px)', fontWeight:600, color:'rgba(255,255,255,0.45)', letterSpacing:'.06em', textTransform:'uppercase', marginBottom:8 }}>Welcome back</div>
+          <div style={{ fontFamily:'var(--font-display)', fontSize:'clamp(1.9rem,6vw,2.8rem)', fontWeight:800, color:'#ffffff', letterSpacing:'-0.02em', lineHeight:1.1 }}>
+            {name}
+          </div>
         </div>
 
-        {/* Buttons */}
-        <div style={{ opacity:phase>=5?1:0, transform:phase>=5?'translateY(0)':'translateY(8px)', transition:'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
-          <button onClick={dismiss} className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'14px', fontSize:15, fontWeight:700, marginBottom:12, letterSpacing:'0.02em', boxShadow:'0 0 30px rgba(27,67,50,0.6)' }}>
-            Enter the community →
+        {/* Thin gold divider */}
+        <div style={{
+          opacity: phase >= 2 ? 1 : 0,
+          transition: 'opacity 0.6s ease 200ms',
+          display:'flex', alignItems:'center', gap:14, margin:'22px auto', maxWidth:320,
+        }}>
+          <div style={{ flex:1, height:'1px', background:'linear-gradient(to right, transparent, rgba(201,168,76,0.35))' }}/>
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="rgba(201,168,76,0.5)"><path d="M8 0l2 6h6l-5 3.6 1.9 5.9L8 11.8l-4.9 3.7L5 9.6 0 6h6z"/></svg>
+          <div style={{ flex:1, height:'1px', background:'linear-gradient(to left, transparent, rgba(201,168,76,0.35))' }}/>
+        </div>
+
+        {/* Scripture — the centrepiece */}
+        <div style={{
+          opacity: phase >= 3 ? 1 : 0,
+          transform: phase >= 3 ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'opacity 0.6s ease, transform 0.6s cubic-bezier(0.22,1,0.36,1)',
+          marginBottom: 32,
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 18,
+          padding: '24px 26px 20px',
+          textAlign: 'left',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* Gold left accent bar */}
+          <div style={{ position:'absolute', left:0, top:20, bottom:20, width:3, background:'linear-gradient(to bottom, rgba(201,168,76,0.8), rgba(201,168,76,0.2))', borderRadius:'0 2px 2px 0' }}/>
+          {/* Opening quote mark */}
+          <div style={{ fontFamily:'Georgia, serif', fontSize:72, lineHeight:0.6, color:'rgba(201,168,76,0.15)', marginBottom:14, userSelect:'none', paddingLeft:10 }}>"</div>
+          <p style={{ fontSize:15, fontStyle:'italic', color:'rgba(255,255,255,0.88)', lineHeight:1.85, marginBottom:16, paddingLeft:10, fontFamily:'Georgia, serif', fontWeight:400, letterSpacing:'0.01em' }}>
+            {word.verse}
+          </p>
+          <div style={{ display:'flex', justifyContent:'flex-end', alignItems:'center', gap:8 }}>
+            <div style={{ height:'1px', flex:1, background:'rgba(201,168,76,0.15)', marginLeft:10 }}/>
+            <span style={{ fontSize:12, color:'rgba(201,168,76,0.85)', fontWeight:700, letterSpacing:'.06em' }}>{word.ref}</span>
+          </div>
+        </div>
+
+        {/* CTA button */}
+        <div style={{
+          opacity: phase >= 5 ? 1 : 0,
+          transform: phase >= 5 ? 'translateY(0)' : 'translateY(10px)',
+          transition: 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)',
+        }}>
+          <button
+            onClick={dismiss}
+            style={{
+              width: '100%', cursor:'pointer',
+              background: 'linear-gradient(135deg, #1B4332 0%, #0A2B1A 100%)',
+              border: '1px solid rgba(201,168,76,0.3)',
+              borderRadius: 14, padding: '15px 24px',
+              color: '#fff', fontSize: 15, fontWeight: 700,
+              fontFamily: 'var(--font-body)', letterSpacing: '0.03em',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+              boxShadow: '0 0 40px rgba(27,67,50,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
+              transition: 'transform .15s, box-shadow .15s',
+              marginBottom: 14,
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform='scale(1.015)'; (e.currentTarget as HTMLButtonElement).style.boxShadow='0 0 55px rgba(27,67,50,0.7), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform='scale(1)'; (e.currentTarget as HTMLButtonElement).style.boxShadow='0 0 40px rgba(27,67,50,0.5), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+          >
+            Enter the community
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(201,168,76,0.9)" strokeWidth="2.5" width="16" height="16"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
-          <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.25)', fontSize:12, fontFamily:'var(--font-body)', letterSpacing:'.04em' }}>
+          <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.2)', fontSize:12, fontFamily:'var(--font-body)', letterSpacing:'.05em', transition:'color .2s' }}
+            onMouseEnter={e=>(e.currentTarget.style.color='rgba(255,255,255,0.45)')}
+            onMouseLeave={e=>(e.currentTarget.style.color='rgba(255,255,255,0.2)')}
+          >
             Skip for now
           </button>
         </div>
+
       </div>
     </div>
   )

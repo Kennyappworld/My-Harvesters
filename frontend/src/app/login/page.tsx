@@ -5,110 +5,96 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 const DAILY_WORDS = [
-  // GOD'S LOVE & IDENTITY
-  { verse: 'The Lord your God is in your midst, a mighty one who will save; he will rejoice over you with gladness; he will quiet you by his love; he will exult over you with loud singing.', ref: 'Zephaniah 3:17 (ESV)' },
-  { verse: 'Can a mother forget the baby at her breast and have no compassion on the child she has borne? Though she may forget, I will not forget you! See, I have engraved you on the palms of my hands.', ref: 'Isaiah 49:15-16 (NIV)' },
-  { verse: 'I have loved you with an everlasting love; therefore I have continued my faithfulness to you.', ref: 'Jeremiah 31:3 (ESV)' },
-  { verse: 'For I am convinced that neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.', ref: 'Romans 8:38-39 (NIV)' },
-  { verse: 'See what great love the Father has lavished on us, that we should be called children of God! And that is what we are!', ref: '1 John 3:1 (NIV)' },
-  { verse: 'But you are a chosen people, a royal priesthood, a holy nation, God\'s special possession, that you may declare the praises of him who called you out of darkness into his wonderful light.', ref: '1 Peter 2:9 (NIV)' },
-  { verse: 'For we are God\'s handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.', ref: 'Ephesians 2:10 (NIV)' },
-  { verse: 'The LORD your God is with you, the Mighty Warrior who saves. He will take great delight in you; in his love he will no longer rebuke you, but will rejoice over you with singing.', ref: 'Zephaniah 3:17 (NIV)' },
-  { verse: 'Before I formed you in the womb I knew you, before you were born I set you apart; I appointed you as a prophet to the nations.', ref: 'Jeremiah 1:5 (NIV)' },
-  { verse: 'You are precious in my eyes, and honoured, and I love you.', ref: 'Isaiah 43:4 (ESV)' },
-
-  // FAITH & TRUST
-  { verse: 'Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.', ref: 'Proverbs 3:5-6 (NIV)' },
-  { verse: 'For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, plans to give you hope and a future.', ref: 'Jeremiah 29:11 (NIV)' },
-  { verse: 'And we know that in all things God works for the good of those who love him, who have been called according to his purpose.', ref: 'Romans 8:28 (NIV)' },
-  { verse: 'Now faith is confidence in what we hope for and assurance about what we do not see.', ref: 'Hebrews 11:1 (NIV)' },
-  { verse: 'For we live by faith, not by sight.', ref: '2 Corinthians 5:7 (NIV)' },
-  { verse: 'Without faith it is impossible to please God, because anyone who comes to him must believe that he exists and that he rewards those who earnestly seek him.', ref: 'Hebrews 11:6 (NIV)' },
-  { verse: 'Ask and it will be given to you; seek and you will find; knock and the door will be opened to you.', ref: 'Matthew 7:7 (NIV)' },
-  { verse: 'Jesus said to him, "If you can believe, all things are possible to him who believes."', ref: 'Mark 9:23 (NKJV)' },
-  { verse: 'I can do all things through Christ who strengthens me.', ref: 'Philippians 4:13 (NKJV)' },
-  { verse: 'But those who hope in the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.', ref: 'Isaiah 40:31 (NIV)' },
-
-  // GRACE & SALVATION
-  { verse: 'For it is by grace you have been saved, through faith - and this is not from yourselves, it is the gift of God - not by works, so that no one can boast.', ref: 'Ephesians 2:8-9 (NIV)' },
-  { verse: 'The grace of God has appeared that offers salvation to all people. It teaches us to say "No" to ungodliness and worldly passions, and to live self-controlled, upright and godly lives.', ref: 'Titus 2:11-12 (NIV)' },
-  { verse: 'But he said to me, "My grace is sufficient for you, for my power is made perfect in weakness." Therefore I will boast all the more gladly about my weaknesses, so that Christ\'s power may rest on me.', ref: '2 Corinthians 12:9 (NIV)' },
-  { verse: 'The LORD is compassionate and gracious, slow to anger, abounding in love.', ref: 'Psalm 103:8 (NIV)' },
-  { verse: 'Let us then approach God\'s throne of grace with confidence, so that we may receive mercy and find grace to help us in our time of need.', ref: 'Hebrews 4:16 (NIV)' },
-
-  // GOD'S PRESENCE & PROTECTION
-  { verse: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.', ref: 'Psalm 23:1-3 (ESV)' },
-  { verse: 'Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.', ref: 'Isaiah 41:10 (ESV)' },
-  { verse: 'Fear not, for I have redeemed you; I have called you by name, you are mine. When you pass through the waters, I will be with you; and through the rivers, they shall not overwhelm you.', ref: 'Isaiah 43:1-2 (ESV)' },
-  { verse: 'The Lord is my light and my salvation - whom shall I fear? The Lord is the stronghold of my life - of whom shall I be afraid?', ref: 'Psalm 27:1 (NIV)' },
-  { verse: 'God is our refuge and strength, an ever-present help in trouble. Therefore we will not fear, though the earth give way and the mountains fall into the heart of the sea.', ref: 'Psalm 46:1-2 (NIV)' },
-  { verse: 'He who dwells in the secret place of the Most High shall abide under the shadow of the Almighty. I will say of the LORD, "He is my refuge and my fortress; My God, in Him I will trust."', ref: 'Psalm 91:1-2 (NKJV)' },
-  { verse: 'No weapon formed against you shall prosper, and every tongue which rises against you in judgment you shall condemn. This is the heritage of the servants of the LORD.', ref: 'Isaiah 54:17 (NKJV)' },
-  { verse: 'The LORD will fight for you; you need only to be still.', ref: 'Exodus 14:14 (NIV)' },
-
-  // PURPOSE & CALLING
-  { verse: 'You did not choose me, but I chose you and appointed you so that you might go and bear fruit - fruit that will last.', ref: 'John 15:16 (NIV)' },
-  { verse: 'For we are co-workers in God\'s service; you are God\'s field, God\'s building.', ref: '1 Corinthians 3:9 (NIV)' },
-  { verse: 'Therefore, my dear brothers and sisters, stand firm. Let nothing move you. Always give yourselves fully to the work of the Lord, because you know that your labour in the Lord is not in vain.', ref: '1 Corinthians 15:58 (NIV)' },
-  { verse: 'Each of you should use whatever gift you have received to serve others, as faithful stewards of God\'s grace in its various forms.', ref: '1 Peter 4:10 (NIV)' },
-  { verse: 'He said to them, "Go into all the world and preach the gospel to all creation."', ref: 'Mark 16:15 (NIV)' },
-  { verse: 'Whatever you do, work at it with all your heart, as working for the Lord, not for human masters, since you know that you will receive an inheritance from the Lord as a reward.', ref: 'Colossians 3:23-24 (NIV)' },
-  { verse: 'Commit to the LORD whatever you do, and he will establish your plans.', ref: 'Proverbs 16:3 (NIV)' },
-
-  // PEACE & REST
-  { verse: 'Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls.', ref: 'Matthew 11:28-29 (NIV)' },
-  { verse: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.', ref: 'Philippians 4:6-7 (NIV)' },
-  { verse: 'You will keep in perfect peace those whose minds are steadfast, because they trust in you.', ref: 'Isaiah 26:3 (NIV)' },
-  { verse: 'Peace I leave with you; my peace I give you. I do not give to you as the world gives. Do not let your hearts be troubled and do not be afraid.', ref: 'John 14:27 (NIV)' },
-  { verse: 'Cast all your anxiety on him because he cares for you.', ref: '1 Peter 5:7 (NIV)' },
-  { verse: 'The LORD gives strength to his people; the LORD blesses his people with peace.', ref: 'Psalm 29:11 (NIV)' },
-
-  // ABUNDANCE & PROVISION
-  { verse: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us, to him be glory.', ref: 'Ephesians 3:20-21 (NIV)' },
-  { verse: 'The thief comes only to steal and kill and destroy. I came that they may have life and have it abundantly.', ref: 'John 10:10 (ESV)' },
-  { verse: 'And my God will meet all your needs according to the riches of his glory in Christ Jesus.', ref: 'Philippians 4:19 (NIV)' },
-  { verse: 'Bring the whole tithe into the storehouse, that there may be food in my house. "Test me in this," says the LORD Almighty, "and see if I will not throw open the floodgates of heaven and pour out so much blessing that there will not be room enough to store it."', ref: 'Malachi 3:10 (NIV)' },
-  { verse: 'Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap.', ref: 'Luke 6:38 (NIV)' },
-  { verse: 'The LORD will open the heavens, the storehouse of his bounty, to send rain on your land in season and to bless all the work of your hands.', ref: 'Deuteronomy 28:12 (NIV)' },
-
-  // STRENGTH & VICTORY
-  { verse: 'He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who hope in the LORD will renew their strength.', ref: 'Isaiah 40:29-31 (NIV)' },
-  { verse: 'Be strong and courageous. Do not be afraid; do not be discouraged, for the LORD your God will be with you wherever you go.', ref: 'Joshua 1:9 (NIV)' },
-  { verse: 'But thanks be to God! He gives us the victory through our Lord Jesus Christ.', ref: '1 Corinthians 15:57 (NIV)' },
-  { verse: 'No, in all these things we are more than conquerors through him who loved us.', ref: 'Romans 8:37 (NIV)' },
-  { verse: 'For everyone born of God overcomes the world. This is the victory that has overcome the world, even our faith.', ref: '1 John 5:4 (NIV)' },
-  { verse: 'The horse is made ready for the day of battle, but victory rests with the LORD.', ref: 'Proverbs 21:31 (NIV)' },
-  { verse: 'Submit yourselves, then, to God. Resist the devil, and he will flee from you.', ref: 'James 4:7 (NIV)' },
-
-  // LIFE IN THE SPIRIT
-  { verse: 'But the fruit of the Spirit is love, joy, peace, forbearance, kindness, goodness, faithfulness, gentleness and self-control. Against such things there is no law.', ref: 'Galatians 5:22-23 (NIV)' },
-  { verse: 'For the Spirit God gave us does not make us timid, but gives us power, love and self-discipline.', ref: '2 Timothy 1:7 (NIV)' },
-  { verse: 'Those who live in accordance with the Spirit have their minds set on what the Spirit desires. The mind governed by the Spirit is life and peace.', ref: 'Romans 8:5-6 (NIV)' },
-  { verse: 'But you will receive power when the Holy Spirit comes on you; and you will be my witnesses in Jerusalem, and in all Judea and Samaria, and to the ends of the earth.', ref: 'Acts 1:8 (NIV)' },
-
-  // TRANSFORMATION & RENEWAL
-  { verse: 'Do not conform to the pattern of this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what God\'s will is - his good, pleasing and perfect will.', ref: 'Romans 12:2 (NIV)' },
-  { verse: 'Therefore, if anyone is in Christ, the new creation has come: the old has gone, the new is here!', ref: '2 Corinthians 5:17 (NIV)' },
-  { verse: 'Create in me a pure heart, O God, and renew a steadfast spirit within me.', ref: 'Psalm 51:10 (NIV)' },
-  { verse: 'He who was seated on the throne said, "I am making everything new!" Then he said, "Write this down, for these words are trustworthy and true."', ref: 'Revelation 21:5 (NIV)' },
-
-  // PRAYER & SEEKING GOD
-  { verse: 'If my people, who are called by my name, will humble themselves and pray and seek my face and turn from their wicked ways, then I will hear from heaven, and I will forgive their sin and will heal their land.', ref: '2 Chronicles 7:14 (NIV)' },
-  { verse: 'Call to me and I will answer you and tell you great and unsearchable things you do not know.', ref: 'Jeremiah 33:3 (NIV)' },
-  { verse: 'Delight yourself in the LORD, and he will give you the desires of your heart.', ref: 'Psalm 37:4 (ESV)' },
-  { verse: 'Draw near to God, and he will draw near to you.', ref: 'James 4:8 (ESV)' },
-  { verse: 'This is the confidence we have in approaching God: that if we ask anything according to his will, he hears us.', ref: '1 John 5:14 (NIV)' },
-
-  // LIFE & GODLINESS
-  { verse: 'His divine power has given us everything we need for a godly life through our knowledge of him who called us by his own glory and goodness.', ref: '2 Peter 1:3 (NIV)' },
-  { verse: 'Seek first his kingdom and his righteousness, and all these things will be given to you as well.', ref: 'Matthew 6:33 (NIV)' },
-  { verse: 'Blessed is the one who does not walk in step with the wicked or stand in the way that sinners take or sit in the company of mockers, but whose delight is in the law of the LORD, and who meditates on his law day and night.', ref: 'Psalm 1:1-2 (NIV)' },
-  { verse: 'Taste and see that the LORD is good; blessed is the one who takes refuge in him.', ref: 'Psalm 34:8 (NIV)' },
-  { verse: 'May he give you the desire of your heart and make all your plans succeed.', ref: 'Psalm 20:4 (NIV)' },
-  { verse: 'This is the day the LORD has made; let us rejoice and be glad in it.', ref: 'Psalm 118:24 (NIV)' },
-  { verse: 'Let the morning bring me word of your unfailing love, for I have put my trust in you. Show me the way I should go, for to you I entrust my life.', ref: 'Psalm 143:8 (NIV)' },
-  { verse: 'Your word is a lamp for my feet, a light on my path.', ref: 'Psalm 119:105 (NIV)' },
-  { verse: 'The steadfast love of the LORD never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness.', ref: 'Lamentations 3:22-23 (ESV)' },
+  // God's Love & Identity
+  { verse: "The LORD your God is with you, the Mighty Warrior who saves. He will take great delight in you; in his love he will no longer rebuke you, but will rejoice over you with singing.", ref: "Zephaniah 3:17 (NIV)" },
+  { verse: "Can a woman forget her nursing child, that she should have no compassion on the son of her womb? Even these may forget, yet I will not forget you. Behold, I have engraved you on the palms of my hands.", ref: "Isaiah 49:15-16 (ESV)" },
+  { verse: "Long ago the LORD said to Israel: 'I have loved you, my people, with an everlasting love. With unfailing love I have drawn you to myself.'", ref: "Jeremiah 31:3 (NLT)" },
+  { verse: "And I am convinced that nothing can ever separate us from God's love. Neither death nor life, neither angels nor demons, neither our fears for today nor our worries about tomorrow — not even the powers of hell can separate us from God's love.", ref: "Romans 8:38 (NLT)" },
+  { verse: "See what great love the Father has lavished on us, that we should be called children of God! And that is what we are!", ref: "1 John 3:1 (NIV)" },
+  { verse: "But you are a chosen race, a royal priesthood, a holy nation, a people for his own possession, that you may proclaim the excellencies of him who called you out of darkness into his marvellous light.", ref: "1 Peter 2:9 (ESV)" },
+  { verse: "For we are God's masterpiece. He has created us anew in Christ Jesus, so we can do the good things he planned for us long ago.", ref: "Ephesians 2:10 (NLT)" },
+  { verse: "'I knew you before I formed you in your mother's womb. Before you were born I set you apart and appointed you as my prophet to the nations.'", ref: "Jeremiah 1:5 (NLT)" },
+  { verse: "You are precious in my eyes, and honoured, and I love you.", ref: "Isaiah 43:4 (ESV)" },
+  // Faith & Trust
+  { verse: "Trust in the LORD with all your heart; do not depend on your own understanding. Seek his will in all you do, and he will show you which path to take.", ref: "Proverbs 3:5-6 (NLT)" },
+  { verse: "'For I know the plans I have for you,' says the LORD. 'They are plans for good and not for disaster, to give you a future and a hope.'", ref: "Jeremiah 29:11 (NLT)" },
+  { verse: "And we know that God causes everything to work together for the good of those who love God and are called according to his purpose for them.", ref: "Romans 8:28 (NLT)" },
+  { verse: "Now faith is the assurance of things hoped for, the conviction of things not seen.", ref: "Hebrews 11:1 (ESV)" },
+  { verse: "For we walk by faith, not by sight.", ref: "2 Corinthians 5:7 (ESV)" },
+  { verse: "And without faith it is impossible to please him, for whoever would draw near to God must believe that he exists and that he rewards those who seek him.", ref: "Hebrews 11:6 (ESV)" },
+  { verse: "Keep on asking, and you will receive what you ask for. Keep on seeking, and you will find. Keep on knocking, and the door will be opened to you.", ref: "Matthew 7:7 (NLT)" },
+  { verse: "Jesus said to him, 'If you can believe, all things are possible to him who believes.'", ref: "Mark 9:23 (NKJV)" },
+  { verse: "I can do everything through Christ, who gives me strength.", ref: "Philippians 4:13 (NLT)" },
+  { verse: "But those who trust in the LORD will find new strength. They will soar high on wings like eagles. They will run and not grow weary. They will walk and not faint.", ref: "Isaiah 40:31 (NLT)" },
+  // Grace & Salvation
+  { verse: "God saved you by his grace when you believed. And you can't take credit for this; it is a gift from God. Salvation is not a reward for the good things we have done, so none of us can boast about it.", ref: "Ephesians 2:8-9 (NLT)" },
+  { verse: "Each time he said, 'My grace is all you need. My power works best in weakness.' So now I am glad to boast about my weaknesses, so that the power of Christ can work through me.", ref: "2 Corinthians 12:9 (NLT)" },
+  { verse: "The LORD is merciful and gracious, slow to anger and abounding in steadfast love.", ref: "Psalm 103:8 (ESV)" },
+  { verse: "So let us come boldly to the throne of our gracious God. There we will receive his mercy, and we will find grace to help us when we need it most.", ref: "Hebrews 4:16 (NLT)" },
+  { verse: "For the grace of God has appeared, bringing salvation for all people.", ref: "Titus 2:11 (ESV)" },
+  { verse: "Where sin increased, grace increased all the more, so that, just as sin reigned in death, so also grace might reign through righteousness to bring eternal life through Jesus Christ our Lord.", ref: "Romans 5:20-21 (NIV)" },
+  // God's Presence & Protection
+  { verse: "The LORD is my shepherd; I have all that I need. He lets me rest in green meadows; he leads me beside peaceful streams. He renews my strength.", ref: "Psalm 23:1-3 (NLT)" },
+  { verse: "Don't be afraid, for I am with you. Don't be discouraged, for I am your God. I will strengthen you and help you. I will hold you up with my victorious right hand.", ref: "Isaiah 41:10 (NLT)" },
+  { verse: "'Do not be afraid, for I have ransomed you. I have called you by name; you are mine.'", ref: "Isaiah 43:1 (NLT)" },
+  { verse: "The LORD is my light and my salvation — so why should I be afraid? The LORD is my fortress, protecting me from danger, so why should I tremble?", ref: "Psalm 27:1 (NLT)" },
+  { verse: "God is our refuge and strength, always ready to help in times of trouble. So we will not fear when earthquakes come and the mountains crumble into the sea.", ref: "Psalm 46:1-2 (NLT)" },
+  { verse: "He who dwells in the shelter of the Most High will abide in the shadow of the Almighty. I will say to the LORD, 'My refuge and my fortress, my God, in whom I trust.'", ref: "Psalm 91:1-2 (ESV)" },
+  { verse: "No weapon formed against you shall prosper, and every tongue which rises against you in judgment you shall condemn. This is the heritage of the servants of the LORD.", ref: "Isaiah 54:17 (NKJV)" },
+  { verse: "The LORD will fight for you, and you have only to be silent.", ref: "Exodus 14:14 (ESV)" },
+  // Purpose & Calling
+  { verse: "You didn't choose me. I chose you. I appointed you to go and produce lasting fruit, so that the Father will give you whatever you ask for, using my name.", ref: "John 15:16 (NLT)" },
+  { verse: "For we are both God's workers. And you are God's field. You are God's building.", ref: "1 Corinthians 3:9 (NLT)" },
+  { verse: "So, my dear brothers and sisters, be strong and immovable. Always work enthusiastically for the Lord, for you know that nothing you do for the Lord is ever useless.", ref: "1 Corinthians 15:58 (NLT)" },
+  { verse: "God has given each of you a gift from his great variety of spiritual gifts. Use them well to serve one another.", ref: "1 Peter 4:10 (NLT)" },
+  { verse: "And then he told them, 'Go into all the world and preach the Good News to everyone.'", ref: "Mark 16:15 (NLT)" },
+  { verse: "Work willingly at whatever you do, as though you were working for the Lord rather than for people. Remember that the Lord will give you an inheritance as your reward, and that the Master you are serving is Christ.", ref: "Colossians 3:23-24 (NLT)" },
+  { verse: "Commit your actions to the LORD, and your plans will succeed.", ref: "Proverbs 16:3 (NLT)" },
+  // Peace & Rest
+  { verse: "Then Jesus said, 'Come to me, all of you who are weary and carry heavy burdens, and I will give you rest. Take my yoke upon you. Let me teach you, because I am humble and gentle at heart, and you will find rest for your souls.'", ref: "Matthew 11:28-29 (NLT)" },
+  { verse: "Don't worry about anything; instead, pray about everything. Tell God what you need, and thank him for all he has done. Then you will experience God's peace, which exceeds anything we can understand. His peace will guard your hearts and minds as you live in Christ Jesus.", ref: "Philippians 4:6-7 (NLT)" },
+  { verse: "You will keep in perfect peace all who trust in you, all whose thoughts are fixed on you!", ref: "Isaiah 26:3 (NLT)" },
+  { verse: "'I am leaving you with a gift — peace of mind and heart. And the peace I give is a gift the world cannot give. So don't be troubled or afraid.'", ref: "John 14:27 (NLT)" },
+  { verse: "Give all your worries and cares to God, for he cares about you.", ref: "1 Peter 5:7 (NLT)" },
+  { verse: "The LORD gives his people strength. The LORD blesses them with peace.", ref: "Psalm 29:11 (NLT)" },
+  // Abundance & Provision
+  { verse: "Now all glory to God, who is able, through his mighty power at work within us, to accomplish infinitely more than we might ask or think.", ref: "Ephesians 3:20 (NLT)" },
+  { verse: "The thief's purpose is to steal and kill and destroy. My purpose is to give them a rich and satisfying life.", ref: "John 10:10 (NLT)" },
+  { verse: "And this same God who takes care of me will supply all your needs from his glorious riches, which have been given to us in Christ Jesus.", ref: "Philippians 4:19 (NLT)" },
+  { verse: "Give, and you will receive. Your gift will return to you in full — pressed down, shaken together to make room for more, running over, and poured into your lap.", ref: "Luke 6:38 (NLT)" },
+  { verse: "The LORD will open to you his good treasury, the heavens, to give the rain to your land in its season and to bless all the work of your hands.", ref: "Deuteronomy 28:12 (ESV)" },
+  { verse: "'Try it! Put me to the test!' says the LORD of Heaven's Armies. 'I will open the windows of heaven for you. I will pour out a blessing so great you won't have enough room to take it in!'", ref: "Malachi 3:10 (NLT)" },
+  // Strength & Victory
+  { verse: "He gives power to the weak and strength to the powerless. Even youths will become weak and tired, and young men will fall in exhaustion. But those who trust in the LORD will find new strength.", ref: "Isaiah 40:29-31 (NLT)" },
+  { verse: "This is my command — be strong and courageous! Do not be afraid or discouraged. For the LORD your God is with you wherever you go.", ref: "Joshua 1:9 (NLT)" },
+  { verse: "But thank God! He gives us victory over sin and death through our Lord Jesus Christ.", ref: "1 Corinthians 15:57 (NLT)" },
+  { verse: "No, despite all these things, overwhelming victory is ours through Christ, who loved us.", ref: "Romans 8:37 (NLT)" },
+  { verse: "For every child of God defeats this evil world, and we achieve this victory through our faith.", ref: "1 John 5:4 (NLT)" },
+  { verse: "So humble yourselves before God. Resist the devil, and he will flee from you.", ref: "James 4:7 (NLT)" },
+  // Life in the Spirit
+  { verse: "But the Holy Spirit produces this kind of fruit in our lives: love, joy, peace, patience, kindness, goodness, faithfulness, gentleness, and self-control.", ref: "Galatians 5:22-23 (NLT)" },
+  { verse: "For God has not given us a spirit of fear and timidity, but of power, love, and self-discipline.", ref: "2 Timothy 1:7 (NLT)" },
+  { verse: "So letting your sinful nature control your mind leads to death. But letting the Spirit control your mind leads to life and peace.", ref: "Romans 8:6 (NLT)" },
+  { verse: "But you will receive power when the Holy Spirit comes upon you. And you will be my witnesses, telling people about me everywhere — in Jerusalem, throughout Judea, in Samaria, and to the ends of the earth.", ref: "Acts 1:8 (NLT)" },
+  // Transformation & Renewal
+  { verse: "Don't copy the behaviour and customs of this world, but let God transform you into a new person by changing the way you think. Then you will learn to know God's will for you, which is good and pleasing and perfect.", ref: "Romans 12:2 (NLT)" },
+  { verse: "This means that anyone who belongs to Christ has become a new person. The old life is gone; a new life has begun!", ref: "2 Corinthians 5:17 (NLT)" },
+  { verse: "Create in me a clean heart, O God. Renew a loyal spirit within me.", ref: "Psalm 51:10 (NLT)" },
+  { verse: "And the one sitting on the throne said, 'Look, I am making everything new!' And then he said to me, 'Write this down, for what I tell you is trustworthy and true.'", ref: "Revelation 21:5 (NLT)" },
+  // Prayer & Seeking God
+  { verse: "Then if my people who are called by my name will humble themselves and pray and seek my face and turn from their wicked ways, I will hear from heaven and will forgive their sins and restore their land.", ref: "2 Chronicles 7:14 (NLT)" },
+  { verse: "'Call to me and I will answer you, and will tell you great and hidden things that you have not known.'", ref: "Jeremiah 33:3 (ESV)" },
+  { verse: "Take delight in the LORD, and he will give you your heart's desires.", ref: "Psalm 37:4 (NLT)" },
+  { verse: "Come close to God, and God will come close to you.", ref: "James 4:8 (NLT)" },
+  { verse: "And we are confident that he hears us whenever we ask for anything that pleases him.", ref: "1 John 5:14 (NLT)" },
+  // Life & Godliness
+  { verse: "By his divine power, God has given us everything we need for living a godly life. We have received all of this by coming to know him, the one who called us to himself by means of his marvellous glory and excellence.", ref: "2 Peter 1:3 (NLT)" },
+  { verse: "Seek the Kingdom of God above all else, and live righteously, and he will give you everything you need.", ref: "Matthew 6:33 (NLT)" },
+  { verse: "Oh, the joys of those who do not follow the advice of the wicked, or stand around with sinners, or join in with mockers. But they delight in the law of the LORD, meditating on it day and night.", ref: "Psalm 1:1-2 (NLT)" },
+  { verse: "Taste and see that the LORD is good. Oh, the joys of those who take refuge in him!", ref: "Psalm 34:8 (NLT)" },
+  { verse: "This is the day the LORD has made. We will rejoice and be glad in it.", ref: "Psalm 118:24 (NLT)" },
+  { verse: "Your word is a lamp to guide my feet and a light for my path.", ref: "Psalm 119:105 (NLT)" },
+  { verse: "The faithful love of the LORD never ends! His mercies never cease. Great is his faithfulness; his mercies begin afresh each morning.", ref: "Lamentations 3:22-23 (NLT)" },
 ]
 
 // Supabase client - gracefully falls back if env vars not yet set

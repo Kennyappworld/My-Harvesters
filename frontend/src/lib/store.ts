@@ -13,6 +13,7 @@ type StorageKey =
   | 'hicc_meetings'
   | 'hicc_network_profiles'
   | 'hicc_network_opps'
+  | 'hicc_access_requests'
   | 'hicc_verif_members'
   | 'hicc_attendance'
   | 'hicc_devotional_plans'

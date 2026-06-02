@@ -2,6 +2,12 @@
 import { useState } from 'react'
 import { testimonies } from '@/lib/data'
 import { persist, hydrate } from '@/lib/store'
+import { createClient } from '@supabase/supabase-js'
+import { useSession } from '@/lib/useSession'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const CATS = ['All','Healing','Finance','Salvation','Breakthrough','Marriage','Career']
 const CAT_COL: Record<string,string> = {
@@ -10,6 +16,7 @@ const CAT_COL: Record<string,string> = {
 }
 
 export default function Testimony() {
+  const { user } = useSession()
   const [items, setItems] = useState(() => hydrate('hicc_testimonies', testimonies.map(t=>({...t, hasCelebrated:false}))))
   const [filter, setFilter] = useState('All')
   const [showForm, setShowForm] = useState(false)
@@ -24,7 +31,11 @@ export default function Testimony() {
 
   const submit = (e:React.FormEvent) => {
     e.preventDefault()
-    setItems(prev=>[{id:`t${Date.now()}`,author:'You',branch:'Lekki HQ',initials:'BI',av:'brand',role:'Senior Pastor',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),category:form.category,text:form.text,celebrating:0,comments:0,hasCelebrated:false},...prev])
+    const name = user?.name || 'Worker'
+    setItems(prev=>[{id:`t${Date.now()}`,author:name,branch:user?.branch_id||'Lekki HQ',initials:name.slice(0,2).toUpperCase(),av:'brand',role:user?.role||'worker',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),category:form.category,text:form.text,celebrating:0,comments:0,hasCelebrated:false},...prev])
+    if (supabase && user?.id) {
+      supabase.from('testimonies').insert({ author_id:user.id, author_name:name, branch_id:user.branch_id, category:form.category, body:form.text }).then(()=>{})
+    }
     setSaved(true); setTimeout(()=>{setSaved(false);setShowForm(false);setForm({title:'',category:'Breakthrough',text:''})},2000)
   }
 

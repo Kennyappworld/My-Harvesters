@@ -1,6 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { persist, hydrate } from '@/lib/store'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 type DevotionalEntry = {
   id: string
@@ -204,6 +209,28 @@ export default function Devotional() {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [isAdmin] = useState(true) // In production: derive from session role
 
+  // Load latest devotional from Supabase on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const loadFromSupabase = async () => {
+    if (!supabase) return
+    const { data } = await supabase
+      .from('announcements')
+      .select('body')
+      .like('id', 'devotional_%')
+      .order('created_at', { ascending: false })
+      .limit(1)
+    if (data?.[0]?.body) {
+      try {
+        const plan = JSON.parse(data[0].body) as DevotionalPlan
+        setPlans([plan])
+        persist('hicc_devotional_plans', [plan])
+      } catch {}
+    }
+  }
+
+  // Load on first mount
+  useState(() => { loadFromSupabase() })
+
   const activePlan = plans[0] || null
   const today = getTodayStr()
 
@@ -214,10 +241,19 @@ export default function Devotional() {
   const todayEntry = allEntries.find(e => e.date === today)
   const selectedEntry = allEntries.find(e => e.date === selectedDate)
 
-  const savePlan = (plan: DevotionalPlan) => {
+  const savePlan = async (plan: DevotionalPlan) => {
     const next = [plan, ...plans.filter(p => p.id !== plan.id)]
     setPlans(next)
     persist('hicc_devotional_plans', next)
+    // Also store in Supabase announcements so all workers get it
+    if (supabase) {
+      await supabase.from('announcements').upsert({
+        id: `devotional_${plan.id}`,
+        title: `Devotional Plan: ${plan.title}`,
+        body: JSON.stringify(plan),
+        scope: 'all',
+      })
+    }
     setShowUpload(false)
   }
 

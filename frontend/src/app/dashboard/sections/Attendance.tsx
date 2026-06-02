@@ -1,8 +1,15 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ATTENDANCE_RECORDS, branches } from '@/lib/data'
+import { createClient } from '@supabase/supabase-js'
+import { useSession } from '@/lib/useSession'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 export default function Attendance() {
+  const { user } = useSession()
   const [view, setView] = useState<'summary'|'record'|'register'>('summary')
   const [selected, setSelected] = useState<any>(null)
   const [selectedDept, setSelectedDept] = useState<string|null>(null)
@@ -21,10 +28,19 @@ export default function Attendance() {
 
   const totalThisWeek = records.reduce((a,r)=>a+r.total,0)
 
-  const saveRecord = (e: React.FormEvent) => {
+  const saveRecord = async (e: React.FormEvent) => {
     e.preventDefault()
     const br = branches.find(b=>b.id===regForm.branch)!
     setRecords(prev => [...prev, { id:`at${Date.now()}`, date:regForm.date, branchId:regForm.branch, branchName:br.name, service:regForm.service, total:Number(regForm.total), departments:[] }])
+    if (supabase && user?.id) {
+      await supabase.from('attendance_logs').insert({
+        branch_id: regForm.branch,
+        service_date: regForm.date,
+        department: regForm.service,
+        count: Number(regForm.total),
+        recorded_by: user.id,
+      })
+    }
     setSaved(true)
     setTimeout(()=>{ setSaved(false); setView('summary') }, 2000)
   }

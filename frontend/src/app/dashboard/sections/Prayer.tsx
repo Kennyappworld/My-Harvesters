@@ -2,10 +2,17 @@
 import { useState, useEffect } from 'react'
 import { prayerRequests } from '@/lib/data'
 import { persist, hydrate } from '@/lib/store'
+import { createClient } from '@supabase/supabase-js'
+import { useSession } from '@/lib/useSession'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 
 const SCOPE_COL: Record<string,string> = { unit:'var(--green)', branch:'var(--blue)', global:'var(--red)' }
 
 export default function Prayer() {
+  const { user } = useSession()
   const [requests, setRequests] = useState(() => hydrate('hicc_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
@@ -22,14 +29,21 @@ export default function Prayer() {
     setRequests(prev => prev.map(r => r.id === id ? { ...r, scope: r.scope === 'unit' ? 'branch' : 'global' } : r))
   }
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.text.trim()) return
+    const name = user?.name || 'Worker'
     setRequests(prev => [{
-      id: `p${Date.now()}`, author:'You', branch:'Lekki HQ', branchId:'lekki',
-      initials:'BI', av:'brand', time:'just now', scope: form.scope as any,
+      id: `p${Date.now()}`, author: name, branch: user?.branch_id || 'Lekki HQ', branchId: user?.branch_id || 'lekki',
+      initials: name.slice(0,2).toUpperCase(), av:'brand', time:'just now', scope: form.scope as any,
       elevated: false, text: form.text, interceding: 0, responses: 0, isInterceding: false
     }, ...prev])
+    if (supabase && user?.id) {
+      await supabase.from('prayer_requests').insert({
+        author_id: user.id, author_name: name,
+        branch_id: user.branch_id, body: form.text,
+      })
+    }
     setForm({ text:'', scope:'unit' }); setSaved(true)
     setTimeout(() => { setSaved(false); setShowForm(false) }, 2000)
   }

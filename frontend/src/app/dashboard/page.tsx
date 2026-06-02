@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useSession, hasRole } from '@/lib/useSession'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import PoweredBy from '@/lib/PoweredBy'
@@ -136,7 +137,7 @@ const NAV = [
     { key:'testimony',     label:'Testimonies',        icon:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', badge:4, bc:'nb-green' },
     { key:'announcements', label:'Announcements',      icon:'M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0', badge:4 },
     { key:'devotional',    label:'Daily Devotional',   icon:'M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z', badge:'New', bc:'nb-green' },
-    { key:'pastoral',       label:'Pastoral Pulse',     icon:'M22 12h-4l-3 9L9 3l-3 9H2', badge:'!', bc:'nb-brand' },
+    { key:'pastoral',       label:'Pastoral Pulse',     icon:'M22 12h-4l-3 9L9 3l-3 9H2', badge:'!', bc:'nb-brand', minRole:'pastor' },
     { key:'meetings',      label:'Meetings',           icon:'M15 10l4.553-2.069A1 1 0 0 1 21 8.87v6.259a1 1 0 0 1-1.447.894L15 14M2 8h13v8H2z' },
     { key:'events',        label:'Events',             icon:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01', badge:2, bc:'nb-brand' },
   ]},
@@ -149,7 +150,7 @@ const NAV = [
   ]},
   { section:'OPERATIONS', items:[
     { key:'attendance',   label:'Attendance',          icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-    { key:'reports',      label:'Reports',             icon:'M18 20V10M12 20V4M6 20v-6', badge:3 },
+    { key:'reports',      label:'Reports',             icon:'M18 20V10M12 20V4M6 20v-6', badge:3, minRole:'unit_head' },
   ]},
   { section:'ADMIN', items:[
     { key:'settings',     label:'Settings',            icon:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z' },
@@ -185,6 +186,7 @@ const PAGES: Record<string,any> = {
 }
 
 export default function Dashboard() {
+  const { user } = useSession()
   const [page, setPage] = useState('overview')
   const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
   useEffect(() => {
@@ -219,7 +221,7 @@ export default function Dashboard() {
           {NAV.map(sec=>(
             <div key={sec.section}>
               <div style={{fontSize:8.5,color:'rgba(201,168,76,0.55)',padding:'14px 12px 5px',letterSpacing:'.12em',textTransform:'uppercase',fontWeight:700,display:'flex',alignItems:'center',gap:8}}><div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/>{sec.section}<div style={{flex:1,height:'0.5px',background:'rgba(255,255,255,0.06)'}}/></div>
-              {sec.items.map((item:any)=>(
+              {sec.items.filter((item:any) => !item.minRole || !user || hasRole(user.role, item.minRole)).map((item:any)=>(
                 <div key={item.key} className={`nav-link ${page===item.key?'active':''}`} onClick={()=>{setPage(item.key);setMobileOpen(false)}}>
                   <span style={{width:28,height:28,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,background:page===item.key?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.06)',transition:'background .12s'}}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14"><path d={item.icon}/></svg>
@@ -235,10 +237,10 @@ export default function Dashboard() {
         {/* User info — bottom of dark sidebar */}
         <div style={{padding:'12px 14px',borderTop:'1px solid rgba(255,255,255,0.08)',background:'rgba(0,0,0,0.15)'}}>
           <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--brand-md),var(--brand-lt))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0,boxShadow:'0 2px 8px rgba(27,67,50,0.5)',border:'2px solid rgba(255,255,255,0.15)'}}>BI</div>
+            <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--brand-md),var(--brand-lt))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0,boxShadow:'0 2px 8px rgba(27,67,50,0.5)',border:'2px solid rgba(255,255,255,0.15)'}}>{(user?.name||'W').slice(0,2).toUpperCase()}</div>
             <div>
-              <div style={{fontSize:12,fontWeight:700,color:'white'}}>Pastor Bolaji Idowu</div>
-              <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>Senior Pastor · All branches</div>
+              <div style={{fontSize:12,fontWeight:700,color:'white'}}>{user?.name || 'Worker'}</div>
+              <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>{user?.role?.replace(/_/g,' ') || 'worker'} · {user?.branch_id || 'Lekki'}</div>
             </div>
           </div>
           <Link href="/" style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'rgba(255,255,255,0.35)',textDecoration:'none'}}>

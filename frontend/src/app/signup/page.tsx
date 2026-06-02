@@ -60,6 +60,14 @@ function SignupForm() {
         })
         if (error) { setSignupErr(error.message); setBusy(false); return }
       }
+      // Notify admins of pending approval
+      if (supabase) {
+        await supabase.from('announcements').insert({
+          title: `New worker registration: ${form.name}`,
+          body: `${form.name} (${form.email}) registered as a worker at ${form.branch} — ${form.dept}. Pending admin approval.`,
+          scope: 'admin',
+        }).then(() => {})
+      }
       setDone(true)
     } catch { setSignupErr('Registration failed. Please try again.') }
     finally { setBusy(false) }

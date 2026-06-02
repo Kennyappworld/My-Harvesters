@@ -6,12 +6,12 @@ import { createClient } from '@supabase/supabase-js'
 
 const DAILY_WORDS = [
   {
-    verse: 'The Lord your God is in your midst — a mighty one who will save. He will rejoice over you with gladness; He will quiet you by His love; He will exult over you with loud singing.',
+    verse: 'The Lord your God is in your midst - a mighty one who will save. He will rejoice over you with gladness; He will quiet you by His love; He will exult over you with loud singing.',
     ref: 'Zephaniah 3:17 (ESV)',
   },
   {
     verse: 'Can a mother forget the baby at her breast and have no compassion on the child she has borne? Though she may forget, I will not forget you! See, I have engraved you on the palms of my hands.',
-    ref: 'Isaiah 49:15–16 (NIV)',
+    ref: 'Isaiah 49:15-16 (NIV)',
   },
   {
     verse: 'The LORD appeared to us in the past, saying: I have loved you with an everlasting love; I have drawn you with unfailing kindness.',
@@ -19,11 +19,11 @@ const DAILY_WORDS = [
   },
   {
     verse: 'For I am convinced that neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.',
-    ref: 'Romans 8:38–39 (NIV)',
+    ref: 'Romans 8:38-39 (NIV)',
   },
   {
     verse: 'He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who hope in the LORD will renew their strength. They will soar on wings like eagles.',
-    ref: 'Isaiah 40:29–31 (NIV)',
+    ref: 'Isaiah 40:29-31 (NIV)',
   },
   {
     verse: 'The thief comes only to steal and kill and destroy. I came that they may have life and have it abundantly.',
@@ -31,31 +31,31 @@ const DAILY_WORDS = [
   },
   {
     verse: 'Fear not, for I have redeemed you; I have called you by name, you are mine. When you pass through the waters, I will be with you; and through the rivers, they shall not overwhelm you.',
-    ref: 'Isaiah 43:1–2 (ESV)',
+    ref: 'Isaiah 43:1-2 (ESV)',
   },
   {
-    verse: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us — to him be glory.',
-    ref: 'Ephesians 3:20–21 (NIV)',
+    verse: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us - to him be glory.',
+    ref: 'Ephesians 3:20-21 (NIV)',
   },
   {
     verse: 'Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls.',
-    ref: 'Matthew 11:28–29 (NIV)',
+    ref: 'Matthew 11:28-29 (NIV)',
   },
   {
-    verse: 'For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.',
+    verse: "For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.",
     ref: 'Ephesians 2:10 (NIV)',
   },
   {
     verse: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.',
-    ref: 'Psalm 23:1–3 (ESV)',
+    ref: 'Psalm 23:1-3 (ESV)',
   },
   {
-    verse: 'But you are a chosen people, a royal priesthood, a holy nation, God's special possession, that you may declare the praises of him who called you out of darkness into his wonderful light.',
+    verse: "But you are a chosen people, a royal priesthood, a holy nation, God's special possession, that you may declare the praises of him who called you out of darkness into his wonderful light.",
     ref: '1 Peter 2:9 (NIV)',
   },
   {
     verse: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.',
-    ref: 'Philippians 4:6–7 (NIV)',
+    ref: 'Philippians 4:6-7 (NIV)',
   },
   {
     verse: 'For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, plans to give you hope and a future.',
@@ -63,7 +63,7 @@ const DAILY_WORDS = [
   },
 ]
 
-// Supabase client — gracefully falls back if env vars not yet set
+// Supabase client - gracefully falls back if env vars not yet set
 const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
 const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null
@@ -101,7 +101,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
           <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
         </div>
 
-        {/* Grace words — stagger in one by one */}
+        {/* Grace words - stagger in one by one */}
         <div style={{ marginBottom:6, display:'flex', gap:'0.4em', justifyContent:'center', flexWrap:'wrap' }}>
           {graceWords.map((w, i) => (
             <span key={w} style={{
@@ -124,7 +124,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
         {/* Scripture card */}
         <div style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.09)', borderLeft:'3px solid rgba(201,168,76,0.6)', borderRadius:14, padding:'1.2rem 1.4rem', marginBottom:28, textAlign:'left', opacity:phase>=4?1:0, transform:phase>=4?'translateY(0)':'translateY(10px)', transition:'opacity 0.5s ease, transform 0.5s cubic-bezier(0.22,1,0.36,1)' }}>
           <p style={{ fontSize:13.5, fontStyle:'italic', color:'rgba(255,255,255,.78)', lineHeight:1.8, marginBottom:10 }}>"{word.verse}"</p>
-          <p style={{ fontSize:11, color:'var(--gold)', fontWeight:700, letterSpacing:'.08em', textAlign:'right' }}>— {word.ref}</p>
+          <p style={{ fontSize:11, color:'var(--gold)', fontWeight:700, letterSpacing:'.08em', textAlign:'right' }}>- {word.ref}</p>
         </div>
 
         {/* Buttons */}
@@ -141,7 +141,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
   )
 }
 
-// Forgot password — uses Supabase magic link / OTP
+// Forgot password - uses Supabase magic link / OTP
 function ForgotFlow({ onBack }: { onBack: () => void }) {
   const [step, setStep] = useState<'email'|'sent'>('email')
   const [email, setEmail] = useState('')
@@ -222,7 +222,7 @@ export default function LoginPage() {
     setSplash({ show: true, name })
   }, [])
 
-  // Handle magic link redirect — Supabase puts tokens in the URL hash
+  // Handle magic link redirect - Supabase puts tokens in the URL hash
   useEffect(() => {
     if (!supabase) return
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -302,7 +302,7 @@ export default function LoginPage() {
           return
         }
       }
-      // Fallback — use stored email with demo data
+      // Fallback - use stored email with demo data
       const DEMO: Record<string, string> = {
         'pastor@hicc.org': 'Pastor Bolaji Idowu',
         'pastor.ikeja@hicc.org': 'Pastor Kanmi Adeyemi',
@@ -379,7 +379,7 @@ export default function LoginPage() {
         <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:18, padding:'6px 10px', background: supabase ? 'rgba(16,185,129,0.08)' : 'rgba(201,168,76,0.08)', border:`1px solid ${supabase ? 'rgba(16,185,129,0.2)' : 'rgba(201,168,76,0.2)'}`, borderRadius:8 }}>
           <div style={{ width:7, height:7, borderRadius:'50%', background: supabase ? '#10B981' : '#C9A84C', flexShrink:0 }}/>
           <span style={{ fontSize:11, color: supabase ? '#6EE7B7' : 'var(--gold)' }}>
-            {supabase ? 'Connected to Harvesters database' : 'Demo mode — database not connected'}
+            {supabase ? 'Connected to Harvesters database' : 'Demo mode - database not connected'}
           </span>
         </div>
 

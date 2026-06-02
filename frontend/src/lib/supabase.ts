@@ -1,5 +1,5 @@
 /**
- * Supabase client — HICC Workforce Platform
+ * Supabase client — HICC Workforce Community
  *
  * Setup steps (one-time):
  * 1. Go to https://supabase.com → New project → name it "hicc-workforce"

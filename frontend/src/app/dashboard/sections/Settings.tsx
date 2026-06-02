@@ -24,9 +24,147 @@ function QRCodeWidget({ value, size=160 }: { value:string; size?:number }) {
 }
 
 
+// ── Scripture Manager ────────────────────────────────────────────────────────
+function ScriptureManager() {
+  const [customScriptures, setCustomScriptures] = useState<{verse:string;ref:string}[]>([])
+  const [hasCustom, setHasCustom] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [parseError, setParseError] = useState('')
+  const [saved, setSavedSc] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('hicc_custom_scriptures')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCustomScriptures(parsed)
+          setHasCustom(true)
+        }
+      }
+    } catch {}
+  }, [])
+
+  const parseTxt = (text: string) => {
+    const entries: {verse:string;ref:string}[] = []
+    const blocks = text.split(/\n{2,}/)
+    for (const block of blocks) {
+      const lines = block.split('\n').map((l: string) => l.trim()).filter(Boolean)
+      if (lines.length >= 2) {
+        const ref = lines[lines.length - 1]
+        const verse = lines.slice(0, lines.length - 1).join(' ')
+        if (verse.length > 10 && ref.length > 3) entries.push({ verse, ref })
+      } else if (lines.length === 1 && lines[0].includes('|')) {
+        const [verse, ref] = lines[0].split('|').map((s: string) => s.trim())
+        if (verse && ref) entries.push({ verse, ref })
+      }
+    }
+    return entries
+  }
+
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setParseError('')
+    setUploading(true)
+    try {
+      const text = await file.text()
+      const entries = parseTxt(text)
+      if (entries.length < 1) {
+        setParseError('Could not parse any scriptures. See the format guide below.')
+        setUploading(false)
+        return
+      }
+      setCustomScriptures(entries)
+      setHasCustom(true)
+    } catch {
+      setParseError('Failed to read file. Please upload a plain .txt file.')
+    }
+    setUploading(false)
+  }
+
+  const save = () => {
+    localStorage.setItem('hicc_custom_scriptures', JSON.stringify(customScriptures))
+    setSavedSc(true)
+    setTimeout(() => setSavedSc(false), 2500)
+  }
+
+  const reset = () => {
+    localStorage.removeItem('hicc_custom_scriptures')
+    setCustomScriptures([])
+    setHasCustom(false)
+  }
+
+  return (
+    <div className="card card-p" style={{ marginBottom: 12 }}>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:4 }}>
+        <div>
+          <h3 style={{ fontFamily:"var(--font-display)", fontSize:13.5, fontWeight:700, marginBottom:2 }}>Scripture splash pool</h3>
+          <p style={{ fontSize:12.5, color:"var(--t-2)" }}>
+            {hasCustom
+              ? <><strong style={{ color:"var(--green)" }}>Custom pool active</strong> &mdash; {customScriptures.length} scriptures loaded</>
+              : "Using default pool of 80 faith-building scriptures. Upload a custom list to override."}
+          </p>
+        </div>
+        {hasCustom && (
+          <span style={{ fontSize:10, fontWeight:700, letterSpacing:1, background:"var(--green-lt)", color:"var(--green)", padding:"3px 8px", borderRadius:20, flexShrink:0, marginLeft:8 }}>CUSTOM</span>
+        )}
+      </div>
+
+      <div style={{ marginTop:14, display:"flex", gap:8, flexWrap:"wrap" }}>
+        <button className="btn btn-sm" onClick={() => fileRef.current?.click()} disabled={uploading} style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          {uploading ? "Reading..." : "Upload scripture list (.txt)"}
+        </button>
+        {hasCustom && (
+          <>
+            <button className="btn btn-sm" onClick={save} style={{ display:"flex", alignItems:"center", gap:6, background:"var(--green)", color:"white" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>
+              {saved ? "Saved!" : "Save custom pool"}
+            </button>
+            <button className="btn btn-sm btn-ghost" onClick={reset} style={{ fontSize:11.5, color:"var(--red)" }}>Reset to defaults</button>
+          </>
+        )}
+        <input ref={fileRef} type="file" accept=".txt,text/plain" style={{ display:"none" }} onChange={handleFileUpload} />
+      </div>
+
+      {parseError && (
+        <div style={{ marginTop:10, padding:"8px 12px", background:"rgba(220,50,50,0.08)", border:"1px solid rgba(220,50,50,0.2)", borderRadius:"var(--r)", fontSize:12, color:"#d93535" }}>
+          {parseError}
+        </div>
+      )}
+
+      {hasCustom && customScriptures.length > 0 && (
+        <div style={{ marginTop:12, maxHeight:180, overflowY:"auto", display:"flex", flexDirection:"column", gap:6 }}>
+          {customScriptures.slice(0,5).map((s,i) => (
+            <div key={i} style={{ padding:"8px 10px", background:"var(--s-3)", borderRadius:8, borderLeft:"3px solid var(--brand)" }}>
+              <p style={{ fontSize:11.5, color:"var(--t-1)", lineHeight:1.6, margin:0 }}>&ldquo;{s.verse.slice(0,100)}{s.verse.length>100?"...":""}&rdquo;</p>
+              <p style={{ fontSize:10.5, color:"var(--t-3)", margin:"4px 0 0", fontStyle:"italic" }}>{s.ref}</p>
+            </div>
+          ))}
+          {customScriptures.length > 5 && (
+            <p style={{ fontSize:11, color:"var(--t-3)", textAlign:"center", marginTop:4 }}>+ {customScriptures.length - 5} more scriptures</p>
+          )}
+        </div>
+      )}
+
+      <div style={{ marginTop:14, padding:"10px 12px", background:"var(--s-3)", borderRadius:8, border:"1px solid var(--border)" }}>
+        <p style={{ fontSize:11.5, fontWeight:600, color:"var(--t-2)", marginBottom:6 }}>File format guide</p>
+        <p style={{ fontSize:11, color:"var(--t-3)", lineHeight:1.7, margin:0 }}>
+          Option A &mdash; separate each verse with a blank line; put the reference on the last line:<br/>
+          <code style={{ background:"rgba(255,255,255,0.05)", padding:"0 4px", borderRadius:4 }}>For God so loved the world... [newline] John 3:16 (NIV)</code><br/><br/>
+          Option B &mdash; verse and reference on one line separated by a pipe character:<br/>
+          <code style={{ background:"rgba(255,255,255,0.05)", padding:"0 4px", borderRadius:4 }}>For God so loved the world... | John 3:16 (NIV)</code>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // ── General Settings — fully editable ──────────────────────────────────────
 function GeneralSettings() {
-  const [platformName, setPlatformName] = useState('Harvesters HICC Workforce Platform')
+  const [platformName, setPlatformName] = useState('Harvesters HICC Workforce Community')
   const [followUpSchedule, setFollowUpSchedule] = useState(['2 weeks','4 weeks','3 months','4 months'])
   const [sessionTimeout, setSessionTimeout] = useState('15')
   const [allowSelfRegister, setAllowSelfRegister] = useState(true)
@@ -188,6 +326,9 @@ function GeneralSettings() {
           <span style={{ fontSize:13,color:'var(--t-1)',fontWeight:500 }}>{phoneVisible?'Phone numbers visible to all workers':'Phone numbers hidden (members can share individually)'}</span>
         </label>
       </div>
+
+      {/* ── Scripture splash management ── */}
+      <ScriptureManager />
 
       <button className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'12px', fontSize:14, fontWeight:700 }} onClick={save}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>

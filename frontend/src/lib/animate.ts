@@ -1,5 +1,5 @@
 /**
- * Animation utilities — HICC Workforce Platform
+ * Animation utilities — HICC Workforce Community
  * Countup, entrance stagger, progress fill, spring toast
  */
 

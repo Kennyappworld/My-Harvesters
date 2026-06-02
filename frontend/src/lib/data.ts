@@ -1,5 +1,5 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   HICC Church Data v4.0 — Workforce Platform
+   HICC Church Data v4.0 — Workforce Community
    ───────────────────────────────────────────────────────────────────────── */
 
 export const BRANCH_COLORS: Record<string, string> = {

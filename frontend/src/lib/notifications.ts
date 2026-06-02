@@ -1,5 +1,5 @@
 /**
- * Push notification utilities — HICC Workforce Platform
+ * Push notification utilities — HICC Workforce Community
  */
 
 export async function requestNotificationPermission(): Promise<boolean> {

@@ -5,62 +5,110 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 
 const DAILY_WORDS = [
-  {
-    verse: 'The Lord your God is in your midst - a mighty one who will save. He will rejoice over you with gladness; He will quiet you by His love; He will exult over you with loud singing.',
-    ref: 'Zephaniah 3:17 (ESV)',
-  },
-  {
-    verse: 'Can a mother forget the baby at her breast and have no compassion on the child she has borne? Though she may forget, I will not forget you! See, I have engraved you on the palms of my hands.',
-    ref: 'Isaiah 49:15-16 (NIV)',
-  },
-  {
-    verse: 'The LORD appeared to us in the past, saying: I have loved you with an everlasting love; I have drawn you with unfailing kindness.',
-    ref: 'Jeremiah 31:3 (NIV)',
-  },
-  {
-    verse: 'For I am convinced that neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.',
-    ref: 'Romans 8:38-39 (NIV)',
-  },
-  {
-    verse: 'He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who hope in the LORD will renew their strength. They will soar on wings like eagles.',
-    ref: 'Isaiah 40:29-31 (NIV)',
-  },
-  {
-    verse: 'The thief comes only to steal and kill and destroy. I came that they may have life and have it abundantly.',
-    ref: 'John 10:10 (ESV)',
-  },
-  {
-    verse: 'Fear not, for I have redeemed you; I have called you by name, you are mine. When you pass through the waters, I will be with you; and through the rivers, they shall not overwhelm you.',
-    ref: 'Isaiah 43:1-2 (ESV)',
-  },
-  {
-    verse: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us - to him be glory.',
-    ref: 'Ephesians 3:20-21 (NIV)',
-  },
-  {
-    verse: 'Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls.',
-    ref: 'Matthew 11:28-29 (NIV)',
-  },
-  {
-    verse: "For we are God's handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.",
-    ref: 'Ephesians 2:10 (NIV)',
-  },
-  {
-    verse: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.',
-    ref: 'Psalm 23:1-3 (ESV)',
-  },
-  {
-    verse: "But you are a chosen people, a royal priesthood, a holy nation, God's special possession, that you may declare the praises of him who called you out of darkness into his wonderful light.",
-    ref: '1 Peter 2:9 (NIV)',
-  },
-  {
-    verse: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.',
-    ref: 'Philippians 4:6-7 (NIV)',
-  },
-  {
-    verse: 'For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, plans to give you hope and a future.',
-    ref: 'Jeremiah 29:11 (NIV)',
-  },
+  // GOD'S LOVE & IDENTITY
+  { verse: 'The Lord your God is in your midst, a mighty one who will save; he will rejoice over you with gladness; he will quiet you by his love; he will exult over you with loud singing.', ref: 'Zephaniah 3:17 (ESV)' },
+  { verse: 'Can a mother forget the baby at her breast and have no compassion on the child she has borne? Though she may forget, I will not forget you! See, I have engraved you on the palms of my hands.', ref: 'Isaiah 49:15-16 (NIV)' },
+  { verse: 'I have loved you with an everlasting love; therefore I have continued my faithfulness to you.', ref: 'Jeremiah 31:3 (ESV)' },
+  { verse: 'For I am convinced that neither death nor life, neither angels nor demons, neither the present nor the future, nor any powers, neither height nor depth, nor anything else in all creation, will be able to separate us from the love of God that is in Christ Jesus our Lord.', ref: 'Romans 8:38-39 (NIV)' },
+  { verse: 'See what great love the Father has lavished on us, that we should be called children of God! And that is what we are!', ref: '1 John 3:1 (NIV)' },
+  { verse: 'But you are a chosen people, a royal priesthood, a holy nation, God\'s special possession, that you may declare the praises of him who called you out of darkness into his wonderful light.', ref: '1 Peter 2:9 (NIV)' },
+  { verse: 'For we are God\'s handiwork, created in Christ Jesus to do good works, which God prepared in advance for us to do.', ref: 'Ephesians 2:10 (NIV)' },
+  { verse: 'The LORD your God is with you, the Mighty Warrior who saves. He will take great delight in you; in his love he will no longer rebuke you, but will rejoice over you with singing.', ref: 'Zephaniah 3:17 (NIV)' },
+  { verse: 'Before I formed you in the womb I knew you, before you were born I set you apart; I appointed you as a prophet to the nations.', ref: 'Jeremiah 1:5 (NIV)' },
+  { verse: 'You are precious in my eyes, and honoured, and I love you.', ref: 'Isaiah 43:4 (ESV)' },
+
+  // FAITH & TRUST
+  { verse: 'Trust in the LORD with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.', ref: 'Proverbs 3:5-6 (NIV)' },
+  { verse: 'For I know the plans I have for you, declares the LORD, plans to prosper you and not to harm you, plans to give you hope and a future.', ref: 'Jeremiah 29:11 (NIV)' },
+  { verse: 'And we know that in all things God works for the good of those who love him, who have been called according to his purpose.', ref: 'Romans 8:28 (NIV)' },
+  { verse: 'Now faith is confidence in what we hope for and assurance about what we do not see.', ref: 'Hebrews 11:1 (NIV)' },
+  { verse: 'For we live by faith, not by sight.', ref: '2 Corinthians 5:7 (NIV)' },
+  { verse: 'Without faith it is impossible to please God, because anyone who comes to him must believe that he exists and that he rewards those who earnestly seek him.', ref: 'Hebrews 11:6 (NIV)' },
+  { verse: 'Ask and it will be given to you; seek and you will find; knock and the door will be opened to you.', ref: 'Matthew 7:7 (NIV)' },
+  { verse: 'Jesus said to him, "If you can believe, all things are possible to him who believes."', ref: 'Mark 9:23 (NKJV)' },
+  { verse: 'I can do all things through Christ who strengthens me.', ref: 'Philippians 4:13 (NKJV)' },
+  { verse: 'But those who hope in the LORD will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.', ref: 'Isaiah 40:31 (NIV)' },
+
+  // GRACE & SALVATION
+  { verse: 'For it is by grace you have been saved, through faith - and this is not from yourselves, it is the gift of God - not by works, so that no one can boast.', ref: 'Ephesians 2:8-9 (NIV)' },
+  { verse: 'The grace of God has appeared that offers salvation to all people. It teaches us to say "No" to ungodliness and worldly passions, and to live self-controlled, upright and godly lives.', ref: 'Titus 2:11-12 (NIV)' },
+  { verse: 'But he said to me, "My grace is sufficient for you, for my power is made perfect in weakness." Therefore I will boast all the more gladly about my weaknesses, so that Christ\'s power may rest on me.', ref: '2 Corinthians 12:9 (NIV)' },
+  { verse: 'The LORD is compassionate and gracious, slow to anger, abounding in love.', ref: 'Psalm 103:8 (NIV)' },
+  { verse: 'Let us then approach God\'s throne of grace with confidence, so that we may receive mercy and find grace to help us in our time of need.', ref: 'Hebrews 4:16 (NIV)' },
+
+  // GOD'S PRESENCE & PROTECTION
+  { verse: 'The LORD is my shepherd; I shall not want. He makes me lie down in green pastures. He leads me beside still waters. He restores my soul.', ref: 'Psalm 23:1-3 (ESV)' },
+  { verse: 'Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand.', ref: 'Isaiah 41:10 (ESV)' },
+  { verse: 'Fear not, for I have redeemed you; I have called you by name, you are mine. When you pass through the waters, I will be with you; and through the rivers, they shall not overwhelm you.', ref: 'Isaiah 43:1-2 (ESV)' },
+  { verse: 'The Lord is my light and my salvation - whom shall I fear? The Lord is the stronghold of my life - of whom shall I be afraid?', ref: 'Psalm 27:1 (NIV)' },
+  { verse: 'God is our refuge and strength, an ever-present help in trouble. Therefore we will not fear, though the earth give way and the mountains fall into the heart of the sea.', ref: 'Psalm 46:1-2 (NIV)' },
+  { verse: 'He who dwells in the secret place of the Most High shall abide under the shadow of the Almighty. I will say of the LORD, "He is my refuge and my fortress; My God, in Him I will trust."', ref: 'Psalm 91:1-2 (NKJV)' },
+  { verse: 'No weapon formed against you shall prosper, and every tongue which rises against you in judgment you shall condemn. This is the heritage of the servants of the LORD.', ref: 'Isaiah 54:17 (NKJV)' },
+  { verse: 'The LORD will fight for you; you need only to be still.', ref: 'Exodus 14:14 (NIV)' },
+
+  // PURPOSE & CALLING
+  { verse: 'You did not choose me, but I chose you and appointed you so that you might go and bear fruit - fruit that will last.', ref: 'John 15:16 (NIV)' },
+  { verse: 'For we are co-workers in God\'s service; you are God\'s field, God\'s building.', ref: '1 Corinthians 3:9 (NIV)' },
+  { verse: 'Therefore, my dear brothers and sisters, stand firm. Let nothing move you. Always give yourselves fully to the work of the Lord, because you know that your labour in the Lord is not in vain.', ref: '1 Corinthians 15:58 (NIV)' },
+  { verse: 'Each of you should use whatever gift you have received to serve others, as faithful stewards of God\'s grace in its various forms.', ref: '1 Peter 4:10 (NIV)' },
+  { verse: 'He said to them, "Go into all the world and preach the gospel to all creation."', ref: 'Mark 16:15 (NIV)' },
+  { verse: 'Whatever you do, work at it with all your heart, as working for the Lord, not for human masters, since you know that you will receive an inheritance from the Lord as a reward.', ref: 'Colossians 3:23-24 (NIV)' },
+  { verse: 'Commit to the LORD whatever you do, and he will establish your plans.', ref: 'Proverbs 16:3 (NIV)' },
+
+  // PEACE & REST
+  { verse: 'Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls.', ref: 'Matthew 11:28-29 (NIV)' },
+  { verse: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.', ref: 'Philippians 4:6-7 (NIV)' },
+  { verse: 'You will keep in perfect peace those whose minds are steadfast, because they trust in you.', ref: 'Isaiah 26:3 (NIV)' },
+  { verse: 'Peace I leave with you; my peace I give you. I do not give to you as the world gives. Do not let your hearts be troubled and do not be afraid.', ref: 'John 14:27 (NIV)' },
+  { verse: 'Cast all your anxiety on him because he cares for you.', ref: '1 Peter 5:7 (NIV)' },
+  { verse: 'The LORD gives strength to his people; the LORD blesses his people with peace.', ref: 'Psalm 29:11 (NIV)' },
+
+  // ABUNDANCE & PROVISION
+  { verse: 'Now to him who is able to do immeasurably more than all we ask or imagine, according to his power that is at work within us, to him be glory.', ref: 'Ephesians 3:20-21 (NIV)' },
+  { verse: 'The thief comes only to steal and kill and destroy. I came that they may have life and have it abundantly.', ref: 'John 10:10 (ESV)' },
+  { verse: 'And my God will meet all your needs according to the riches of his glory in Christ Jesus.', ref: 'Philippians 4:19 (NIV)' },
+  { verse: 'Bring the whole tithe into the storehouse, that there may be food in my house. "Test me in this," says the LORD Almighty, "and see if I will not throw open the floodgates of heaven and pour out so much blessing that there will not be room enough to store it."', ref: 'Malachi 3:10 (NIV)' },
+  { verse: 'Give, and it will be given to you. A good measure, pressed down, shaken together and running over, will be poured into your lap.', ref: 'Luke 6:38 (NIV)' },
+  { verse: 'The LORD will open the heavens, the storehouse of his bounty, to send rain on your land in season and to bless all the work of your hands.', ref: 'Deuteronomy 28:12 (NIV)' },
+
+  // STRENGTH & VICTORY
+  { verse: 'He gives strength to the weary and increases the power of the weak. Even youths grow tired and weary, and young men stumble and fall; but those who hope in the LORD will renew their strength.', ref: 'Isaiah 40:29-31 (NIV)' },
+  { verse: 'Be strong and courageous. Do not be afraid; do not be discouraged, for the LORD your God will be with you wherever you go.', ref: 'Joshua 1:9 (NIV)' },
+  { verse: 'But thanks be to God! He gives us the victory through our Lord Jesus Christ.', ref: '1 Corinthians 15:57 (NIV)' },
+  { verse: 'No, in all these things we are more than conquerors through him who loved us.', ref: 'Romans 8:37 (NIV)' },
+  { verse: 'For everyone born of God overcomes the world. This is the victory that has overcome the world, even our faith.', ref: '1 John 5:4 (NIV)' },
+  { verse: 'The horse is made ready for the day of battle, but victory rests with the LORD.', ref: 'Proverbs 21:31 (NIV)' },
+  { verse: 'Submit yourselves, then, to God. Resist the devil, and he will flee from you.', ref: 'James 4:7 (NIV)' },
+
+  // LIFE IN THE SPIRIT
+  { verse: 'But the fruit of the Spirit is love, joy, peace, forbearance, kindness, goodness, faithfulness, gentleness and self-control. Against such things there is no law.', ref: 'Galatians 5:22-23 (NIV)' },
+  { verse: 'For the Spirit God gave us does not make us timid, but gives us power, love and self-discipline.', ref: '2 Timothy 1:7 (NIV)' },
+  { verse: 'Those who live in accordance with the Spirit have their minds set on what the Spirit desires. The mind governed by the Spirit is life and peace.', ref: 'Romans 8:5-6 (NIV)' },
+  { verse: 'But you will receive power when the Holy Spirit comes on you; and you will be my witnesses in Jerusalem, and in all Judea and Samaria, and to the ends of the earth.', ref: 'Acts 1:8 (NIV)' },
+
+  // TRANSFORMATION & RENEWAL
+  { verse: 'Do not conform to the pattern of this world, but be transformed by the renewing of your mind. Then you will be able to test and approve what God\'s will is - his good, pleasing and perfect will.', ref: 'Romans 12:2 (NIV)' },
+  { verse: 'Therefore, if anyone is in Christ, the new creation has come: the old has gone, the new is here!', ref: '2 Corinthians 5:17 (NIV)' },
+  { verse: 'Create in me a pure heart, O God, and renew a steadfast spirit within me.', ref: 'Psalm 51:10 (NIV)' },
+  { verse: 'He who was seated on the throne said, "I am making everything new!" Then he said, "Write this down, for these words are trustworthy and true."', ref: 'Revelation 21:5 (NIV)' },
+
+  // PRAYER & SEEKING GOD
+  { verse: 'If my people, who are called by my name, will humble themselves and pray and seek my face and turn from their wicked ways, then I will hear from heaven, and I will forgive their sin and will heal their land.', ref: '2 Chronicles 7:14 (NIV)' },
+  { verse: 'Call to me and I will answer you and tell you great and unsearchable things you do not know.', ref: 'Jeremiah 33:3 (NIV)' },
+  { verse: 'Delight yourself in the LORD, and he will give you the desires of your heart.', ref: 'Psalm 37:4 (ESV)' },
+  { verse: 'Draw near to God, and he will draw near to you.', ref: 'James 4:8 (ESV)' },
+  { verse: 'This is the confidence we have in approaching God: that if we ask anything according to his will, he hears us.', ref: '1 John 5:14 (NIV)' },
+
+  // LIFE & GODLINESS
+  { verse: 'His divine power has given us everything we need for a godly life through our knowledge of him who called us by his own glory and goodness.', ref: '2 Peter 1:3 (NIV)' },
+  { verse: 'Seek first his kingdom and his righteousness, and all these things will be given to you as well.', ref: 'Matthew 6:33 (NIV)' },
+  { verse: 'Blessed is the one who does not walk in step with the wicked or stand in the way that sinners take or sit in the company of mockers, but whose delight is in the law of the LORD, and who meditates on his law day and night.', ref: 'Psalm 1:1-2 (NIV)' },
+  { verse: 'Taste and see that the LORD is good; blessed is the one who takes refuge in him.', ref: 'Psalm 34:8 (NIV)' },
+  { verse: 'May he give you the desire of your heart and make all your plans succeed.', ref: 'Psalm 20:4 (NIV)' },
+  { verse: 'This is the day the LORD has made; let us rejoice and be glad in it.', ref: 'Psalm 118:24 (NIV)' },
+  { verse: 'Let the morning bring me word of your unfailing love, for I have put my trust in you. Show me the way I should go, for to you I entrust my life.', ref: 'Psalm 143:8 (NIV)' },
+  { verse: 'Your word is a lamp for my feet, a light on my path.', ref: 'Psalm 119:105 (NIV)' },
+  { verse: 'The steadfast love of the LORD never ceases; his mercies never come to an end; they are new every morning; great is your faithfulness.', ref: 'Lamentations 3:22-23 (ESV)' },
 ]
 
 // Supabase client - gracefully falls back if env vars not yet set
@@ -70,7 +118,18 @@ const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabase
 
 function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
   const [vis, setVis] = useState(false)
-  const [word] = useState(() => DAILY_WORDS[Math.floor(Math.random() * DAILY_WORDS.length)])
+  const [word] = useState(() => {
+    try {
+      const custom = localStorage.getItem('hicc_custom_scriptures')
+      if (custom) {
+        const pool = JSON.parse(custom)
+        if (Array.isArray(pool) && pool.length > 0) {
+          return pool[Math.floor(Math.random() * pool.length)]
+        }
+      }
+    } catch {}
+    return DAILY_WORDS[Math.floor(Math.random() * DAILY_WORDS.length)]
+  })
   const [phase, setPhase] = useState(0) // 0=hidden 1=cross 2=grace words 3=name 4=scripture 5=buttons
 
   useEffect(() => {
@@ -130,7 +189,7 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
         {/* Buttons */}
         <div style={{ opacity:phase>=5?1:0, transform:phase>=5?'translateY(0)':'translateY(8px)', transition:'opacity 0.4s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
           <button onClick={dismiss} className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'14px', fontSize:15, fontWeight:700, marginBottom:12, letterSpacing:'0.02em', boxShadow:'0 0 30px rgba(27,67,50,0.6)' }}>
-            Enter the platform →
+            Enter the community →
           </button>
           <button onClick={dismiss} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,.25)', fontSize:12, fontFamily:'var(--font-body)', letterSpacing:'.04em' }}>
             Skip for now
@@ -369,7 +428,7 @@ export default function LoginPage() {
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
         </div>
         <div style={{ fontSize:13, fontWeight:800, fontFamily:'var(--font-display)', color:'white', letterSpacing:'-0.01em' }}>Harvesters HICC</div>
-        <div style={{ fontSize:10, color:'var(--gold)', letterSpacing:'.08em', fontWeight:600, textTransform:'uppercase', marginTop:2 }}>Workforce Platform</div>
+        <div style={{ fontSize:10, color:'var(--gold)', letterSpacing:'.08em', fontWeight:600, textTransform:'uppercase', marginTop:2 }}>Workforce Community</div>
       </div>
 
       {/* Login card */}

@@ -26,6 +26,7 @@ const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { l
 const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),     { loading: () => <L/> })
 const Devotional    = dynamic(() => import('./sections/Devotional'),          { loading: () => <L/> })
 const Network       = dynamic(() => import('./sections/Network'),             { loading: () => <L/> })
+const Giving        = dynamic(() => import('./sections/Giving'),              { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -152,6 +153,7 @@ const NAV = [
     { key:'membcard',     label:'Membership Cards',    icon:'M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z' },
   ]},
   { section:'OPERATIONS', items:[
+    { key:'giving',       label:'Giving & Tithes',     icon:'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2', badge:'₦', bc:'nb-green' },
     { key:'attendance',   label:'Attendance',          icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
     { key:'reports',      label:'Reports',             icon:'M18 20V10M12 20V4M6 20v-6', badge:3, minRole:'unit_head' },
   ]},
@@ -179,6 +181,7 @@ const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
   reports:      {title:'Reports',            sub:'Monthly branch reports · Analytics summaries', emoji:'📊'},
   settings:     {title:'Settings',           sub:'Users · Branches · Departments · QR Signup', emoji:'⚙️'},
   membcard:     {title:'Membership Cards',   sub:'Digital ID · QR verification · Print-ready', emoji:'🪪'},
+  giving:       {title:'Giving & Tithes',     sub:'Multi-currency · Multi-branch · Service breakdown', emoji:'💰'},
 }
 
 const PAGES: Record<string,any> = {
@@ -186,7 +189,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash, network:Network,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash, network:Network, giving:Giving,
 }
 
 export default function Dashboard() {

@@ -306,14 +306,13 @@ export default function Dashboard() {
             </div>
           </div>
           <button onClick={async()=>{
-            // Clear session cookie and storage
-            document.cookie='hicc_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+            if (!window.confirm('Sign out of the Workforce Community?')) return
+            document.cookie='hicc_session=; path=/; max-age=0'
             sessionStorage.clear()
-            // Sign out from Supabase if connected
             const sUrl=process.env.NEXT_PUBLIC_SUPABASE_URL
             const sKey=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
             if(sUrl&&sKey){try{const{createClient}=await import('@supabase/supabase-js');await createClient(sUrl,sKey).auth.signOut()}catch{}}
-            window.location.href='/'
+            window.location.href='/login'
           }} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'rgba(255,255,255,0.35)',background:'none',border:'none',cursor:'pointer',fontFamily:'var(--font-body)',padding:0}}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="11" height="11"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign out

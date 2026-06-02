@@ -1,4 +1,5 @@
 'use client'
+import { useSession } from '@/lib/useSession'
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
 import { createClient } from '@supabase/supabase-js'
 
@@ -381,7 +382,7 @@ export default function Settings() {
   const [deptForm, setDeptForm] = useState({ name:'', icon:'📋', color:'#1B4332', head:'' })
   const [branchForm, setBranchForm] = useState({ name:'', location:'', country:'NG', pastor:'' })
 
-  const currentUser = { role:'senior_pastor' } // In production: from auth context
+  const { user: currentUser } = useSession()
 
   const filteredUsers = userFilter === 'all' ? users : userFilter === 'pending' ? users.filter(u=>u.status==='pending') : users.filter(u=>u.role===userFilter)
 
@@ -406,14 +407,23 @@ export default function Settings() {
     if (supabase) {
       // Update worker record
       await supabase.from('workers').update({ status:'active', role:'worker' }).eq('id', id).then(()=>{})
-      // If they have an email, create their Supabase auth account
+      // If they have an email, create their auth account via secure server-side API
       if (u.email) {
         try {
-          await supabase.auth.admin?.createUser({
-            email: u.email,
-            password: tempPass,
-            email_confirm: true,
-            user_metadata: { full_name: u.name, branch_id: u.branch, department: u.dept, role: 'worker' }
+          const { data: { session } } = await supabase.auth.getSession()
+          await fetch('/api/create-worker-account', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session?.access_token ?? ''}`,
+            },
+            body: JSON.stringify({
+              email: u.email,
+              password: tempPass,
+              name: u.name,
+              branch: u.branch,
+              dept: u.dept,
+            }),
           })
         } catch {}
       }
@@ -440,7 +450,7 @@ export default function Settings() {
   }
 
   const deleteBranch = (id: string) => {
-    if (currentUser.role !== 'senior_pastor') { notify.error('Only the Super Admin can delete a branch.'); return }
+    if (currentUser?.role !== 'senior_pastor') { notify.error('Only the Super Admin can delete a branch.'); return }
     setBranchList(prev => prev.filter(b => b.id !== id)); setBranchDeleteConfirm(null)
   }
 
@@ -602,7 +612,7 @@ export default function Settings() {
                   <span>{b.members.toLocaleString()} members</span>
                   <span>{b.pastor}</span>
                 </div>
-                {currentUser.role === 'senior_pastor' ? (
+                {currentUser?.role === 'senior_pastor' ? (
                   <button className="btn btn-danger btn-sm" style={{ width:'100%', justifyContent:'center', fontSize:11.5 }} onClick={()=>setBranchDeleteConfirm(b.id)}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
                     Delete branch
@@ -751,7 +761,7 @@ export default function Settings() {
                       <div class="badge">Harvesters International Christian Centre</div>
                       <h2>${title}</h2>
                       <p>Scan to register as a worker in this ${qrMode==='branch'?'branch':qrMode==='dept'?'department':'branch & department'}</p>
-                      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrUrl)}" width="220" height="220" style="border-radius:8px"/>
+                      <img style={{display:"none"}} aria-hidden/>
                       <div class="url">${qrUrl}</div>
                       <p class="no-print" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 24px;background:#1B3A2A;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Print / Save as PDF</button></p>
                       </div></body></html>`)
@@ -785,7 +795,7 @@ export default function Settings() {
                   const url = `https://my-harvesters.vercel.app/signup?branch=${qrBranch}&dept=${d.id}`
                   return `<div class="qr-card">
                     <div class="badge">${d.icon} ${d.name}</div>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}" width="160" height="160"/>
+                    <img style="display:none"/>
                     <div class="sub">${brName}</div>
                     <div class="url">${url}</div>
                   </div>`

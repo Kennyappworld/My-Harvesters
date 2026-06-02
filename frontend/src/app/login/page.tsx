@@ -313,8 +313,17 @@ export default function LoginPage() {
   const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd]   = useState(false)
+  const [failCount, setFailCount] = useState(0)
+  const [lockUntil, setLockUntil] = useState(0)
   const [busy, setBusy]         = useState(false)
   const [err, setErr]           = useState('')
+  // Show session-expired message if redirected by useSession
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('reason') === 'session_expired') setErr('Your session expired. Please sign in again.')
+    }
+  }, [])
   const [mode, setMode]         = useState<'login'|'forgot'>('login')
   const [splash, setSplash]     = useState<{show:boolean;name:string}>({show:false,name:''})
   const [biometric, setBiometric] = useState(false)
@@ -328,6 +337,7 @@ export default function LoginPage() {
   }, [])
 
   const afterAuth = useCallback((name: string, userEmail: string) => {
+    setFailCount(0); setLockUntil(0)
     sessionStorage.setItem('hicc_user', JSON.stringify({ email: userEmail, name, authenticated: true }))
     sessionStorage.setItem('hicc_biometric_email', userEmail)
     // Set explicit session cookie so middleware allows /dashboard immediately
@@ -364,6 +374,12 @@ export default function LoginPage() {
     const safeEmail = email.trim().toLowerCase().replace(/[<>"'`]/g, '')
     if (!safeEmail || !password) return
 
+    if (lockUntil > Date.now()) {
+      const secs = Math.ceil((lockUntil - Date.now()) / 1000)
+      setErr(`Too many failed attempts. Wait ${secs}s.`)
+      return
+    }
+
     setBusy(true)
 
     // Hard timeout — if nothing resolves in 8 seconds, unblock the UI
@@ -380,9 +396,16 @@ export default function LoginPage() {
         })
         clearTimeout(timeoutId)
         if (error) {
-          setErr(error.message === 'Invalid login credentials'
-            ? 'Incorrect email or password.'
-            : error.message || 'Incorrect email or password.')
+          const nc = failCount + 1; setFailCount(nc)
+          if (nc >= 5) {
+            setLockUntil(Date.now() + 60_000)
+            setErr('Too many failed attempts. Wait 60 seconds.')
+          } else {
+            const rem = 5 - nc
+            setErr(error.message === 'Invalid login credentials'
+              ? `Incorrect email or password. ${rem} attempt${rem===1?'':'s'} remaining.`
+              : error.message || 'Incorrect email or password.')
+          }
           setBusy(false)
           return
         }
@@ -392,21 +415,10 @@ export default function LoginPage() {
         // Don't setBusy(false) — we navigate away, no need to unblock
         afterAuth(name, safeEmail)
       } else {
-        // Demo fallback
-        const DEMO: Record<string, string> = {
-          'pastor@hicc.org': 'Pastor Bolaji Idowu',
-          'pastor.ikeja@hicc.org': 'Pastor Kanmi Adeyemi',
-          'pastor.london@hicc.org': 'Pastor James Osei',
-          'segun@hicc.org': 'Segun Adeyemi',
-        }
-        const DEMO_PASS = process.env.NEXT_PUBLIC_DEMO_PASS || 'demo123'
+        // Supabase not configured — show helpful message
         clearTimeout(timeoutId)
-        if (!DEMO[safeEmail] || password !== DEMO_PASS) {
-          setErr('Incorrect email or password.')
-          setBusy(false)
-          return
-        }
-        afterAuth(DEMO[safeEmail], safeEmail)
+        setErr('Authentication service not configured. Please contact your administrator.')
+        setBusy(false)
       }
     } catch {
       clearTimeout(timeoutId)
@@ -479,7 +491,9 @@ export default function LoginPage() {
   }
 
   if (splash.show) {
-    return <WelcomeSplash name={splash.name} onDone={() => { setSplash({show:false,name:''}); router.push('/dashboard') }}/>
+    const from = new URLSearchParams(window.location.search).get('from')
+    const dest = from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard'
+    return <WelcomeSplash name={splash.name} onDone={() => { setSplash({show:false,name:''}); router.push(dest) }}/>
   }
 
   if (mode === 'forgot') return (

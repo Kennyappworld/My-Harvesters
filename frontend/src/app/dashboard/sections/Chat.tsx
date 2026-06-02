@@ -152,6 +152,7 @@ export default function Chat() {
 
   const send = async () => {
     if (!input.trim() || !isChannelMember) return
+    if (input.length > 4000) { alert("Message too long (max 4000 characters)"); return }
     const text = input.trim(); setInput('')
     const name = user?.name || 'Worker'
     const opt: Msg = { id:`opt_${Date.now()}`, from:name, initials:name.slice(0,2).toUpperCase(), text, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), mine:true }
@@ -548,7 +549,7 @@ export default function Chat() {
 
             {/* Input */}
             <div style={{padding:'10px 14px',borderTop:'0.5px solid rgba(255,255,255,0.08)',display:'flex',gap:8}}>
-              <input className="input" placeholder={`Message ${ch?.label}…`} value={input} onChange={e=>setInput(e.target.value)}
+              <input className="input" placeholder={`Message ${ch?.label}…`} value={input} onChange={e=>setInput(e.target.value.slice(0,4000))}
                 onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send() }}}
                 style={{flex:1,background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',color:'white'}}/>
               <button className="btn btn-brand btn-icon" onClick={send} disabled={!input.trim()}>

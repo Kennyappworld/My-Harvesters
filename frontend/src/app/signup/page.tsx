@@ -39,6 +39,19 @@ function SignupForm() {
     e.preventDefault()
     setBusy(true)
     setSignupErr('')
+    // Validate phone
+    const phoneClean = form.phone.replace(/[\s\-\(\)]/g,'')
+    if (!/^[\+]?[0-9]{7,15}$/.test(phoneClean)) {
+      setSignupErr('Please enter a valid phone number (7-15 digits, optional + prefix).')
+      setBusy(false)
+      return
+    }
+    // Validate email if provided
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setSignupErr('Please enter a valid email address.')
+      setBusy(false)
+      return
+    }
     try {
       if (supabase) {
         // Save directly to workers table — no Supabase auth email triggered
@@ -122,7 +135,7 @@ function SignupForm() {
             </div>
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5}}>Phone number *</label>
-              <input className="input" type="tel" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="+234 800 000 0000" required/>
+              <input className="input" type="tel" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="+234 800 000 0000" maxLength={20} required/>
             </div>
             <div style={{marginBottom:12}}>
               <label style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5}}>Email address</label>

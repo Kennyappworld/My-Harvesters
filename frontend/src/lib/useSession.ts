@@ -53,6 +53,13 @@ export function useSession() {
               .eq('id', session.user.id)
               .single()
 
+            // Force password change if flagged
+            if (worker?.must_change_password && typeof window !== 'undefined') {
+              if (!window.location.pathname.includes('/change-password')) {
+                window.location.href = '/change-password'
+                return
+              }
+            }
             setUser({
               id: session.user.id,
               email: session.user.email || '',
@@ -84,6 +91,26 @@ export function useSession() {
       setLoading(false)
     }
     load()
+
+    // Watch for session expiry and sign-out
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_OUT' && typeof window !== 'undefined') {
+            // Clear session cookie and redirect to login
+            document.cookie = 'hicc_session=; path=/; max-age=0'
+            if (!window.location.pathname.includes('/login')) {
+              window.location.href = '/login?reason=session_expired'
+            }
+          }
+          if (event === 'TOKEN_REFRESHED') {
+            // Re-load user data after token refresh
+            load()
+          }
+        }
+      })
+      return () => subscription.unsubscribe()
+    }
   }, [])
 
   return { user, loading }

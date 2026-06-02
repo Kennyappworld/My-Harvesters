@@ -144,7 +144,7 @@ ${absent.length>0 ? `<p style="font-size:12px;color:#888;margin-top:8px">Absent:
 
 export default function Meetings() {
   const { user } = useSession()
-  const [meetings, setMeetings] = useState<Meeting[]>(() => hydrate('hicc_meetings_v2' as any, SAMPLE_MEETINGS))
+  const [meetings, setMeetings] = useState<Meeting[]>(() => hydrate('hicc_meetings_v2', SAMPLE_MEETINGS))
   const [tab, setTab] = useState<'meetings'|'instant'|'schedule'|'summaries'>('meetings')
   const [selected, setSelected] = useState<Meeting|null>(null)
   const [editingAttendants, setEditingAttendants] = useState(false)
@@ -172,7 +172,7 @@ export default function Meetings() {
             meetLink: m.meet_link||'',
           }))
           setMeetings(mapped)
-          persist('hicc_meetings_v2' as any, mapped)
+          persist('hicc_meetings_v2', mapped)
         }
       } catch {}
     }
@@ -187,12 +187,12 @@ export default function Meetings() {
         const age = now - new Date(m.createdAt).getTime()
         return age < ONE_MONTH_MS
       })
-      if (pruned.length !== prev.length) persist('hicc_meetings_v2' as any, pruned)
+      if (pruned.length !== prev.length) persist('hicc_meetings_v2', pruned)
       return pruned
     })
   }, [])
 
-  const save = (updated: Meeting[]) => { setMeetings(updated); persist('hicc_meetings_v2' as any, updated) }
+  const save = (updated: Meeting[]) => { setMeetings(updated); persist('hicc_meetings_v2', updated) }
 
   const markAttendance = (mtgId: string, idx: number, present: boolean) => {
     const updated = meetings.map(m => m.id===mtgId ? { ...m, attendants: m.attendants.map((a,i)=>i===idx?{...a,present}:a) } : m)

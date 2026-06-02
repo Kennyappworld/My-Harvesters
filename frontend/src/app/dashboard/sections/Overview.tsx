@@ -148,6 +148,12 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
     <div>
       {showNewMembers && <NewMembersModal onClose={()=>setShowNewMembers(false)}/>}
 
+      {/* Sample data notice */}
+      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#92610A' }}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span>KPIs and charts show <strong>sample data</strong> until your Supabase database is connected and live records are entered.</span>
+      </div>
+
       {/* Mission statement */}
       <div style={{ marginBottom:20, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(120deg, #0F2D1C 0%, #0A1F13 60%, #0C2518 100%)', padding:'0', boxShadow:'0 2px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
         {/* Faint cross watermark far right */}

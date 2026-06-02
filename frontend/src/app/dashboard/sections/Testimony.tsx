@@ -1,7 +1,5 @@
 'use client'
-import { useState } from 'react'
-import { testimonies } from '@/lib/data'
-import { persist, hydrate } from '@/lib/store'
+import { useState, useEffect } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useSession } from '@/lib/useSession'
 
@@ -9,96 +7,115 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   : null
 
-const CATS = ['All','Healing','Finance','Salvation','Breakthrough','Marriage','Career']
-const CAT_COL: Record<string,string> = {
-  Healing:'#10B981', Finance:'#F59E0B', Salvation:'#1B4332',
-  Breakthrough:'#2B6CB0', Marriage:'#C9A84C', Career:'#14B8A6',
-}
+const CATS = ['Healing','Provision','Breakthrough','Salvation','Restoration','Family','Career','General']
+
+const SAMPLES = [
+  { id:'s1', author_name:'Sister Grace', category:'Healing', body:'After three months of illness the doctors said was incurable, God healed me completely. My last test came back clear. To God be the glory!', branch_id:'lekki', created_at: new Date(Date.now()-86400000*2).toISOString() },
+  { id:'s2', author_name:'Brother Emmanuel', category:'Provision', body:'I was about to lose my home. I prayed and three days later I received an unexpected settlement from a case I had forgotten about. God is faithful!', branch_id:'ikeja', created_at: new Date(Date.now()-86400000*5).toISOString() },
+  { id:'s3', author_name:'Deaconess Folake', category:'Career', body:'After 18 months of job searching, I received two offers in the same week — both better than what I had before. His timing is perfect.', branch_id:'lekki', created_at: new Date(Date.now()-86400000*7).toISOString() },
+]
 
 export default function Testimony() {
   const { user } = useSession()
-  const [items, setItems] = useState(() => hydrate('hicc_testimonies', testimonies.map(t=>({...t, hasCelebrated:false}))))
+  const [items, setItems] = useState<any[]>(SAMPLES)
+  const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('All')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ title:'', category:'Breakthrough', text:'' })
+  const [form, setForm] = useState({ text: '', category: 'General' })
   const [saved, setSaved] = useState(false)
 
-  const filtered = filter==='All' ? items : items.filter(t=>t.category===filter)
+  useEffect(() => {
+    if (!supabase) return
+    setLoading(true)
+    supabase
+      .from('testimonies')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(50)
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) setItems(data)
+        setLoading(false)
+      }, () => setLoading(false))
+  }, [])
 
-  const celebrate = (id:string) => {
-    setItems(prev=>prev.map(t=>t.id===id?{...t,celebrating:t.hasCelebrated?t.celebrating-1:t.celebrating+1,hasCelebrated:!t.hasCelebrated}:t))
-  }
+  // Real-time — new testimonies appear instantly
+  useEffect(() => {
+    if (!supabase) return
+    const sub = supabase
+      .channel('testimony_rt')
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'testimonies' }, payload => {
+        setItems(prev => [payload.new as any, ...prev])
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(sub) }
+  }, [])
 
-  const submit = (e:React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const name = user?.name || 'Worker'
-    setItems(prev=>[{id:`t${Date.now()}`,author:name,branch:user?.branch_id||'Lekki HQ',initials:name.slice(0,2).toUpperCase(),av:'brand',role:user?.role||'worker',date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),category:form.category,text:form.text,celebrating:0,comments:0,hasCelebrated:false},...prev])
+    if (!form.text.trim()) return
+    const name = user?.name || 'Anonymous'
+    const newItem = { id: Date.now().toString(), author_name: name, category: form.category, body: form.text, branch_id: user?.branch_id || 'lekki', created_at: new Date().toISOString() }
+    setItems(prev => [newItem, ...prev])
+    setSaved(true); setTimeout(() => setSaved(false), 3000)
+    setForm({ text: '', category: 'General' }); setShowForm(false)
     if (supabase && user?.id) {
-      supabase.from('testimonies').insert({ author_id:user.id, author_name:name, branch_id:user.branch_id, category:form.category, body:form.text }).then(()=>{})
+      await supabase.from('testimonies').insert({ author_id: user.id, author_name: name, branch_id: user.branch_id || 'lekki', category: form.category, body: form.text })
     }
-    setSaved(true); setTimeout(()=>{setSaved(false);setShowForm(false);setForm({title:'',category:'Breakthrough',text:''})},2000)
   }
+
+  const filtered = filter === 'All' ? items : items.filter((i: any) => i.category === filter)
 
   return (
     <div>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <div style={{fontWeight:800,fontSize:16,fontFamily:'var(--font-display)'}}>Testimonies</div>
-          <div style={{fontSize:12,color:'var(--t-2)',marginTop:2}}>Cross-branch celebrations · {items.length} shared</div>
+          <h2 style={{ fontFamily:'var(--font-display)', fontSize:22, fontWeight:800, marginBottom:4 }}>Testimonies</h2>
+          <div style={{ fontSize:12, color:'var(--t-2)' }}>
+            Declare what God has done · {items.length} testimonies
+            {supabase && <span style={{ marginLeft:8, color:'#22c55e', fontWeight:600 }}>● Live</span>}
+          </div>
         </div>
-        <button className="btn btn-brand btn-sm" onClick={()=>setShowForm(v=>!v)}>+ Share testimony</button>
+        <button className="btn btn-brand btn-sm" onClick={() => setShowForm(v => !v)}>{showForm ? 'Cancel' : '+ Share testimony'}</button>
       </div>
 
-      <div className="tabs" style={{marginBottom:16}}>
-        {CATS.map(c=><button key={c} className={`tab ${filter===c?'active':''}`} onClick={()=>setFilter(c)}>{c}</button>)}
-      </div>
+      {saved && <div style={{ padding:'10px 14px', background:'var(--green-lt)', borderRadius:'var(--r)', fontSize:13, color:'var(--green)', marginBottom:16, fontWeight:600 }}>✓ Testimony shared! Praise God!</div>}
 
       {showForm && (
-        <div className="card card-p" style={{marginBottom:16,maxWidth:560}}>
-          <div style={{fontWeight:700,fontSize:14,marginBottom:12}}>Share your testimony</div>
-          {saved && <div style={{padding:'8px 12px',background:'var(--green-lt)',borderRadius:'var(--r)',fontSize:12.5,color:'var(--green)',marginBottom:12,fontWeight:600}}>✓ Testimony shared — God be praised!</div>}
-          <form onSubmit={submit}>
-            <div style={{marginBottom:12}}>
-              <label style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5}}>Category</label>
-              <select className="input" value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
-                {CATS.slice(1).map(c=><option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div style={{marginBottom:14}}>
-              <label style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',display:'block',marginBottom:5}}>Your testimony *</label>
-              <textarea className="input" rows={4} placeholder="Share what God has done…" value={form.text} onChange={e=>setForm(f=>({...f,text:e.target.value}))} required style={{resize:'vertical'}}/>
-            </div>
-            <div style={{display:'flex',gap:10}}>
-              <button type="submit" className="btn btn-brand btn-sm">Share testimony</button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setShowForm(false)}>Cancel</button>
-            </div>
-          </form>
-        </div>
+        <form onSubmit={submit} className="card card-p" style={{ marginBottom:20 }}>
+          <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Share what God has done</div>
+          <select className="select" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} style={{ marginBottom:10 }}>
+            {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <textarea className="input" rows={5} placeholder="Tell us what God did…" value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} style={{ resize:'vertical', marginBottom:10 }}/>
+          <button type="submit" className="btn btn-brand btn-sm">Share testimony</button>
+        </form>
       )}
 
-      <div style={{display:'flex',flexDirection:'column',gap:12}}>
-        {filtered.map(t=>(
-          <div key={t.id} className="card" style={{padding:'18px 20px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
-              <div style={{display:'flex',alignItems:'center',gap:10}}>
-                <div className={`av av-md av-${t.av}`}>{t.initials}</div>
+      <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap' }}>
+        {['All', ...CATS].map(c => (
+          <button key={c} onClick={() => setFilter(c)} className={`btn btn-sm ${filter===c?'btn-brand':'btn-ghost'}`}>{c}</button>
+        ))}
+      </div>
+
+      {loading && <div style={{ textAlign:'center', padding:'2rem', color:'var(--t-3)', fontSize:13 }}>Loading testimonies…</div>}
+
+      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+        {filtered.map((t: any) => (
+          <div key={t.id} className="card card-p" style={{ borderLeft:'3px solid var(--brand)' }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div className="av av-md av-brand">{(t.author_name||'A').slice(0,2).toUpperCase()}</div>
                 <div>
-                  <div style={{fontWeight:700,fontSize:13}}>{t.author}</div>
-                  <div style={{fontSize:11,color:'var(--t-3)',marginTop:1}}>{t.branch} · {t.role} · {t.date}</div>
+                  <div style={{ fontWeight:700, fontSize:13 }}>{t.author_name || 'Anonymous'}</div>
+                  <div style={{ fontSize:11, color:'var(--t-3)' }}>{t.branch_id} · {new Date(t.created_at).toLocaleDateString()}</div>
                 </div>
               </div>
-              <span style={{background:`${CAT_COL[t.category]||'var(--brand)'}20`,color:CAT_COL[t.category]||'var(--brand)',border:`1px solid ${CAT_COL[t.category]||'var(--brand)'}40`,padding:'2px 10px',borderRadius:100,fontSize:11,fontWeight:600}}>{t.category}</span>
+              <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:20, background:'var(--green-lt)', color:'var(--green)' }}>{t.category}</span>
             </div>
-            <div style={{fontSize:13.5,color:'var(--t-1)',lineHeight:1.75,marginBottom:14,paddingLeft:46}}>{t.text}</div>
-            <div style={{display:'flex',gap:12,alignItems:'center',paddingLeft:46}}>
-              <button onClick={()=>celebrate(t.id)} className="btn btn-sm" style={{background:t.hasCelebrated?'rgba(245,158,11,0.15)':'transparent',border:`1px solid ${t.hasCelebrated?'var(--gold)':'var(--border-md)'}`,color:t.hasCelebrated?'var(--gold)':'var(--t-2)',gap:5}}>
-                ⭐ {t.celebrating} celebrating
-              </button>
-              <span style={{fontSize:11.5,color:'var(--t-3)'}}>{t.comments} comments</span>
-            </div>
+            <p style={{ fontSize:13.5, color:'var(--t-1)', lineHeight:1.75 }}>{t.body}</p>
           </div>
         ))}
-        {filtered.length===0 && <div style={{textAlign:'center',padding:'3rem',color:'var(--t-3)',fontSize:13}}>No testimonies in this category yet.</div>}
+        {!loading && filtered.length === 0 && <div style={{ textAlign:'center', padding:'3rem', color:'var(--t-3)', fontSize:13 }}>No testimonies in this category yet. Be the first to share!</div>}
       </div>
     </div>
   )

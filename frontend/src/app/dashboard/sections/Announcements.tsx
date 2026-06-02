@@ -1,4 +1,5 @@
 'use client'
+import React from 'react'
 import { useState, useEffect } from 'react'
 import { announcements, branches, DEPARTMENTS } from '@/lib/data'
 import { persist, hydrate } from '@/lib/store'
@@ -7,6 +8,36 @@ import { createClient } from '@supabase/supabase-js'
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   : null
+
+
+function SmsConfig() {
+  const [apiKey, setApiKey] = React.useState(() => { try { return localStorage.getItem('hicc_termii_key') || '' } catch { return '' } })
+  const [senderId, setSenderId] = React.useState(() => { try { return localStorage.getItem('hicc_termii_sender') || '' } catch { return '' } })
+  const [saved, setSaved] = React.useState(false)
+  const save = () => {
+    localStorage.setItem('hicc_termii_key', apiKey)
+    localStorage.setItem('hicc_termii_sender', senderId)
+    setSaved(true); setTimeout(() => setSaved(false), 2500)
+  }
+  return (
+    <div style={{marginTop:20,padding:'14px 18px',background:'var(--s-3)',borderRadius:'var(--r-lg)',border:'0.5px solid var(--border)',maxWidth:640}}>
+      <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>SMS delivery — Termii</div>
+      <div style={{fontSize:12,color:'var(--t-2)',lineHeight:1.7,marginBottom:12}}>Members without WhatsApp receive SMS as fallback. Enter your Termii credentials below.</div>
+      {saved && <div style={{padding:'6px 10px',background:'var(--green-lt)',borderRadius:6,fontSize:12,color:'var(--green)',fontWeight:600,marginBottom:10}}>✓ Config saved</div>}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        <div>
+          <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5}}>Termii API key</label>
+          <input className="input" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="TLxxxxxxxxxxxxxx" style={{fontSize:12,fontFamily:'var(--font-mono)'}}/>
+        </div>
+        <div>
+          <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5}}>Sender ID</label>
+          <input className="input" value={senderId} onChange={e=>setSenderId(e.target.value)} placeholder="HARVESTERS" style={{fontSize:12}}/>
+        </div>
+      </div>
+      <button className="btn btn-sm btn-brand" style={{marginTop:12}} onClick={save}>Save SMS config</button>
+    </div>
+  )
+}
 
 export default function Announcements() {
   const [items, setItems] = useState(announcements)
@@ -212,23 +243,7 @@ export default function Announcements() {
             ))}
           </div>
 
-          <div style={{marginTop:20,padding:'14px 18px',background:'var(--s-3)',borderRadius:'var(--r-lg)',border:'0.5px solid var(--border)',maxWidth:640}}>
-            <div style={{fontWeight:700,fontSize:13,marginBottom:8}}>SMS delivery — Termii / Infobip</div>
-            <div style={{fontSize:12.5,color:'var(--t-2)',lineHeight:1.7,marginBottom:12}}>
-              For SMS broadcasts, connect your Termii or Infobip API key in the backend environment variables. Members without WhatsApp receive SMS as fallback.
-            </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-              <div>
-                <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5}}>Termii API key</label>
-                <input className="input" placeholder="TLxxxxxxxxxxxxxx" style={{fontSize:12,fontFamily:'var(--font-mono)'}}/>
-              </div>
-              <div>
-                <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5}}>Sender ID</label>
-                <input className="input" placeholder="HARVESTERS" style={{fontSize:12}}/>
-              </div>
-            </div>
-            <button className="btn btn-sm btn-brand" style={{marginTop:12}}>Save SMS config</button>
-          </div>
+          <SmsConfig />
         </div>
       )}
     </div>

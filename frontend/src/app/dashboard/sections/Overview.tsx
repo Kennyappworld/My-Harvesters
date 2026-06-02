@@ -1,5 +1,10 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  : null
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { weeklyAttendance, memberGrowthMonthly, retentionCohorts, retentionMonthly, branches, SERVICE_RECORDS } from '@/lib/data'
 
@@ -125,6 +130,19 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
   const quiet = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
   const avgR  = retentionMonthly[4].avg.toFixed(1)
   const totalNewThisWeek = SERVICE_RECORDS.reduce((a,r)=>a+r.newMembers.length,0)
+  const [liveWorkers, setLiveWorkers] = useState<number|null>(null)
+  const [liveSouls, setLiveSouls] = useState<number|null>(null)
+
+  useEffect(() => {
+    if (!supabase) return
+    Promise.all([
+      supabase.from('workers').select('*', { count:'exact', head:true }),
+      supabase.from('soul_records').select('*', { count:'exact', head:true }),
+    ]).then(([w, s]) => {
+      if (w.count) setLiveWorkers(w.count)
+      if (s.count) setLiveSouls(s.count)
+    }).catch(() => {})
+  }, [])
 
   return (
     <div>
@@ -147,10 +165,10 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
       {/* KPIs */}
       <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:14 }}>
         {[
-          { l:'Total members',     n:83400,  suffix:'',    sub:'↑ 12% this quarter', up:true,  click:'members'   },
+          { l:'Total members',     n:liveWorkers ?? 83400, suffix:'', sub: liveWorkers ? `${liveWorkers.toLocaleString()} in database` : '↑ 12% this quarter', up:true, click:'members' },
           { l:'Weekly attendance', n:71200,  suffix:'',    sub:'↑ 5% vs last month', up:true,  click:'attendance'},
           { l:'Active branches',   n:9,      suffix:'',    sub:'NG · UK · USA',                                  },
-          { l:'New this week',     n:totalNewThisWeek, suffix:'', sub:'Click for breakdown →', up:true, clickFn:()=>setShowNewMembers(true) },
+          { l:'Souls recorded',   n:liveSouls ?? totalNewThisWeek, suffix:'', sub: liveSouls ? '↑ See Soul Tracker' : 'Click for breakdown →', up:true, clickFn: liveSouls ? ()=>onNavigate('soultracker') : ()=>setShowNewMembers(true) },
           { l:'New members (May)', n:1810,   suffix:'',    sub:'↑ 8% vs April →',   up:true,  click:'growth'    },
           { l:'Avg retention',     n:parseFloat(avgR), suffix:'%', sub:'↑ 1.1pts →', up:true, click:'growth'    },
         ].map(m=>(

@@ -9,124 +9,155 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   : null
 
-const SCOPE_COL: Record<string,string> = { unit:'var(--green)', branch:'var(--blue)', global:'var(--red)' }
-
 export default function Prayer() {
   const { user } = useSession()
   const [requests, setRequests] = useState(() => hydrate('hicc_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ text:'', scope:'unit' })
+  const [form, setForm] = useState({ text: '', scope: 'unit' })
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const filtered = filter === 'all' ? requests : requests.filter(r => r.scope === filter)
+  // Load from Supabase on mount
+  useEffect(() => {
+    if (!supabase) return
+    setLoading(true)
+    supabase
+      .from('prayer_requests')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(60)
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          const mapped = data.map((r: any) => ({
+            id: r.id,
+            text: r.body,
+            author: r.author_name || 'Anonymous',
+            branch: r.branch_id || 'lekki',
+            branchId: r.branch_id || 'lekki',
+            initials: (r.author_name || 'A').slice(0, 2).toUpperCase(),
+            av: 'brand',
+            time: new Date(r.created_at).toLocaleDateString(),
+            scope: r.branch_id === 'all' ? 'global' : r.elevated ? 'branch' : 'unit',
+            elevated: !!r.elevated,
+            interceding: 0,
+            responses: 0,
+            isInterceding: false,
+          }))
+          setRequests(mapped)
+        }
+        setLoading(false)
+      }, () => setLoading(false))
+  }, [])
 
-  const intercede = (id: string) => {
-    setRequests(prev => { const n = prev.map(r => r.id === id ? { ...r, interceding: r.isInterceding ? r.interceding-1 : r.interceding+1, isInterceding: !r.isInterceding } : r); persist('hicc_prayer_requests', n); return n })
-  }
+  // Real-time subscription for new prayer requests
+  useEffect(() => {
+    if (!supabase) return
+    const sub = supabase
+      .channel('prayer_rt')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'prayer_requests' }, payload => {
+        const r = payload.new as any
+        setRequests((prev: any[]) => [{
+          id: r.id, text: r.body, author: r.author_name || 'Anonymous',
+          branch: r.branch_id || 'lekki', branchId: r.branch_id || 'lekki',
+          initials: (r.author_name || 'A').slice(0, 2).toUpperCase(),
+          av: 'brand', time: 'just now',
+          scope: r.elevated ? 'branch' : 'unit',
+          elevated: !!r.elevated, responses: 0,
+          interceding: 0, isInterceding: false,
+        }, ...prev])
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(sub) }
+  }, [])
 
-  const elevate = (id: string) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, scope: r.scope === 'unit' ? 'branch' : 'global' } : r))
-  }
+  const toggle = (id: string) =>
+    setRequests((prev: any[]) => { const n = prev.map(r => r.id === id ? { ...r, interceding: r.isInterceding ? r.interceding - 1 : r.interceding + 1, isInterceding: !r.isInterceding } : r); persist('hicc_prayer_requests', n); return n })
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.text.trim()) return
-    const name = user?.name || 'Worker'
-    setRequests(prev => [{
-      id: `p${Date.now()}`, author: name, branch: user?.branch_id || 'Lekki HQ', branchId: user?.branch_id || 'lekki',
-      initials: name.slice(0,2).toUpperCase(), av:'brand', time:'just now', scope: form.scope as any,
-      elevated: false, text: form.text, interceding: 0, responses: 0, isInterceding: false
-    }, ...prev])
+    const name = user?.name || 'Anonymous'
+    const newReq = {
+      id: Date.now().toString(), text: form.text, author: name,
+      initials: name.slice(0, 2).toUpperCase(), av: 'brand', time: 'just now',
+      scope: form.scope as any, interceding: 0, isInterceding: false,
+    }
+    setRequests((prev: any[]) => [newReq, ...prev])
+    setSaved(true); setTimeout(() => setSaved(false), 3000)
+    setForm({ text: '', scope: 'unit' }); setShowForm(false)
+
     if (supabase && user?.id) {
       await supabase.from('prayer_requests').insert({
         author_id: user.id, author_name: name,
-        branch_id: user.branch_id, body: form.text,
+        branch_id: user.branch_id || 'lekki',
+        body: form.text, elevated: form.scope === 'branch' || form.scope === 'global',
       })
     }
-    setForm({ text:'', scope:'unit' }); setSaved(true)
-    setTimeout(() => { setSaved(false); setShowForm(false) }, 2000)
   }
+
+  const filtered = filter === 'all' ? requests : requests.filter((r: any) => r.scope === filter)
 
   return (
     <div>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
         <div>
-          <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)' }}>Prayer Wall</div>
-          <div style={{ fontSize:12, color:'var(--t-2)', marginTop:2 }}>Unit → Branch → Global elevation · {requests.length} active requests</div>
+          <h2 style={{ fontFamily:'var(--font-display)', fontSize:22, fontWeight:800, marginBottom:4 }}>Prayer Wall</h2>
+          <div style={{ fontSize:12, color:'var(--t-2)', marginTop:2 }}>
+            Unit → Branch → Global elevation · {requests.length} active requests
+            {supabase && <span style={{ marginLeft:8, color:'#22c55e', fontWeight:600 }}>● Live</span>}
+          </div>
         </div>
-        <button className="btn btn-brand btn-sm" onClick={()=>setShowForm(v=>!v)}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Post request
+        <button className="btn btn-brand btn-sm" onClick={() => setShowForm(v => !v)}>
+          {showForm ? 'Cancel' : '+ Post request'}
         </button>
       </div>
 
-      {/* Filter tabs */}
-      <div className="tabs" style={{ marginBottom:16 }}>
-        {[['all','All'],['unit','Unit'],['branch','Branch'],['global','Global']].map(([k,l]) => (
-          <button key={k} className={`tab ${filter===k?'active':''}`} onClick={()=>setFilter(k)}>{l}</button>
+      {saved && <div style={{ padding:'10px 14px', background:'var(--green-lt)', borderRadius:'var(--r)', fontSize:13, color:'var(--green)', marginBottom:16, fontWeight:600 }}>✓ Prayer request posted to the wall.</div>}
+
+      {showForm && (
+        <form onSubmit={submit} className="card card-p" style={{ marginBottom:20 }}>
+          <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Post a prayer request</div>
+          <textarea className="input" rows={3} placeholder="Share your prayer request…" value={form.text} onChange={e => setForm(f => ({ ...f, text: e.target.value }))} style={{ resize:'vertical', marginBottom:10 }}/>
+          <div style={{ display:'flex', gap:8, alignItems:'center', justifyContent:'space-between' }}>
+            <select className="select" value={form.scope} onChange={e => setForm(f => ({ ...f, scope: e.target.value }))} style={{ flex:1 }}>
+              <option value="unit">My Unit</option>
+              <option value="branch">Branch</option>
+              <option value="global">Global (all branches)</option>
+            </select>
+            <button type="submit" className="btn btn-brand btn-sm" style={{ flexShrink:0 }}>Post request</button>
+          </div>
+        </form>
+      )}
+
+      <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap' }}>
+        {['all','unit','branch','global'].map(f => (
+          <button key={f} onClick={() => setFilter(f)} className={`btn btn-sm ${filter===f?'btn-brand':'btn-ghost'}`} style={{ textTransform:'capitalize' }}>{f === 'all' ? 'All requests' : f}</button>
         ))}
       </div>
 
-      {/* Post form */}
-      {showForm && (
-        <div className="card card-p" style={{ marginBottom:16 }}>
-          <div style={{ fontWeight:700, fontSize:14, marginBottom:12 }}>Post a prayer request</div>
-          {saved && <div style={{ padding:'8px 12px', background:'var(--green-lt)', borderRadius:'var(--r)', fontSize:12.5, color:'var(--green)', marginBottom:12, fontWeight:600 }}>✓ Prayer request posted.</div>}
-          <form onSubmit={submit}>
-            <textarea className="input" rows={3} placeholder="Share your prayer request…" value={form.text} onChange={e=>setForm(f=>({...f,text:e.target.value}))} style={{ resize:'vertical', marginBottom:10 }}/>
-            <div style={{ display:'flex', gap:10, alignItems:'center' }}>
-              <select className="input" value={form.scope} onChange={e=>setForm(f=>({...f,scope:e.target.value}))} style={{ width:160 }}>
-                <option value="unit">Unit only</option>
-                <option value="branch">Branch</option>
-                <option value="global">Global</option>
-              </select>
-              <button type="submit" className="btn btn-brand btn-sm" style={{ flexShrink:0 }}>Post request</button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={()=>setShowForm(false)}>Cancel</button>
-            </div>
-          </form>
-        </div>
-      )}
+      {loading && <div style={{ textAlign:'center', padding:'2rem', color:'var(--t-3)', fontSize:13 }}>Loading prayer requests…</div>}
 
-      {/* Requests */}
-      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-        {filtered.map(r => (
-          <div key={r.id} className="card" style={{ padding:'16px 20px' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div className={`av av-md av-${r.av}`}>{r.initials}</div>
-                <div>
-                  <div style={{ fontWeight:700, fontSize:13 }}>{r.author}</div>
-                  <div style={{ fontSize:11, color:'var(--t-3)', marginTop:1 }}>{r.branch} · {r.time}</div>
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {filtered.map((r: any) => (
+          <div key={r.id} className="card card-p" style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+            <div className={`av av-md av-${r.av}`}>{r.initials}</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                <span style={{ fontWeight:600, fontSize:13 }}>{r.author}</span>
+                <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                  <span style={{ fontSize:10, padding:'2px 6px', borderRadius:4, background:'var(--s-3)', color:'var(--t-2)', textTransform:'capitalize' }}>{r.scope}</span>
+                  <span style={{ fontSize:11, color:'var(--t-3)' }}>{r.time}</span>
                 </div>
               </div>
-              <span style={{ background:`${SCOPE_COL[r.scope]}20`, color:SCOPE_COL[r.scope], border:`1px solid ${SCOPE_COL[r.scope]}40`, padding:'2px 10px', borderRadius:100, fontSize:11, fontWeight:600 }}>{r.scope}</span>
-            </div>
-
-            <div style={{ fontSize:13.5, color:'var(--t-1)', lineHeight:1.75, marginBottom:14, paddingLeft:46 }}>{r.text}</div>
-
-            <div style={{ display:'flex', gap:10, alignItems:'center', paddingLeft:46, flexWrap:'wrap' }}>
-              <button onClick={()=>intercede(r.id)} className="btn btn-sm" style={{ background: r.isInterceding?'var(--red-lt)':'transparent', border:`1px solid ${r.isInterceding?'var(--red)':'var(--border-md)'}`, color:r.isInterceding?'var(--red)':'var(--t-2)', gap:5 }}>
-                <svg viewBox="0 0 24 24" fill={r.isInterceding?'var(--red)':'none'} stroke={r.isInterceding?'var(--red)':'currentColor'} strokeWidth="2" width="12" height="12"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                {r.interceding} praying
+              <p style={{ fontSize:13, color:'var(--t-1)', lineHeight:1.6, marginBottom:8 }}>{r.text}</p>
+              <button onClick={() => toggle(r.id)} style={{ fontSize:12, color: r.isInterceding ? 'var(--brand)' : 'var(--t-3)', background:'none', border:'none', cursor:'pointer', padding:0, fontWeight: r.isInterceding ? 700 : 400 }}>
+                🙏 {r.isInterceding ? 'Interceding' : 'Intercede'} {r.interceding > 0 && `· ${r.interceding}`}
               </button>
-
-              {r.scope !== 'global' && (
-                <button onClick={()=>elevate(r.id)} className="btn btn-sm" style={{ gap:5 }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                  Elevate to {r.scope==='unit'?'branch':'global'}
-                </button>
-              )}
-
-              {r.responses > 0 && (
-                <span style={{ fontSize:11.5, color:'var(--t-3)' }}>{r.responses} responses</span>
-              )}
-
-              {r.elevated && <span className="chip chip-gold">Elevated</span>}
             </div>
           </div>
         ))}
-        {filtered.length === 0 && <div style={{ textAlign:'center', padding:'3rem', color:'var(--t-3)', fontSize:13 }}>No prayer requests in this scope yet.</div>}
+        {!loading && filtered.length === 0 && <div style={{ textAlign:'center', padding:'3rem', color:'var(--t-3)', fontSize:13 }}>No prayer requests in this scope yet.</div>}
       </div>
     </div>
   )

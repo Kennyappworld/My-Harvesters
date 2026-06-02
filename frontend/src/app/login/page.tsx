@@ -440,7 +440,7 @@ export default function LoginPage() {
         <div style={{ width:52, height:52, background:'var(--grad-brand)', borderRadius:16, display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 12px', boxShadow:'var(--sh-brand)' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="22" height="22"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
         </div>
-        <div style={{ fontSize:13, fontWeight:800, fontFamily:'var(--font-display)', color:'white', letterSpacing:'-0.01em' }}>Harvesters HICC</div>
+        <div style={{ fontSize:10.5, fontWeight:800, fontFamily:'var(--font-display)', color:'white', letterSpacing:'0.01em', textTransform:'uppercase' }}>Harvesters International Christian Centre</div>
         <div style={{ fontSize:10, color:'var(--gold)', letterSpacing:'.08em', fontWeight:600, textTransform:'uppercase', marginTop:2 }}>Workforce Community</div>
       </div>
 

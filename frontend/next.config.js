@@ -1,11 +1,39 @@
 const withPWA = require('@ducanh2912/next-pwa').default({
   dest: 'public',
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  cacheOnFrontEndNav: false,
+  aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
   swcMinify: true,
   disable: process.env.NODE_ENV === 'development',
-  workboxOptions: { disableDevLogs: true },
+  workboxOptions: {
+    disableDevLogs: true,
+    runtimeCaching: [
+      {
+        urlPattern: /\/(login|signup|api\/)(.*)/,
+        handler: 'NetworkOnly',
+      },
+      {
+        urlPattern: /\/_next\/static\/chunks\/app\/.+\.js$/i,
+        handler: 'NetworkFirst',
+        options: { cacheName: 'next-app-chunks', networkTimeoutSeconds: 5 },
+      },
+      {
+        urlPattern: /\/_next\/static\/.+\.(css|js)$/i,
+        handler: 'StaleWhileRevalidate',
+        options: { cacheName: 'next-static-assets', expiration: { maxEntries: 128, maxAgeSeconds: 86400 } },
+      },
+      {
+        urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/i,
+        handler: 'CacheFirst',
+        options: { cacheName: 'google-fonts', expiration: { maxEntries: 8, maxAgeSeconds: 604800 } },
+      },
+      {
+        urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
+        handler: 'CacheFirst',
+        options: { cacheName: 'images', expiration: { maxEntries: 64, maxAgeSeconds: 2592000 } },
+      },
+    ],
+  },
 })
 
 /** @type {import('next').NextConfig} */

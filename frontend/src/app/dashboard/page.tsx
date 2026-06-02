@@ -261,7 +261,7 @@ export default function Dashboard() {
               <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
             </div>
             <div>
-              <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>Harvesters HICC</div>
+              <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>Harvesters International Christian Centre</div>
               <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>Workforce Community</div>
             </div>
           </div>

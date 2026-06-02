@@ -48,7 +48,7 @@ export default function MemberVerification() {
   const [ratingComponents, setRatingComponents] = useState(['Attendance','Giving','Prayer','Serving'])
   const [expiry, setExpiry]               = useState('30 days')
   const [ratingScale, setRatingScale]     = useState<[number,number]>([1,5])
-  const [platformName, setPlatformName]   = useState('Harvesters HICC Workforce Community')
+  const [platformName, setPlatformName]   = useState('Harvesters International Christian Centre Workforce Community')
 
   const toggleComponent = (comp: string) => {
     setRatingComponents(prev =>

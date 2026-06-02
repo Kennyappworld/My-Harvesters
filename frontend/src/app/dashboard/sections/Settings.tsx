@@ -164,7 +164,7 @@ function ScriptureManager() {
 
 // ── General Settings — fully editable ──────────────────────────────────────
 function GeneralSettings() {
-  const [platformName, setPlatformName] = useState('Harvesters HICC Workforce Community')
+  const [platformName, setPlatformName] = useState('Harvesters International Christian Centre Workforce Community')
   const [followUpSchedule, setFollowUpSchedule] = useState(['2 weeks','4 weeks','3 months','4 months'])
   const [sessionTimeout, setSessionTimeout] = useState('15')
   const [allowSelfRegister, setAllowSelfRegister] = useState(true)

@@ -9,7 +9,7 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Harvesters HICC — Workforce Community',
+  title: 'Harvesters International Christian Centre — Workforce Community',
   description: 'Workforce management and community platform for Harvesters International Christian Centre',
   robots: { index: false, follow: false },
   manifest: '/manifest.json',

@@ -24,7 +24,7 @@ const DEPARTMENTS = [
 function SignupForm() {
   const params = useSearchParams()
   const branchParam = params.get('branch') || ''
-  const branchName = BRANCHES[branchParam] || 'Harvesters HICC'
+  const branchName = BRANCHES[branchParam] || 'Harvesters International Christian Centre'
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({ name:'', phone:'', email:'', branch:branchParam||'lekki', dept:'', firstTimer:'no', dob:'' })

@@ -26,7 +26,6 @@ const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { l
 const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),     { loading: () => <L/> })
 const Devotional    = dynamic(() => import('./sections/Devotional'),          { loading: () => <L/> })
 const Network       = dynamic(() => import('./sections/Network'),             { loading: () => <L/> })
-const Giving        = dynamic(() => import('./sections/Giving'),              { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -360,7 +359,6 @@ const NAV = [
   ]},
   { section:'OPERATIONS', items:[
 { key:'attendance',   label:'Attendance',          icon:'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-    { key:'giving',       label:'Giving & Finance',    icon:'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6', minRole:'unit_head' },
     { key:'reports',      label:'Reports',             icon:'M18 20V10M12 20V4M6 20v-6', badge:3, minRole:'unit_head' },
   ]},
   { section:'ADMIN', items:[
@@ -384,7 +382,6 @@ const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
   memberverif:  {title:'Member Verification',sub:'6-month threshold · Referral links · Commitment rating', emoji:'✅'},
   volunteer:    {title:'Workforce',          sub:'Serving slots · Sign-up · Capacity management', emoji:'🤝'},
   attendance:   {title:'Attendance',         sub:'Per-service · Per-department · Member names', emoji:'✓'},
-  giving:       {title:'Giving & Finance',   sub:'Multi-currency · Tithe · Offering · Trend analytics', emoji:'💰'},
   reports:      {title:'Reports',            sub:'Monthly branch reports · Analytics summaries', emoji:'📊'},
   settings:     {title:'Settings',           sub:'Users · Branches · Departments · QR Signup', emoji:'⚙️'},
   membcard:     {title:'Membership Cards',   sub:'Digital ID · QR verification · Print-ready', emoji:'🪪'},
@@ -395,7 +392,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash, network:Network, giving:Giving,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash, network:Network,
 }
 
 export default function Dashboard() {

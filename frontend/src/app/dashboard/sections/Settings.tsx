@@ -167,9 +167,18 @@ function ScriptureManager() {
 // ── Profile Editor ────────────────────────────────────────────────────────────
 function ProfileEditor() {
   const { user } = useSession()
-  const [form, setForm] = useState({ name: user?.name||'', phone: '', dept: user?.department||'' })
+  const [form, setForm] = useState({ name: user?.name||'', phone: '', dept: user?.department||'', marital_status: '' })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Load current phone and marital status from Supabase on mount
+  useEffect(() => {
+    if (!supabase || !user?.id) return
+    supabase.from('workers').select('phone,marital_status').eq('id', user.id).single()
+      .then(({ data }: any) => {
+        if (data) setForm(f => ({ ...f, phone: data.phone||'', marital_status: data.marital_status||'' }))
+      })
+  }, [user?.id])
   const [pwForm, setPwForm] = useState({ next:'', confirm:'' })
   const [pwSaving, setPwSaving] = useState(false)
   const [pwErr, setPwErr] = useState('')
@@ -179,7 +188,7 @@ function ProfileEditor() {
     e.preventDefault(); setSaving(true)
     if (supabase && user?.id) {
       await supabase.from('workers').update({
-        full_name: form.name, phone: form.phone, department: form.dept,
+        full_name: form.name, phone: form.phone, department: form.dept, marital_status: form.marital_status,
       }).eq('id', user.id)
     }
     setSaving(false); setSaved(true); setTimeout(()=>setSaved(false), 2500)
@@ -213,6 +222,16 @@ function ProfileEditor() {
                 <input className="input" type={t} value={(form as any)[k]} onChange={e=>setForm(f=>({...f,[k]:e.target.value}))} placeholder={k==='phone'?'+234 800 000 0000':undefined}/>
               </div>
             ))}
+            <div style={{ marginBottom:10 }}>
+              <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Marital status</label>
+              <select className="input" value={form.marital_status} onChange={e=>setForm(f=>({...f,marital_status:e.target.value}))}>
+                <option value="">Prefer not to say</option>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="widowed">Widowed</option>
+                <option value="divorced">Divorced</option>
+              </select>
+            </div>
             <div style={{ marginBottom:14 }}>
               <label style={{ fontSize:11.5, fontWeight:600, color:'var(--t-2)', display:'block', marginBottom:5 }}>Department</label>
               <select className="input" value={form.dept} onChange={e=>setForm(f=>({...f,dept:e.target.value}))}>

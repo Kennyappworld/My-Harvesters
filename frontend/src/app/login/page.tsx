@@ -338,13 +338,13 @@ export default function LoginPage() {
 
   const afterAuth = useCallback((name: string, userEmail: string) => {
     setFailCount(0); setLockUntil(0)
-    sessionStorage.setItem('hicc_user', JSON.stringify({ email: userEmail, name, authenticated: true }))
-    sessionStorage.setItem('hicc_biometric_email', userEmail)
-    // Set explicit session cookie so middleware allows /dashboard immediately
-    // SameSite=Lax, no expiry = session cookie (clears on browser close)
-    document.cookie = `hicc_session=1; path=/; SameSite=Lax`
-    // Show scripture splash on every login
-    setSplash({ show: true, name })
+    sessionStorage.setItem("hicc_user", JSON.stringify({ email: userEmail, name, authenticated: true }))
+    sessionStorage.setItem("hicc_biometric_email", userEmail)
+    // Set session cookie SYNCHRONOUSLY before any navigation
+    // Use max-age=86400 (24h) so it persists across page loads today
+    document.cookie = "hicc_session=1; path=/; SameSite=Lax; max-age=86400"
+    // Small delay to ensure cookie is committed by browser before navigation
+    setTimeout(() => setSplash({ show: true, name }), 50)
   }, [router])
 
   // Handle magic-link redirect ONLY — do NOT fire on password login

@@ -14,6 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'HICC' },
+  icons: { icon: '/icon-192.png', apple: '/icon-192.png' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

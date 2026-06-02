@@ -1,11 +1,11 @@
 {
-  "name": "Harvesters HICC Workforce",
-  "short_name": "HICC",
-  "description": "Harvesters International Christian Centre workforce platform",
+  "name": "Harvesters International Christian Centre",
+  "short_name": "Harvesters",
+  "description": "Harvesters International Christian Centre — Workforce Community",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0F0A2E",
-  "theme_color": "#7C3AED",
+  "background_color": "#0D1F17",
+  "theme_color": "#1B3A2A",
   "orientation": "portrait",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

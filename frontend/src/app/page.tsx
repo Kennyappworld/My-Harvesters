@@ -29,7 +29,7 @@ export default function Landing() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="16" height="16"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
                 </div>
             }
-            <span style={{ fontSize:14, fontWeight:800, fontFamily:'var(--font-display)', letterSpacing:'-.01em', color:'white' }}>HICC Workforce</span>
+            <span style={{ fontSize:14, fontWeight:800, fontFamily:'var(--font-display)', letterSpacing:'-.01em', color:'white' }}>Harvesters</span>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
             <Link href="/signup" style={{ fontSize:13, color:'rgba(255,255,255,.5)', textDecoration:'none', padding:'7px 14px' }}>Register</Link>

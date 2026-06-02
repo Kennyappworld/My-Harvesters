@@ -44,7 +44,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
     e.preventDefault()
     // If WhatsApp channel selected, open WhatsApp Web with pre-filled message
     if (form.channel === 'whatsapp' || form.channel === 'all') {
-      const text = encodeURIComponent(`📣 HARVESTERS HICC BROADCAST\n\n${form.message}\n\n— HICC Leadership`)
+      const text = encodeURIComponent(`📣 HARVESTERS WORKFORCE COMMUNITY\n\n${form.message}\n\n— Leadership`)
       window.open(`https://wa.me/?text=${text}`, '_blank', 'noopener')
     }
     setSent(true)

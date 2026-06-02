@@ -55,8 +55,13 @@ function GeneralSettings() {
     reader.readAsDataURL(file)
   }
 
+  const [phoneVisible, setPhoneVisible] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('hicc_phone_visible')||'false') } catch { return false }
+  })
+
   const save = () => {
     saveOrgSettings({ logoUrl, poweredByText, poweredByUrl, poweredByVisible })
+    localStorage.setItem('hicc_phone_visible', JSON.stringify(phoneVisible))
     setSaved(true)
     setTimeout(()=>setSaved(false), 2500)
   }
@@ -170,6 +175,18 @@ function GeneralSettings() {
           ))}
           <button className="btn btn-sm" style={{ alignSelf:'flex-start', marginTop:4 }} onClick={()=>setFollowUpSchedule(prev=>[...prev,''])}>+ Add stage</button>
         </div>
+      </div>
+
+      {/* ── Phone visibility ── */}
+      <div className="card card-p" style={{ marginBottom:12 }}>
+        <h3 style={{ fontFamily:'var(--font-display)', fontSize:13.5, fontWeight:700, marginBottom:4 }}>Phone number visibility</h3>
+        <p style={{ fontSize:12.5, color:'var(--t-2)', marginBottom:14 }}>Controls whether phone numbers are visible in the Kingdom Network directory. Individual members can also opt out on their own profile.</p>
+        <label style={{ display:'flex', alignItems:'center', gap:12, cursor:'pointer' }}>
+          <div onClick={()=>setPhoneVisible((v:boolean)=>!v)} style={{ width:40,height:22,borderRadius:11,background:phoneVisible?'var(--brand)':'var(--s-4)',position:'relative',transition:'background .15s',flexShrink:0,cursor:'pointer' }}>
+            <div style={{ position:'absolute',top:3,left:phoneVisible?21:3,width:16,height:16,borderRadius:'50%',background:'white',transition:'left .15s',boxShadow:'0 1px 3px rgba(0,0,0,0.2)' }}/>
+          </div>
+          <span style={{ fontSize:13,color:'var(--t-1)',fontWeight:500 }}>{phoneVisible?'Phone numbers visible to all workers':'Phone numbers hidden (members can share individually)'}</span>
+        </label>
       </div>
 
       <button className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'12px', fontSize:14, fontWeight:700 }} onClick={save}>

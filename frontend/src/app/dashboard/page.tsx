@@ -24,6 +24,7 @@ const PastoralPulse = dynamic(() => import('./sections/PastoralPulse'),      { l
 const MembershipCard= dynamic(() => import('./sections/MembershipCard'),     { loading: () => <L/> })
 const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),     { loading: () => <L/> })
 const Devotional    = dynamic(() => import('./sections/Devotional'),          { loading: () => <L/> })
+const Network       = dynamic(() => import('./sections/Network'),             { loading: () => <L/> })
 
 function L() {
   return <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:300,color:'var(--t-3)',gap:8,fontSize:13}}>
@@ -143,6 +144,7 @@ const NAV = [
   ]},
   { section:'PEOPLE', items:[
     { key:'members',      label:'Members',             icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' },
+    { key:'network',      label:'Kingdom Network',      icon:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', badge:'New', bc:'nb-green' },
     { key:'soultracker',  label:'Soul Tracker',        icon:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', badge:'New', bc:'nb-green' },
     { key:'memberverif',  label:'Member Verification', icon:'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3' },
     { key:'volunteer',    label:'Workforce',           icon:'M9 11l3 3L22 4' },
@@ -167,6 +169,7 @@ const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
   announcements:{title:'Announcements',      sub:'Targeted broadcasts · WhatsApp · SMS · Read receipts', emoji:'📣'},
   meetings:     {title:'Meetings',           sub:'Google Meet · Instant · Schedule · Summaries', emoji:'📹'},
   events:       {title:'Events',             sub:'Create · Approve · Manage registrations', emoji:'📅'},
+  network:      {title:'Kingdom Network',      sub:'Professional directory · Opportunities · Connections', emoji:'🤝'},
   members:      {title:'Members',            sub:'Directory · Profiles · Growth Passport', emoji:'👥'},
   soultracker:  {title:'Soul Tracker',       sub:'Capture new converts · Automated follow-up', emoji:'🛡'},
   memberverif:  {title:'Member Verification',sub:'6-month threshold · Referral links · Commitment rating', emoji:'✅'},
@@ -182,7 +185,7 @@ const PAGES: Record<string,any> = {
   testimony:Testimony, announcements:Announcements, meetings:Meetings,
   events:Events, members:Members, soultracker:SoulTracker,
   memberverif:MemberVerif, volunteer:Volunteer, attendance:Attendance,
-  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash,
+  reports:Reports, settings:Settings, pastoral:PastoralPulse, devotional:Devotional, membcard:MembershipCard, branches:BranchDash, network:Network,
 }
 
 export default function Dashboard() {

@@ -11,6 +11,8 @@ type StorageKey =
   | 'hicc_events'
   | 'hicc_members_photos'
   | 'hicc_meetings'
+  | 'hicc_network_profiles'
+  | 'hicc_network_opps'
   | 'hicc_attendance'
   | 'hicc_devotional_plans'
   | 'hicc_chat_channels_v2'

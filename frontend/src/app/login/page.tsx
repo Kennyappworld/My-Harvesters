@@ -269,15 +269,8 @@ export default function LoginPage() {
     // Set explicit session cookie so middleware allows /dashboard immediately
     // SameSite=Lax, no expiry = session cookie (clears on browser close)
     document.cookie = `hicc_session=1; path=/; SameSite=Lax`
-    // Only show splash once every 8 hours — otherwise go straight to dashboard
-    const lastSplash = Number(localStorage.getItem('hicc_splash_ts') || '0')
-    const eightHours = 8 * 60 * 60 * 1000
-    if (Date.now() - lastSplash > eightHours) {
-      localStorage.setItem('hicc_splash_ts', String(Date.now()))
-      setSplash({ show: true, name })
-    } else {
-      router.push('/dashboard')
-    }
+    // Show scripture splash on every login
+    setSplash({ show: true, name })
   }, [router])
 
   // Handle magic-link redirect ONLY — do NOT fire on password login

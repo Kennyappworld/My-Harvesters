@@ -130,29 +130,61 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
   const quiet = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
   const avgR  = retentionMonthly[4].avg.toFixed(1)
   const totalNewThisWeek = SERVICE_RECORDS.reduce((a,r)=>a+r.newMembers.length,0)
-  const [liveWorkers, setLiveWorkers] = useState<number|null>(null)
-  const [liveSouls, setLiveSouls] = useState<number|null>(null)
+  const [liveWorkers,      setLiveWorkers]      = useState<number|null>(null)
+  const [liveSouls,        setLiveSouls]        = useState<number|null>(null)
+  const [liveAttendance,   setLiveAttendance]   = useState<number|null>(null)
+  const [livePrayers,      setLivePrayers]      = useState<number|null>(null)
+  const [liveTestimonies,  setLiveTestimonies]  = useState<number|null>(null)
+  const [liveAnnouncements,setLiveAnnouncements]= useState<number|null>(null)
+  const [isLive,           setIsLive]           = useState(false)
 
   useEffect(() => {
     if (!supabase) return
-    Promise.all([
-      supabase.from('workers').select('*', { count:'exact', head:true }),
-      supabase.from('soul_records').select('*', { count:'exact', head:true }),
-    ]).then(([w, s]) => {
-      if (w.count) setLiveWorkers(w.count)
-      if (s.count) setLiveSouls(s.count)
-    }).catch(() => {})
+    const load = async () => {
+      try {
+        const [w, s, a, p, t, an] = await Promise.all([
+          supabase.from('workers').select('*',        { count:'exact', head:true }),
+          supabase.from('soul_records').select('*',   { count:'exact', head:true }),
+          supabase.from('attendance_logs').select('count').limit(1),
+          supabase.from('prayer_requests').select('*',{ count:'exact', head:true }),
+          supabase.from('testimonies').select('*',    { count:'exact', head:true }),
+          supabase.from('announcements').select('*',  { count:'exact', head:true }),
+        ])
+        if ((w.count ?? 0) > 0) { setLiveWorkers(w.count); setIsLive(true) }
+        if ((s.count ?? 0) > 0) setLiveSouls(s.count)
+        if ((p.count ?? 0) > 0) setLivePrayers(p.count)
+        if ((t.count ?? 0) > 0) setLiveTestimonies(t.count)
+        if ((an.count ?? 0) > 0) setLiveAnnouncements(an.count)
+        // Sum latest attendance logs for weekly total
+        const { data: attRows } = await supabase
+          .from('attendance_logs')
+          .select('count')
+          .gte('service_date', new Date(Date.now()-7*86400000).toISOString().slice(0,10))
+        if (attRows && attRows.length > 0) {
+          setLiveAttendance(attRows.reduce((sum:number,r:any)=>sum+(r.count||0),0))
+        }
+      } catch {}
+    }
+    load()
   }, [])
 
   return (
     <div>
       {showNewMembers && <NewMembersModal onClose={()=>setShowNewMembers(false)}/>}
 
-      {/* Sample data notice */}
-      <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#92610A' }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <span>KPIs and charts show <strong>sample data</strong> until your Supabase database is connected and live records are entered.</span>
-      </div>
+      {/* Sample data notice — only show when no live data yet */}
+      {!isLive && (
+        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#92610A' }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>KPIs show <strong>sample data</strong> — they will update automatically as real records are entered.</span>
+        </div>
+      )}
+      {isLive && (
+        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(27,158,90,0.07)', border:'1px solid rgba(27,158,90,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#166534' }}>
+          <div style={{ width:7,height:7,borderRadius:'50%',background:'#16a34a',flexShrink:0,boxShadow:'0 0 0 3px rgba(22,163,74,0.2)' }}/>
+          <span><strong>Live database connected</strong> — KPIs updating from real records.</span>
+        </div>
+      )}
 
       {/* Mission statement */}
       <div style={{ marginBottom:20, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(120deg, #0F2D1C 0%, #0A1F13 60%, #0C2518 100%)', padding:'0', boxShadow:'0 2px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
@@ -183,12 +215,12 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
       {/* KPIs */}
       <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:14 }}>
         {[
-          { l:'Total members',     n:liveWorkers ?? 83400, suffix:'', sub: liveWorkers ? `${liveWorkers.toLocaleString()} in database` : '↑ 12% this quarter', up:true, click:'members' },
-          { l:'Weekly attendance', n:71200,  suffix:'',    sub:'↑ 5% vs last month', up:true,  click:'attendance'},
-          { l:'Active branches',   n:9,      suffix:'',    sub:'NG · UK · USA',                                  },
-          { l:'Souls recorded',   n:liveSouls ?? totalNewThisWeek, suffix:'', sub: liveSouls ? '↑ See Soul Tracker' : 'Click for breakdown →', up:true, clickFn: liveSouls ? ()=>onNavigate('soultracker') : ()=>setShowNewMembers(true) },
-          { l:'New members (May)', n:1810,   suffix:'',    sub:'↑ 8% vs April →',   up:true,  click:'growth'    },
-          { l:'Avg retention',     n:parseFloat(avgR), suffix:'%', sub:'↑ 1.1pts →', up:true, click:'growth'    },
+          { l:'Workers registered', n:liveWorkers ?? 83400, suffix:'', sub: liveWorkers ? `${liveWorkers.toLocaleString()} in database` : 'Sample — connect DB', up:!!liveWorkers, click:'members' },
+          { l:'Weekly attendance',  n:liveAttendance ?? 71200, suffix:'', sub: liveAttendance ? 'Last 7 days · all branches' : 'Sample data', up:!!liveAttendance, click:'attendance' },
+          { l:'Active branches',    n:9, suffix:'', sub:'NG · UK · USA' },
+          { l:'Souls recorded',     n:liveSouls ?? totalNewThisWeek, suffix:'', sub: liveSouls ? `${liveSouls} total recorded` : 'Click for breakdown →', up:!!liveSouls, clickFn: ()=>onNavigate('soultracker') },
+          { l:'Prayer requests',    n:livePrayers ?? 12, suffix:'', sub: livePrayers ? 'Active on prayer wall' : 'Sample', up:!!livePrayers, click:'prayer' },
+          { l:'Testimonies shared', n:liveTestimonies ?? 4, suffix:'', sub: liveTestimonies ? 'Praise reports' : 'Sample', up:!!liveTestimonies, click:'testimony' },
         ].map(m=>(
           <div key={m.l} className={`metric-tile${m.up?' metric-tile-accent':''} ${(m.click||m.clickFn)?'card-hover':''}`}
             style={{ cursor:(m.click||m.clickFn)?'pointer':undefined }}

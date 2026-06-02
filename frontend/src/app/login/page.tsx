@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, FormEvent } from 'react'
+import { useState, useEffect, useCallback, useRef, FormEvent } from 'react'
 import PoweredBy from '@/lib/PoweredBy'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
@@ -120,12 +120,13 @@ function WelcomeSplash({ name, onDone }: { name: string; onDone: () => void }) {
 
   useEffect(() => {
     requestAnimationFrame(() => setVis(true))
+    // Fast sequence — total ~900ms before buttons appear
     const timers = [
-      setTimeout(() => setPhase(1), 200),
-      setTimeout(() => setPhase(2), 600),
-      setTimeout(() => setPhase(3), 1400),
-      setTimeout(() => setPhase(4), 1900),
-      setTimeout(() => setPhase(5), 2600),
+      setTimeout(() => setPhase(1), 80),
+      setTimeout(() => setPhase(2), 220),
+      setTimeout(() => setPhase(3), 550),
+      setTimeout(() => setPhase(4), 720),
+      setTimeout(() => setPhase(5), 900),
     ]
     return () => timers.forEach(clearTimeout)
   }, [])
@@ -264,18 +265,33 @@ export default function LoginPage() {
 
   const afterAuth = useCallback((name: string, userEmail: string) => {
     sessionStorage.setItem('hicc_user', JSON.stringify({ email: userEmail, name, authenticated: true }))
-    setSplash({ show: true, name })
-  }, [])
+    sessionStorage.setItem('hicc_biometric_email', userEmail)
+    // Only show splash once every 8 hours — otherwise go straight to dashboard
+    const lastSplash = Number(localStorage.getItem('hicc_splash_ts') || '0')
+    const eightHours = 8 * 60 * 60 * 1000
+    if (Date.now() - lastSplash > eightHours) {
+      localStorage.setItem('hicc_splash_ts', String(Date.now()))
+      setSplash({ show: true, name })
+    } else {
+      router.push('/dashboard')
+    }
+  }, [router])
 
-  // Handle magic link redirect - Supabase puts tokens in the URL hash
+  // Handle magic-link redirect ONLY — do NOT fire on password login
+  // (password login calls afterAuth directly to avoid double navigation)
+  const magicHandled = useRef(false)
   useEffect(() => {
     if (!supabase) return
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+      // Only handle SIGNED_IN triggered by magic link (not password — password flow handles itself)
+      if (event === 'SIGNED_IN' && session?.user && !magicHandled.current) {
+        // If we're in busy state, password flow will handle it — skip
+        const hash = window.location.hash
+        if (!hash.includes('access_token') && !hash.includes('type=magiclink')) return
+        magicHandled.current = true
         const name = session.user.user_metadata?.full_name
           || session.user.email?.split('@')[0]
           || 'Welcome'
-        sessionStorage.setItem('hicc_biometric_email', session.user.email || '')
         afterAuth(name, session.user.email || '')
       }
     })
@@ -286,27 +302,37 @@ export default function LoginPage() {
     e.preventDefault()
     setErr('')
     const safeEmail = email.trim().toLowerCase().replace(/[<>"'`]/g, '')
+    if (!safeEmail || !password) return
 
     setBusy(true)
+
+    // Hard timeout — if nothing resolves in 8 seconds, unblock the UI
+    const timeoutId = setTimeout(() => {
+      setBusy(false)
+      setErr('Sign-in is taking too long. Please check your connection and try again.')
+    }, 8000)
+
     try {
       if (supabase) {
-        // Real Supabase authentication
         const { data, error } = await supabase.auth.signInWithPassword({
           email: safeEmail,
           password,
         })
+        clearTimeout(timeoutId)
         if (error) {
-          setErr(error.message || 'Incorrect email or password.')
+          setErr(error.message === 'Invalid login credentials'
+            ? 'Incorrect email or password.'
+            : error.message || 'Incorrect email or password.')
           setBusy(false)
           return
         }
         const name = data.user?.user_metadata?.full_name
           || data.user?.email?.split('@')[0]
           || 'Welcome'
-        sessionStorage.setItem('hicc_biometric_email', safeEmail)
+        // Don't setBusy(false) — we navigate away, no need to unblock
         afterAuth(name, safeEmail)
       } else {
-        // Fallback demo mode when Supabase is not yet configured
+        // Demo fallback
         const DEMO: Record<string, string> = {
           'pastor@hicc.org': 'Pastor Bolaji Idowu',
           'pastor.ikeja@hicc.org': 'Pastor Kanmi Adeyemi',
@@ -314,16 +340,17 @@ export default function LoginPage() {
           'segun@hicc.org': 'Segun Adeyemi',
         }
         const DEMO_PASS = process.env.NEXT_PUBLIC_DEMO_PASS || 'demo123'
+        clearTimeout(timeoutId)
         if (!DEMO[safeEmail] || password !== DEMO_PASS) {
           setErr('Incorrect email or password.')
           setBusy(false)
           return
         }
-        sessionStorage.setItem('hicc_biometric_email', safeEmail)
         afterAuth(DEMO[safeEmail], safeEmail)
       }
     } catch {
-      setErr('Something went wrong. Please try again.')
+      clearTimeout(timeoutId)
+      setErr('Something went wrong. Please check your connection and try again.')
       setBusy(false)
     }
   }

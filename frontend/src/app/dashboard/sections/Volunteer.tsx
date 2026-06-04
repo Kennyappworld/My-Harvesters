@@ -5,8 +5,8 @@ import { createClient } from '@supabase/supabase-js'
 import { useSession } from '@/lib/useSession'
 import { notify } from '@/lib/toast'
 
-const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) : null
+const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) : null
 
 type Slot = { id:string; title:string; dept:string; branch_id:string; branch_name:string; date:string; time:string; capacity:number; enrolled:string[]; enrolled_count:number; status:'open'|'full'|'closed' }
 type Application = { id:string; name:string; email:string; phone:string; dept:string; branch_id:string; branch_name:string; skills:string; submitted:string; status:'pending'|'approved'|'declined' }

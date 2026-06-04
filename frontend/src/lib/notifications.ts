@@ -48,12 +48,12 @@ export function isInstalledPWA(): boolean {
 export async function checkSoulFollowUpReminders(userId: string): Promise<void> {
   if (typeof window === 'undefined') return
   if (Notification.permission !== 'granted') return
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !(process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)) return
   try {
     const { createClient } = await import('@supabase/supabase-js')
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
     )
     const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
     const { data } = await supabase

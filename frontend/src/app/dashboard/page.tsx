@@ -108,7 +108,7 @@ To: ${names}
     try {
       const { createClient } = await import('@supabase/supabase-js')
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
       if (url && key) {
         await createClient(url,key).from('announcements').insert({
           title: title||'Broadcast', body: message,
@@ -449,7 +449,7 @@ const Sidebar = React.memo(function Sidebar({
           document.cookie='hicc_session=; path=/; max-age=0'
           sessionStorage.clear()
           const sUrl=process.env.NEXT_PUBLIC_SUPABASE_URL
-          const sKey=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          const sKey=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
           if(sUrl&&sKey){try{const{createClient}=await import('@supabase/supabase-js');await createClient(sUrl,sKey).auth.signOut()}catch{}}
           window.location.href='/login'
         }} style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:'rgba(255,255,255,0.35)',background:'none',border:'none',cursor:'pointer',fontFamily:'var(--font-body)',padding:0}}>

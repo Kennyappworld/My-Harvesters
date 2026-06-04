@@ -16,7 +16,10 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl  = process.env.NEXT_PUBLIC_SUPABASE_URL  ?? ''
-const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+// Support both key names — new Supabase uses PUBLISHABLE_KEY, older projects use ANON_KEY
+const supabaseKey  = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+                  ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+                  ?? ''
 
 // Returns null when env vars aren't set — app uses localStorage fallback
 export const supabase = supabaseUrl && supabaseKey

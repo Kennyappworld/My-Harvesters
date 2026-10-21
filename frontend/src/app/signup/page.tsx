@@ -13,6 +13,37 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (
     (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!
   ) : null
 
+// Rate limit: max 3 signups per 30 min per browser session
+const SIGNUP_RATE_KEY    = 'shq_signup_attempts'
+const SIGNUP_RATE_LIMIT  = 3
+const SIGNUP_RATE_WINDOW = 30 * 60 * 1000
+
+function checkSignupRateLimit(): { allowed: boolean; resetMs: number } {
+  try {
+    const raw = sessionStorage.getItem(SIGNUP_RATE_KEY)
+    const data: { attempts: number[] } = raw ? JSON.parse(raw) : { attempts: [] }
+    const now = Date.now()
+    data.attempts = data.attempts.filter((t: number) => now - t < SIGNUP_RATE_WINDOW)
+    const allowed = data.attempts.length < SIGNUP_RATE_LIMIT
+    const oldest = data.attempts[0]
+    const resetMs = oldest ? SIGNUP_RATE_WINDOW - (now - oldest) : 0
+    return { allowed, resetMs }
+  } catch {
+    return { allowed: true, resetMs: 0 }
+  }
+}
+
+function recordSignupAttempt() {
+  try {
+    const raw = sessionStorage.getItem(SIGNUP_RATE_KEY)
+    const data: { attempts: number[] } = raw ? JSON.parse(raw) : { attempts: [] }
+    const now = Date.now()
+    data.attempts = data.attempts.filter((t: number) => now - t < SIGNUP_RATE_WINDOW)
+    data.attempts.push(now)
+    sessionStorage.setItem(SIGNUP_RATE_KEY, JSON.stringify(data))
+  } catch {}
+}
+
 function SignupForm() {
   const params = useSearchParams()
   const branchParam = params.get('branch') || ''
@@ -48,6 +79,15 @@ function SignupForm() {
     setBusy(true)
     setSignupErr('')
 
+    // Client-side rate limit (belt-and-suspenders — Supabase RLS is the real gate)
+    const rate = checkSignupRateLimit()
+    if (!rate.allowed) {
+      const min = Math.ceil(rate.resetMs / 60000)
+      setSignupErr(`Too many registrations from this browser. Please wait ${min <= 1 ? '1 minute' : `${min} minutes`} and try again.`)
+      setBusy(false)
+      return
+    }
+
     const phoneClean = form.phone.replace(/[\s\-\(\)]/g, '')
     if (!/^[\+]?[0-9]{7,15}$/.test(phoneClean)) {
       setSignupErr('Please enter a valid phone number (7-15 digits, optional + prefix).')
@@ -59,6 +99,8 @@ function SignupForm() {
       setBusy(false)
       return
     }
+    recordSignupAttempt()
+
     try {
       if (supabase) {
         await supabase.from('workers').insert({

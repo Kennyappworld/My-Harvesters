@@ -58,6 +58,8 @@ export default function LoginPage() {
     }
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'session_expired') {
+      // Clear any stale sessionStorage PII when session expires
+      try { sessionStorage.removeItem('shq_user') } catch {}
       setError('Your session expired. Please sign in again.')
     }
   }, [])

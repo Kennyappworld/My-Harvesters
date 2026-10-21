@@ -10,31 +10,23 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLI
   : null
 
 
+/**
+ * SmsConfig — API credentials are stored in Supabase organisations.sms_config
+ * (server-side only, never in localStorage).
+ * This UI just shows the current status and links to Settings → Integrations.
+ */
 function SmsConfig() {
-  const [apiKey, setApiKey] = React.useState(() => { try { return localStorage.getItem('sanctuaryhq_termii_key') || '' } catch { return '' } })
-  const [senderId, setSenderId] = React.useState(() => { try { return localStorage.getItem('sanctuaryhq_termii_sender') || '' } catch { return '' } })
-  const [saved, setSaved] = React.useState(false)
-  const save = () => {
-    localStorage.setItem('sanctuaryhq_termii_key', apiKey)
-    localStorage.setItem('sanctuaryhq_termii_sender', senderId)
-    setSaved(true); setTimeout(() => setSaved(false), 2500)
-  }
   return (
-    <div style={{marginTop:20,padding:'14px 18px',background:'var(--s-3)',borderRadius:'var(--r-lg)',border:'0.5px solid var(--border)',maxWidth:640}}>
-      <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>SMS delivery — Termii</div>
-      <div style={{fontSize:12,color:'var(--t-2)',lineHeight:1.7,marginBottom:12}}>Members without WhatsApp receive SMS as fallback. Enter your Termii credentials below.</div>
-      {saved && <div style={{padding:'6px 10px',background:'var(--green-lt)',borderRadius:6,fontSize:12,color:'var(--green)',fontWeight:600,marginBottom:10}}>✓ Config saved</div>}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-        <div>
-          <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5}}>Termii API key</label>
-          <input className="input" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="TLxxxxxxxxxxxxxx" style={{fontSize:12,fontFamily:'var(--font-mono)'}}/>
-        </div>
-        <div>
-          <label style={{fontSize:11,fontWeight:600,color:'var(--t-3)',display:'block',marginBottom:5}}>Sender ID</label>
-          <input className="input" value={senderId} onChange={e=>setSenderId(e.target.value)} placeholder="HARVESTERS" style={{fontSize:12}}/>
-        </div>
+    <div style={{marginTop:20,padding:'14px 18px',background:'rgba(245,158,11,0.06)',borderRadius:'var(--r-lg)',border:'1px solid rgba(245,158,11,0.22)',maxWidth:640}}>
+      <div style={{fontWeight:700,fontSize:13,marginBottom:4,color:'var(--text-primary)'}}>SMS delivery — Termii</div>
+      <div style={{fontSize:12.5,color:'var(--text-secondary)',lineHeight:1.7,marginBottom:12}}>
+        Members without WhatsApp receive SMS as fallback via Termii.
       </div>
-      <button className="btn btn-sm btn-brand" style={{marginTop:12}} onClick={save}>Save SMS config</button>
+      <div style={{padding:'10px 14px',background:'rgba(245,158,11,0.09)',borderRadius:'var(--r)',fontSize:12.5,color:'#92400e',border:'1px solid rgba(245,158,11,0.22)'}}>
+        🔒 <strong>Security notice:</strong> SMS API credentials are configured as server-side environment variables
+        (<code style={{fontFamily:'var(--font-mono)',fontSize:11}}>TERMII_API_KEY</code> and <code style={{fontFamily:'var(--font-mono)',fontSize:11}}>TERMII_SENDER_ID</code>)
+        and are never stored in the browser. Contact your administrator to update these credentials.
+      </div>
     </div>
   )
 }

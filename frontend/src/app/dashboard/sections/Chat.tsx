@@ -13,18 +13,9 @@ const SCOPE_COLORS: Record<string,string> = {
   leadership:'var(--brand)', peer:'var(--teal)', unit:'var(--green)', custom:'var(--gold)'
 }
 
-const ALL_MEMBERS = [
-  { id:'m1', name:'Pastor Bolaji Idowu',  role:'senior_pastor', branch:'lekki',   dept:'Leadership' },
-  { id:'m2', name:'Pastor Kanmi Adeyemi', role:'pastor',        branch:'ikeja',   dept:'Leadership' },
-  { id:'m3', name:'Segun Adeyemi',        role:'unit_head',     branch:'lekki',   dept:'Ushering' },
-  { id:'m4', name:'Tolu Mensah',          role:'unit_head',     branch:'lekki',   dept:'Worship' },
-  { id:'m5', name:'Tosin Obi',            role:'unit_head',     branch:'lekki',   dept:'KidsHouse' },
-  { id:'m6', name:'Kenny Appiah',         role:'worker',        branch:'lekki',   dept:'Media' },
-  { id:'m7', name:'Emeka Obi',            role:'worker',        branch:'lekki',   dept:'Ushering' },
-  { id:'m8', name:'Ngozi Kalu',           role:'worker',        branch:'lekki',   dept:'Ushering' },
-  { id:'m9', name:'Blessing Okafor',      role:'worker',        branch:'gbagada', dept:'KidsHouse' },
-  { id:'m10',name:'Elder Taiwo',          role:'unit_head',     branch:'lekki',   dept:'Prayer' },
-]
+// Members are loaded from Supabase at runtime — no hardcoded names or contacts
+type MemberRef = { id: string; name: string; role: string; branch: string; dept: string }
+const ALL_MEMBERS: MemberRef[] = []
 
 type Channel = {
   id: string; label: string; scope: string; initials: string; sub: string

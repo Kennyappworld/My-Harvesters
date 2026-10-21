@@ -10,11 +10,10 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLI
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
   : null
 
-const FALLBACK_MEMBERS = [
-  { id:'m1', name:'Emmanuel Abiola',  branch:'lekki',  dept:'ushering', role:'Unit Head', status:'active',  joined:'Nov 2024', phone:'+234 810 111 2222', email:'emmanuel@hicc.org',  growth:3, attendance:92, birthday:'Mar 14', photo:'' },
-  { id:'m2', name:'Funke Oladipo',    branch:'ikeja',  dept:'prayer',   role:'Member',    status:'active',  joined:'Dec 2024', phone:'+234 803 222 3333', email:'funke.o@hicc.org',    growth:2, attendance:78, birthday:'Jul 22', photo:'' },
-  { id:'m3', name:'Ngozi Kalu',       branch:'lekki',  dept:'worship',  role:'Member',    status:'active',  joined:'Oct 2024', phone:'+234 706 333 4444', email:'ngozi.k@hicc.org',    growth:3, attendance:95, birthday:'Feb 5',  photo:'' },
-]
+// Empty fallback — real members are always loaded from Supabase.
+// Never use hardcoded names, phone numbers, or email addresses here
+// as they may be mistaken for real person data.
+const FALLBACK_MEMBERS: any[] = []
 
 export default function Members({ onNavigate, memberSearch, onMemberSearchConsumed }: { onNavigate:(p:string)=>void; memberSearch?:string; onMemberSearchConsumed?:()=>void }) {
   const { user } = useSession()
@@ -59,20 +58,50 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
     load()
   }, [])
 
-  const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>, memberId: string) => {
+  const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>, memberId: string) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { notify.error('Photo must be under 5MB'); return }
-    const reader = new FileReader()
-    reader.onload = async () => {
-      const dataUrl = reader.result as string
-      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, photo: dataUrl } : m))
-      if (selected?.id === memberId) setSelected((s:any) => ({ ...s, photo: dataUrl }))
-      if (supabase) {
-        await supabase.from('workers').update({ avatar_url: dataUrl }).eq('id', memberId)
-      }
+
+    // Strict type validation — reject anything that's not a real image
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      notify.error('Only JPEG, PNG, WebP or GIF images are allowed')
+      return
     }
-    reader.readAsDataURL(file)
+    // 2 MB cap — base64 in DB is not allowed (would bloat ~1.33× and cause slow queries)
+    if (file.size > 2 * 1024 * 1024) { notify.error('Photo must be under 2MB'); return }
+
+    if (!supabase) {
+      notify.error('Supabase is not configured — photo upload requires a storage bucket')
+      return
+    }
+
+    try {
+      // Upload to Supabase Storage (bucket: avatars) — never store base64 in DB
+      const ext = file.type.split('/')[1] || 'jpg'
+      const path = `avatars/${memberId}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+
+      if (upErr) {
+        // If storage bucket doesn't exist yet, show a clear message
+        if (upErr.message?.includes('Bucket not found') || upErr.message?.includes('bucket')) {
+          notify.error('Storage not set up: create an "avatars" bucket in Supabase Storage')
+        } else {
+          notify.error('Upload failed: ' + upErr.message)
+        }
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      await supabase.from('workers').update({ avatar_url: publicUrl }).eq('id', memberId)
+      setMembers(prev => prev.map(m => m.id === memberId ? { ...m, photo: publicUrl } : m))
+      if (selected?.id === memberId) setSelected((s: any) => ({ ...s, photo: publicUrl }))
+      notify.success('Photo updated')
+    } catch (err: any) {
+      notify.error('Upload failed: ' + (err?.message || 'Unknown error'))
+    }
   }
 
   const addMember = async (e: React.FormEvent) => {
@@ -87,7 +116,7 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
     // Write to Supabase workers table
     if (supabase && user?.id) {
       await supabase.from('workers').insert({
-        email: form.email || `worker_${Date.now()}@hicc.org`,
+        email: form.email || null,
         full_name: form.name, phone: form.phone,
         branch_id: form.branch, department: form.dept, role: 'worker',
       })

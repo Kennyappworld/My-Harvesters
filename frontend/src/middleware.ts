@@ -102,8 +102,9 @@ export async function middleware(req: NextRequest) {
   if (isProtected && !isAuthenticated) {
     const url  = req.nextUrl.clone()
     url.pathname = '/login'
-    const from = pathname && !pathname.startsWith('//') ? pathname : '/dashboard'
-    url.searchParams.set('from', encodeURIComponent(from))
+    // Only carry 'reason' query param — never carry arbitrary ?from= to prevent open-redirect
+    // (login page always redirects to /dashboard after auth; ?from= is not consumed)
+    url.searchParams.delete('from')
     const response = NextResponse.redirect(url)
     // Clear any stale / invalid cookies on redirect
     response.cookies.set(SESSION_COOKIE, '', { maxAge: 0, path: '/' })

@@ -546,11 +546,29 @@ export default function Dashboard() {
   }, [user?.id])
 
   // 30-minute inactivity timeout — SECURITY
+  // On each activity event we also slide the cookie's expiry forward so the
+  // cookie and the JS timer stay in sync; without this the cookie can expire
+  // while the user is still active, causing a false session_expired redirect.
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
     const TIMEOUT = 30 * 60 * 1000
+    let lastRefresh = 0
+
+    const refreshCookie = () => {
+      // Throttle cookie refresh to once per minute to avoid excessive writes
+      const now = Date.now()
+      if (now - lastRefresh < 60_000) return
+      lastRefresh = now
+      const token = document.cookie.split(';').find(c => c.trim().startsWith('sanctuaryhq_session='))?.split('=')[1]?.trim()
+      if (!token) return
+      const expires = new Date(now + TIMEOUT).toUTCString()
+      const isSecure = location.protocol === 'https:'
+      document.cookie = `sanctuaryhq_session=${token}; path=/; expires=${expires}; SameSite=Lax${isSecure ? '; Secure' : ''}`
+    }
+
     const reset = () => {
       clearTimeout(timer)
+      refreshCookie()
       timer = setTimeout(() => {
         document.cookie = 'sanctuaryhq_session=; path=/; max-age=0; SameSite=Lax'
         sessionStorage.clear()

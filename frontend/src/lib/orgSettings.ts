@@ -66,7 +66,7 @@ export const ORG_DEFAULTS: OrgSettings = {
 
 // ── localStorage cache key ────────────────────────────────────────────────────
 
-const CACHE_KEY = 'sanctuaryhq_org_settings_v2'
+const CACHE_KEY = 'sanctuaryhq_org_settings_v3'
 
 function readCache(): OrgSettings {
   if (typeof window === 'undefined') return ORG_DEFAULTS

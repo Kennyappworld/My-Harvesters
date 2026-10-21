@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
+import { useOrgSettings } from '@/lib/orgSettings'
 
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
@@ -126,6 +127,7 @@ function CountUp({ to, duration=900, suffix='' }: { to:number; duration?:number;
 }
 
 export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }) {
+  const { settings } = useOrgSettings()
   const [showNewMembers, setShowNewMembers] = useState(false)
   const quiet = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
   const avgR  = retentionMonthly[4].avg.toFixed(1)
@@ -205,8 +207,10 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
               <div style={{ height:'1px', width:28, background:'rgba(201,168,76,0.25)' }}/>
             </div>
             <p style={{ fontSize:14, fontWeight:500, color:'rgba(255,255,255,0.88)', fontFamily:'var(--font-body)', lineHeight:1.75, letterSpacing:'0.005em', margin:0 }}>
-              We are changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, influencing culture, and leading every member to become a{' '}
-              <span style={{ color:'rgba(201,168,76,0.95)', fontWeight:700 }}>fully devoted follower of Christ</span>.
+              {settings.tagline
+                ? <>{settings.tagline}</>
+                : <>Empowering every member to grow in faith, serve with purpose, and build a stronger community together.</>
+              }
             </p>
           </div>
         </div>

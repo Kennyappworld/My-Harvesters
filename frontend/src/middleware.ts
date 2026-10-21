@@ -1,38 +1,52 @@
+/**
+ * ChurchOS / SanctuaryHQ / PulpitPro — Edge Middleware
+ *
+ * Auth strategy:
+ *  - churchos_session cookie (httpOnly, Secure, SameSite=Lax) set by login
+ *  - Real data security is always enforced by Supabase RLS on every DB call
+ *  - This middleware only prevents unauthenticated route access at the edge
+ *
+ * Security:
+ *  - Cookie value is opaque (UUID token, not '1') — set at login
+ *  - Cache-Control: no-store on all protected routes
+ *  - X-Request-ID added for audit trail correlation
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 const PROTECTED   = ['/dashboard']
 const PUBLIC_ONLY = ['/login', '/signup']
+const PUBLIC_PASS = ['/_next', '/api/', '/change-password', '/icon-', '/manifest', '/sw.js', '/workbox']
+
+const SESSION_COOKIE = 'churchos_session'
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // Always allow static assets and API routes
-  if (
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/icon-') ||
-    pathname.startsWith('/manifest') ||
-    pathname.startsWith('/sw.js') ||
-    pathname.startsWith('/workbox') ||
-    pathname.startsWith('/api/') ||
-    pathname.startsWith('/change-password')
-  ) return NextResponse.next()
+  // ── Always pass static assets and api ───────────────────────────────────
+  if (PUBLIC_PASS.some(p => pathname.startsWith(p))) {
+    return NextResponse.next()
+  }
 
   const isProtected  = PROTECTED.some(p => pathname.startsWith(p))
   const isPublicOnly = PUBLIC_ONLY.some(p => pathname.startsWith(p))
 
-  // ── Single auth check: hicc_session cookie ──────────────────────────────
-  // This cookie is set synchronously by the login page BEFORE router.push.
-  // The Supabase cookie arrives asynchronously and cannot be relied on here.
-  // Real data security is enforced by Supabase RLS on every API call.
-  const session = req.cookies.get('hicc_session')?.value
-  const isAuthenticated = session === '1'
+  // ── Auth check ────────────────────────────────────────────────────────────
+  const sessionCookie = req.cookies.get(SESSION_COOKIE)?.value ?? ''
+  // Session cookie must be a non-empty string of at least 8 chars (UUID)
+  const isAuthenticated = sessionCookie.length >= 8
 
+  // ── Route guards ──────────────────────────────────────────────────────────
   if (isProtected && !isAuthenticated) {
     const url = req.nextUrl.clone()
     url.pathname = '/login'
-    const from = pathname.startsWith('/') && !pathname.startsWith('//') ? pathname : '/dashboard'
-    url.searchParams.set('from', from)
-    return NextResponse.redirect(url)
+    const from = pathname && !pathname.startsWith('//') ? pathname : '/dashboard'
+    url.searchParams.set('from', encodeURIComponent(from))
+    const response = NextResponse.redirect(url)
+    // Clear any stale cookies on redirect
+    response.cookies.set(SESSION_COOKIE, '', { maxAge: 0, path: '/' })
+    return response
   }
 
   if (isPublicOnly && isAuthenticated) {
@@ -41,14 +55,25 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // ── Build response with security headers ──────────────────────────────────
   const response = NextResponse.next()
+
+  // Prevent caching on protected pages
   if (isProtected) {
-    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private')
     response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
   }
+
+  // Request correlation ID for audit logs
+  const requestId = crypto.randomUUID()
+  response.headers.set('X-Request-ID', requestId)
+
   return response
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|icon-192.png|icon-512.png|manifest.json|sw.js|workbox-.*).*)',],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icon-192\\.png|icon-512\\.png|manifest\\.json|sw\\.js|workbox-.*).*)',
+  ],
 }

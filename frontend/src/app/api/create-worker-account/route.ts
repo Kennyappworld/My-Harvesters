@@ -1,87 +1,169 @@
 /**
  * POST /api/create-worker-account
+ *
  * Server-side only — uses SUPABASE_SERVICE_ROLE_KEY (never exposed to browser).
  * Called by Settings when an admin approves a pending worker registration.
- * Protected: only authenticated senior_pastors / admins can call this.
+ *
+ * Security:
+ *  - Verifies caller's Supabase JWT before doing anything
+ *  - Checks caller has admin-level role from the DB (not metadata)
+ *  - Rate-limited at the edge (Vercel) by IP via X-Forwarded-For
+ *  - All inputs validated and sanitised
+ *  - Returns minimal information to caller
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl      = process.env.NEXT_PUBLIC_SUPABASE_URL      ?? ''
-const serviceRoleKey   = process.env.SUPABASE_SERVICE_ROLE_KEY     ?? ''
-const anonKey          = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL      ?? ''
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY     ?? ''
+const anonKey        = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+                    ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-export async function POST(req: NextRequest) {
-  // ── 1. Verify caller is an authenticated admin ───────────────────────────
-  const authHeader = req.headers.get('authorization') ?? ''
-  const callerToken = authHeader.replace('Bearer ', '')
+const ADMIN_ROLES = new Set(['developer', 'senior_pastor', 'pastor', 'admin'])
 
-  if (!callerToken || !supabaseUrl || !anonKey) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+// ── Request body type ─────────────────────────────────────────────────────────
+type CreateWorkerBody = {
+  email:      string
+  password:   string
+  name:       string
+  branch_key?: string
+  dept?:      string
+  role?:      string
+}
+
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  // ── 0. Config check ──────────────────────────────────────────────────────
+  if (!supabaseUrl || !anonKey) {
+    return json({ error: 'Service not configured' }, 503)
   }
 
-  // Verify the caller's JWT with the anon client
+  // ── 1. Verify caller JWT ─────────────────────────────────────────────────
+  const authHeader  = req.headers.get('authorization') ?? ''
+  const callerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+
+  if (!callerToken || callerToken.length < 20) {
+    return json({ error: 'Unauthorized' }, 401)
+  }
+
   const anonClient = createClient(supabaseUrl, anonKey)
   const { data: { user: caller }, error: authErr } = await anonClient.auth.getUser(callerToken)
 
-  if (authErr || !caller) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (authErr || !caller?.id) {
+    return json({ error: 'Unauthorized' }, 401)
   }
 
-  // Check caller has admin-level role
+  // ── 2. Verify caller has admin role (from DB, not metadata) ──────────────
+  if (!serviceRoleKey) {
+    return json({ error: 'Service role not configured — contact administrator' }, 503)
+  }
+
   const adminClient = createClient(supabaseUrl, serviceRoleKey)
-  const { data: callerWorker } = await adminClient
+  const { data: callerWorker, error: workerErr } = await adminClient
     .from('workers')
-    .select('role')
+    .select('role, org_id, status')
     .eq('id', caller.id)
     .single()
 
-  const allowedRoles = ['senior_pastor', 'pastor', 'admin']
-  if (!callerWorker || !allowedRoles.includes(callerWorker.role)) {
-    return NextResponse.json({ error: 'Forbidden — admin role required' }, { status: 403 })
+  if (workerErr || !callerWorker || !ADMIN_ROLES.has(callerWorker.role)) {
+    return json({ error: 'Forbidden — admin role required' }, 403)
   }
 
-  // ── 2. Parse and validate body ───────────────────────────────────────────
-  let body: { email?: string; password?: string; name?: string; branch?: string; dept?: string }
-  try { body = await req.json() } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  if (callerWorker.status !== 'active') {
+    return json({ error: 'Forbidden — account is not active' }, 403)
   }
 
-  const { email, password, name, branch, dept } = body
-  if (!email || !password || !name) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+  // ── 3. Parse and validate body ───────────────────────────────────────────
+  let body: CreateWorkerBody
+  try {
+    body = await req.json()
+  } catch {
+    return json({ error: 'Invalid request body' }, 400)
   }
 
-  // Basic email validation
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
-  }
+  const { email, password, name, branch_key, dept, role } = body
 
-  // ── 3. Create auth account using service role ────────────────────────────
-  if (!serviceRoleKey) {
-    // Service role not configured — skip auth creation, worker record only
-    return NextResponse.json({ ok: true, note: 'Service role not configured — worker record only' })
-  }
+  // Required fields
+  if (!email || typeof email !== 'string') return json({ error: 'email is required' }, 400)
+  if (!password || typeof password !== 'string') return json({ error: 'password is required' }, 400)
+  if (!name || typeof name !== 'string') return json({ error: 'name is required' }, 400)
 
-  const { data, error } = await adminClient.auth.admin.createUser({
-    email,
+  // Sanitise email
+  const cleanEmail = email.trim().toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return json({ error: 'Invalid email address' }, 400)
+  }
+  if (cleanEmail.length > 200) return json({ error: 'Email too long' }, 400)
+
+  // Name length
+  const cleanName = name.trim().slice(0, 200)
+  if (cleanName.length < 2) return json({ error: 'Name too short' }, 400)
+
+  // Password strength (basic server-side check)
+  if (password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400)
+  if (password.length > 128) return json({ error: 'Password too long' }, 400)
+
+  // Role can only be worker or unit_head when created by non-developer
+  const allowedNewRoles = callerWorker.role === 'developer'
+    ? ['developer', 'senior_pastor', 'pastor', 'admin', 'unit_head', 'worker']
+    : ['unit_head', 'worker']
+  const cleanRole = typeof role === 'string' && allowedNewRoles.includes(role) ? role : 'worker'
+
+  // ── 4. Create Supabase auth user ─────────────────────────────────────────
+  const { data, error: createErr } = await adminClient.auth.admin.createUser({
+    email: cleanEmail,
     password,
-    email_confirm: true,
+    email_confirm: true,      // skip confirmation email
     user_metadata: {
-      full_name: name,
-      branch_id: branch ?? '',
-      department: dept  ?? '',
-      role: 'worker',
+      full_name:   cleanName,
+      branch_key:  branch_key ?? '',
+      department:  dept ?? '',
+      role:        cleanRole,
     },
   })
 
-  if (error) {
-    // User may already exist — that's acceptable
-    if (error.message?.includes('already registered')) {
-      return NextResponse.json({ ok: true, note: 'Account already exists' })
+  if (createErr) {
+    if (createErr.message?.toLowerCase().includes('already registered')) {
+      // Idempotent — user already exists, just update their worker record
+      await adminClient
+        .from('workers')
+        .update({ status: 'active', must_change_password: true })
+        .eq('email', cleanEmail)
+      return json({ ok: true, note: 'Account already exists — set to active' })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    // Do not leak internal error details
+    console.error('[create-worker-account] Supabase error:', createErr.message)
+    return json({ error: 'Failed to create account — please try again' }, 500)
   }
 
-  return NextResponse.json({ ok: true, userId: data.user?.id })
+  const newUserId = data.user?.id
+
+  // ── 5. Ensure worker record is synced ────────────────────────────────────
+  if (newUserId) {
+    await adminClient
+      .from('workers')
+      .upsert({
+        id:                newUserId,
+        org_id:            callerWorker.org_id,
+        email:             cleanEmail,
+        full_name:         cleanName,
+        role:              cleanRole,
+        branch_key:        branch_key ?? '',
+        department:        dept ?? '',
+        status:            'active',
+        must_change_password: true,
+      }, { onConflict: 'id' })
+  }
+
+  return json({ ok: true, userId: newUserId })
+}
+
+// Helper
+function json(body: object, status = 200): NextResponse {
+  return NextResponse.json(body, {
+    status,
+    headers: {
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  })
 }

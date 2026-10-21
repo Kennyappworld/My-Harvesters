@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSession, hasRole } from '@/lib/useSession'
 import { checkSoulFollowUpReminders, requestNotificationPermission } from '@/lib/notifications'
+import { useOrgSettings } from '@/lib/orgSettings'
+import { useBranches, useDepartments, ROLE_LABELS } from '@/lib/data'
 import dynamic from 'next/dynamic'
-import Link from 'next/link'
 import PoweredBy from '@/lib/PoweredBy'
 
 const Overview      = dynamic(() => import('./sections/Overview'),          { loading: () => <L/> })
@@ -40,33 +41,36 @@ type AudienceGroup = {
   branches: string[]; depts: string[]; roles: string[]; count: number
 }
 
-const PRESET_AUDIENCES: AudienceGroup[] = [
-  { id:'all',        name:'Everyone',       color:'#1B4332', type:'preset', branches:['all'],     depts:['all'], roles:['all'],                            count:83400 },
-  { id:'leadership', name:'Leadership',     color:'#C9A84C', type:'preset', branches:['all'],     depts:['all'], roles:['senior_pastor','pastor','admin'],  count:24    },
-  { id:'pastors',    name:'All Pastors',    color:'#6B46C1', type:'preset', branches:['all'],     depts:['all'], roles:['senior_pastor','pastor'],          count:18    },
-  { id:'unit_heads', name:'Unit Heads',     color:'#0D9488', type:'preset', branches:['all'],     depts:['all'], roles:['unit_head'],                      count:86    },
-  { id:'workers',    name:'All Workers',    color:'#2B6CB0', type:'preset', branches:['all'],     depts:['all'], roles:['worker'],                         count:1240  },
-  { id:'lekki',      name:'Lekki HQ',       color:'#1B4332', type:'preset', branches:['lekki'],   depts:['all'], roles:['all'],                            count:18200 },
-  { id:'london',     name:'London UK',      color:'#3B82F6', type:'preset', branches:['london'],  depts:['all'], roles:['all'],                            count:6200  },
-  { id:'houston',    name:'Houston USA',    color:'#14B8A6', type:'preset', branches:['houston'], depts:['all'], roles:['all'],                            count:4100  },
+const ROLE_AUDIENCES = [
+  { id:'leadership', name:'Leadership',  color:'#C9A84C', roles:['senior_pastor','pastor','admin'] },
+  { id:'pastors',    name:'All Pastors', color:'#6B46C1', roles:['senior_pastor','pastor'] },
+  { id:'unit_heads', name:'Unit Heads',  color:'#0D9488', roles:['unit_head'] },
+  { id:'workers',    name:'All Workers', color:'#2B6CB0', roles:['worker'] },
 ]
 
-const BRANCH_NAMES_MAP: Record<string,string> = { lekki:'Lekki HQ',gbagada:'Gbagada',ikeja:'Ikeja',anthony:'Anthony Village',abuja:'Abuja',portharcourt:'Port Harcourt',ibadan:'Ibadan',london:'London UK',houston:'Houston USA' }
-const BROADCAST_DEPTS = [['ushering','Ushering'],['worship','Worship'],['media','Media'],['kids','KidsHouse'],['protocol','Protocol'],['welfare','Welfare'],['outreach','Outreach'],['prayer','Prayer'],['security','Security'],['drama','Drama'],['IT','IT'],['admin','Admin']]
 const BROADCAST_ROLES = [['senior_pastor','Senior Pastor'],['pastor','Branch Pastor'],['admin','Admin'],['unit_head','Unit Head'],['worker','Worker']]
 
 function BroadcastModal({ onClose }: { onClose: () => void }) {
+  const { branches } = useBranches()
+  const { departments } = useDepartments()
   const [step, setStep] = useState<'compose'|'audience'|'confirm'|'sent'>('compose')
   const [message, setMessage] = useState('')
   const [title, setTitle] = useState('')
   const [channel, setChannel] = useState<'platform'|'whatsapp'|'sms'|'all'>('platform')
   const [selected, setSelected] = useState<AudienceGroup[]>([])
   const [customGroups, setCustomGroups] = useState<AudienceGroup[]>(() => {
-    try { return JSON.parse(localStorage.getItem('hicc_custom_audiences')||'[]') } catch { return [] }
+    try { return JSON.parse(sessionStorage.getItem('org_custom_audiences')||'[]') } catch { return [] }
   })
   const [showNewGroup, setShowNewGroup] = useState(false)
   const [newGroup, setNewGroup] = useState({ name:'', branches:[] as string[], depts:[] as string[], roles:[] as string[] })
   const [sending, setSending] = useState(false)
+
+  // Build preset audiences dynamically from real branches
+  const PRESET_AUDIENCES: AudienceGroup[] = [
+    { id:'all', name:'Everyone', color:'#1B4332', type:'preset', branches:['all'], depts:['all'], roles:['all'], count:0 },
+    ...ROLE_AUDIENCES.map(r => ({ ...r, type:'preset' as const, branches:['all'], depts:['all'], count:0 })),
+    ...branches.map(b => ({ id:b.branch_key, name:b.name, color:b.color||'#1B4332', type:'preset' as const, branches:[b.branch_key], depts:['all'], roles:['all'], count:0 })),
+  ]
 
   const toggleAudience = (g: AudienceGroup) =>
     setSelected(prev => prev.find(a=>a.id===g.id) ? prev.filter(a=>a.id!==g.id) : [...prev, g])
@@ -81,7 +85,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
     }
     const updated = [...customGroups, g]
     setCustomGroups(updated)
-    localStorage.setItem('hicc_custom_audiences', JSON.stringify(updated))
+    try { sessionStorage.setItem('org_custom_audiences', JSON.stringify(updated)) } catch {}
     setSelected(prev=>[...prev,g])
     setShowNewGroup(false)
     setNewGroup({ name:'', branches:[], depts:[], roles:[] })
@@ -90,7 +94,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
   const deleteGroup = (id: string) => {
     const updated = customGroups.filter(g=>g.id!==id)
     setCustomGroups(updated)
-    localStorage.setItem('hicc_custom_audiences', JSON.stringify(updated))
+    try { sessionStorage.setItem('org_custom_audiences', JSON.stringify(updated)) } catch {}
     setSelected(prev=>prev.filter(a=>a.id!==id))
   }
 
@@ -98,7 +102,7 @@ function BroadcastModal({ onClose }: { onClose: () => void }) {
     setSending(true)
     if (channel==='whatsapp'||channel==='all') {
       const names = selected.map(a=>a.name).join(', ')
-      window.open(`https://wa.me/?text=${encodeURIComponent(`📣 HARVESTERS WORKFORCE COMMUNITY
+      window.open(`https://wa.me/?text=${encodeURIComponent(`📣 WORKFORCE ANNOUNCEMENT
 
 ${message}
 
@@ -233,7 +237,7 @@ To: ${names}
                             <div style={{width:8,height:8,borderRadius:'50%',background:on?'var(--brand)':'var(--s-4)',flexShrink:0}}/>
                             <div>
                               <div style={{fontSize:12,fontWeight:700,color:on?'var(--brand)':'var(--t-1)'}}>{g.name}</div>
-                              <div style={{fontSize:10.5,color:'var(--t-3)'}}>{g.branches.length?g.branches.map(b=>BRANCH_NAMES_MAP[b]||b).join(', '):'All branches'} · {g.roles.length?g.roles.join(', '):'All roles'}</div>
+                              <div style={{fontSize:10.5,color:'var(--t-3)'}}>{g.branches.length?g.branches.map(bk=>branches.find(b=>b.branch_key===bk)?.name||bk).join(', '):'All branches'} · {g.roles.length?g.roles.map(r=>ROLE_LABELS[r]||r).join(', '):'All roles'}</div>
                             </div>
                           </button>
                           <button type="button" onClick={()=>deleteGroup(g.id)} style={{background:'var(--red-lt)',border:'none',borderRadius:6,width:24,height:24,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',flexShrink:0}}>
@@ -254,11 +258,11 @@ To: ${names}
                   <input className="input" placeholder="Group name e.g. Lagos Worship Leaders" value={newGroup.name} onChange={e=>setNewGroup(f=>({...f,name:e.target.value}))} style={{marginBottom:10}} required/>
                   <div style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',marginBottom:5}}>Branches (empty = all)</div>
                   <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
-                    {Object.entries(BRANCH_NAMES_MAP).map(([id,name])=><ChipToggle key={id} label={name} active={newGroup.branches.includes(id)} onClick={()=>setNewGroup(f=>({...f,branches:f.branches.includes(id)?f.branches.filter(x=>x!==id):[...f.branches,id]}))}/>)}
+                    {branches.map(b=><ChipToggle key={b.branch_key} label={b.name} active={newGroup.branches.includes(b.branch_key)} onClick={()=>setNewGroup(f=>({...f,branches:f.branches.includes(b.branch_key)?f.branches.filter(x=>x!==b.branch_key):[...f.branches,b.branch_key]}))}/>)}
                   </div>
                   <div style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',marginBottom:5}}>Departments (empty = all)</div>
                   <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
-                    {BROADCAST_DEPTS.map(([id,name])=><ChipToggle key={id} label={name} active={newGroup.depts.includes(id)} onClick={()=>setNewGroup(f=>({...f,depts:f.depts.includes(id)?f.depts.filter(x=>x!==id):[...f.depts,id]}))}/>)}
+                    {departments.map(d=><ChipToggle key={d.dept_key} label={d.name} active={newGroup.depts.includes(d.dept_key)} onClick={()=>setNewGroup(f=>({...f,depts:f.depts.includes(d.dept_key)?f.depts.filter(x=>x!==d.dept_key):[...f.depts,d.dept_key]}))}/>)}
                   </div>
                   <div style={{fontSize:11.5,fontWeight:600,color:'var(--t-2)',marginBottom:5}}>Roles (empty = all)</div>
                   <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:12}}>
@@ -367,7 +371,7 @@ const NAV = [
 ]
 
 const TITLES: Record<string,{title:string;sub:string;emoji:string}> = {
-  overview:     {title:'Dashboard',          sub:'Harvesters International Christian Centre', emoji:'🏠'},
+  overview:     {title:'Dashboard',          sub:'Church workforce management', emoji:'🏠'},
   branches:     {title:'Branch Dashboards',  sub:'Per-branch workforce · KPIs · Departments', emoji:'🏛'},
   growth:       {title:'Growth & Retention', sub:'Member trends · Retention heatmaps · Funnel · Churn', emoji:'📈'},
   chat:         {title:'Community Chat',     sub:'Unit · Peer · Leadership — tiered by role', emoji:'💬'},
@@ -403,17 +407,21 @@ const Sidebar = React.memo(function Sidebar({
   setPage: (p: string) => void
   setMobileOpen: (v: boolean) => void
 }) {
+  const { settings } = useOrgSettings()
   return (
     <>
       {/* Sidebar header */}
       <div style={{padding:'16px 14px 14px', borderBottom:'1px solid rgba(255,255,255,0.07)', background:'rgba(0,0,0,0.15)'}}>
         <div style={{display:'flex', alignItems:'center', gap:10}}>
-          <div style={{width:36,height:36,background:'linear-gradient(135deg, var(--brand-md) 0%, var(--brand) 100%)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 4px 14px rgba(27,67,50,0.6), inset 0 1px 0 rgba(255,255,255,0.15)'}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          <div style={{width:36,height:36,background:'linear-gradient(135deg, var(--brand-md) 0%, var(--brand) 100%)',borderRadius:11,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,boxShadow:'0 4px 14px rgba(27,67,50,0.6), inset 0 1px 0 rgba(255,255,255,0.15)',overflow:'hidden'}}>
+            {settings.logoUrl
+              ? <img src={settings.logoUrl} alt="logo" style={{width:36,height:36,objectFit:'cover'}} />
+              : <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="18" height="18"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            }
           </div>
           <div>
-            <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>Harvesters International Christian Centre</div>
-            <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>Workforce Community</div>
+            <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>{settings.name || 'Your Church'}</div>
+            <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>{settings.appName || 'ChurchOS'}</div>
           </div>
         </div>
       </div>
@@ -441,11 +449,12 @@ const Sidebar = React.memo(function Sidebar({
           <div style={{width:36,height:36,borderRadius:'50%',background:'linear-gradient(135deg,var(--brand-md),var(--brand-lt))',display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'white',flexShrink:0,boxShadow:'0 2px 8px rgba(27,67,50,0.5)',border:'2px solid rgba(255,255,255,0.15)'}}>{(user?.name||'W').slice(0,2).toUpperCase()}</div>
           <div>
             <div style={{fontSize:12,fontWeight:700,color:'white'}}>{user?.name || 'Worker'}</div>
-            <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>{user?.role?.replace(/_/g,' ') || 'worker'} · {user?.branch_id || 'Lekki'}</div>
+            <div style={{fontSize:10.5,color:'rgba(255,255,255,0.45)'}}>{user?.role?.replace(/_/g,' ') || 'worker'}{user?.branch_key ? ` · ${user.branch_key}` : ''}</div>
           </div>
         </div>
         <button onClick={async()=>{
-          if (!window.confirm('Sign out of the Workforce Community?')) return
+          if (!window.confirm('Sign out?')) return
+          document.cookie='churchos_session=; path=/; max-age=0'
           document.cookie='hicc_session=; path=/; max-age=0'
           sessionStorage.clear()
           const sUrl=process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -474,10 +483,10 @@ export default function Dashboard() {
       const granted = await requestNotificationPermission()
       if (granted) {
         // Check for overdue soul follow-ups once per session
-        const lastCheck = sessionStorage.getItem('hicc_followup_check')
+        const lastCheck = sessionStorage.getItem('churchos_followup_check')
         const now = Date.now()
         if (!lastCheck || now - parseInt(lastCheck) > 4 * 60 * 60 * 1000) {
-          sessionStorage.setItem('hicc_followup_check', String(now))
+          sessionStorage.setItem('churchos_followup_check', String(now))
           await checkSoulFollowUpReminders(user.id)
         }
       }
@@ -492,9 +501,10 @@ export default function Dashboard() {
     const reset = () => {
       clearTimeout(timer)
       timer = setTimeout(() => {
+        document.cookie='churchos_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         document.cookie='hicc_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         sessionStorage.clear()
-        window.location.href = '/login?expired=1'
+        window.location.href = '/login?reason=session_expired'
       }, TIMEOUT)
     }
     const events = ['mousedown','keydown','touchstart','scroll']

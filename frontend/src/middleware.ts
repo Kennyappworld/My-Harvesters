@@ -1,8 +1,8 @@
 /**
- * ChurchOS / SanctuaryHQ / PulpitPro — Edge Middleware
+ * SanctuaryHQ / SanctuaryHQ / PulpitPro — Edge Middleware
  *
  * Auth strategy:
- *  - churchos_session cookie (httpOnly, Secure, SameSite=Lax) set by login
+ *  - sanctuaryhq_session cookie (httpOnly, Secure, SameSite=Lax) set by login
  *  - Real data security is always enforced by Supabase RLS on every DB call
  *  - This middleware only prevents unauthenticated route access at the edge
  *
@@ -19,7 +19,7 @@ const PROTECTED   = ['/dashboard']
 const PUBLIC_ONLY = ['/login', '/signup']
 const PUBLIC_PASS = ['/_next', '/api/', '/change-password', '/icon-', '/manifest', '/sw.js', '/workbox']
 
-const SESSION_COOKIE = 'churchos_session'
+const SESSION_COOKIE = 'sanctuaryhq_session'
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl

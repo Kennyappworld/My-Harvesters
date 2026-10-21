@@ -156,9 +156,9 @@ export default function LoginPage() {
       // Generate a secure session token (UUID)
       const sessionToken = data.session.access_token.slice(-36) || crypto.randomUUID()
       const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString()
-      document.cookie = `churchos_session=${sessionToken}; path=/; expires=${expires}; SameSite=Lax`
+      document.cookie = `sanctuaryhq_session=${sessionToken}; path=/; expires=${expires}; SameSite=Lax`
       // Clear legacy cookie
-      document.cookie = 'hicc_session=; path=/; max-age=0'
+      document.cookie = 'sanctuaryhq_session=; path=/; max-age=0'
 
       // Update last_seen in workers table (best effort)
       try {

@@ -3,7 +3,7 @@
  *
  * Security:
  *  - Always reads from Supabase (never trusts sessionStorage role field)
- *  - On SIGNED_OUT: clears churchos_session cookie, redirects to login
+ *  - On SIGNED_OUT: clears sanctuaryhq_session cookie, redirects to login
  *  - developer role is only assignable in DB, never derived from metadata
  */
 'use client'
@@ -133,9 +133,9 @@ export function useSession() {
 
   function clearSessionAndRedirect() {
     if (typeof window === 'undefined') return
-    document.cookie = 'churchos_session=; path=/; max-age=0; SameSite=Lax; Secure'
+    document.cookie = 'sanctuaryhq_session=; path=/; max-age=0; SameSite=Lax; Secure'
     // Also clear legacy cookie name
-    document.cookie = 'hicc_session=; path=/; max-age=0'
+    document.cookie = 'sanctuaryhq_session=; path=/; max-age=0'
     if (!window.location.pathname.includes('/login')) {
       window.location.href = '/login?reason=session_expired'
     }

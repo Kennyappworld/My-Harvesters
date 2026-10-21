@@ -46,7 +46,7 @@ function MemberCard({ holder, onClose }: { holder:CardHolder; onClose:()=>void }
 
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:22 }}>
             <div>
-              <div style={{ fontSize:9, fontWeight:700, color:'rgba(201,168,76,0.8)', letterSpacing:'.16em', textTransform:'uppercase', marginBottom:3 }}>Harvesters Intl Christian Centre</div>
+              <div style={{ fontSize:9, fontWeight:700, color:'rgba(201,168,76,0.8)', letterSpacing:'.16em', textTransform:'uppercase', marginBottom:3 }}>SanctuaryHQ Intl Christian Centre</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.4)', letterSpacing:'.06em', textTransform:'uppercase' }}>Workforce Community</div>
             </div>
             <div style={{ textAlign:'right' }}>

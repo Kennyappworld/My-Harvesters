@@ -35,13 +35,13 @@ export default function Events() {
             capacity: e.capacity||0, organiser: e.organiser||'', desc: e.description||'',
           }))
           setEvents(mapped)
-          persist('hicc_events' as any, mapped)
+          persist('sanctuaryhq_events' as any, mapped)
         }
       } catch {}
     }
     load()
   }, [])
-  const [events, setEvents] = useState(() => hydrate('hicc_events' as any, SAMPLE_EVENTS))
+  const [events, setEvents] = useState(() => hydrate('sanctuaryhq_events' as any, SAMPLE_EVENTS))
   const [tab, setTab] = useState<'all'|'create'>('all')
   const [filter, setFilter] = useState('all')
   const [form, setForm] = useState({ title:'', type:'Service', branch:'all', date:'', time:'09:00', capacity:'', desc:'', organiser:'' })

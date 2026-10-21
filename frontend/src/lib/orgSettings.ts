@@ -28,7 +28,7 @@ export type OrgSettings = {
   accentColor:      string
   timezone:         string
   currency:         string
-  appName:          string            // ChurchOS | SanctuaryHQ | PulpitPro
+  appName:          string            // SanctuaryHQ | SanctuaryHQ | PulpitPro
   poweredByText:    string
   poweredByUrl:     string
   poweredByVisible: boolean
@@ -55,7 +55,7 @@ export const ORG_DEFAULTS: OrgSettings = {
   accentColor:      '#C9A84C',
   timezone:         'Africa/Lagos',
   currency:         'NGN',
-  appName:          'ChurchOS',
+  appName:          'SanctuaryHQ',
   poweredByText:    'Powered by Anchorsuites Technologies Ltd',
   poweredByUrl:     'https://anchorsuites.com',
   poweredByVisible: true,
@@ -66,7 +66,7 @@ export const ORG_DEFAULTS: OrgSettings = {
 
 // ── localStorage cache key ────────────────────────────────────────────────────
 
-const CACHE_KEY = 'churchos_org_settings_v2'
+const CACHE_KEY = 'sanctuaryhq_org_settings_v2'
 
 function readCache(): OrgSettings {
   if (typeof window === 'undefined') return ORG_DEFAULTS
@@ -103,7 +103,7 @@ function rowToSettings(row: Record<string, unknown>): OrgSettings {
     accentColor:      String(row.accent_color || '#C9A84C'),
     timezone:         String(row.timezone || 'Africa/Lagos'),
     currency:         String(row.currency || 'NGN'),
-    appName:          String(row.app_name || 'ChurchOS'),
+    appName:          String(row.app_name || 'SanctuaryHQ'),
     poweredByText:    String(row.powered_by_text || 'Powered by Anchorsuites Technologies Ltd'),
     poweredByUrl:     String(row.powered_by_url || 'https://anchorsuites.com'),
     poweredByVisible: row.powered_by_visible !== false,

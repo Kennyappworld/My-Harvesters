@@ -11,12 +11,12 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLI
 
 
 function SmsConfig() {
-  const [apiKey, setApiKey] = React.useState(() => { try { return localStorage.getItem('hicc_termii_key') || '' } catch { return '' } })
-  const [senderId, setSenderId] = React.useState(() => { try { return localStorage.getItem('hicc_termii_sender') || '' } catch { return '' } })
+  const [apiKey, setApiKey] = React.useState(() => { try { return localStorage.getItem('sanctuaryhq_termii_key') || '' } catch { return '' } })
+  const [senderId, setSenderId] = React.useState(() => { try { return localStorage.getItem('sanctuaryhq_termii_sender') || '' } catch { return '' } })
   const [saved, setSaved] = React.useState(false)
   const save = () => {
-    localStorage.setItem('hicc_termii_key', apiKey)
-    localStorage.setItem('hicc_termii_sender', senderId)
+    localStorage.setItem('sanctuaryhq_termii_key', apiKey)
+    localStorage.setItem('sanctuaryhq_termii_sender', senderId)
     setSaved(true); setTimeout(() => setSaved(false), 2500)
   }
   return (
@@ -45,7 +45,7 @@ export default function Announcements() {
   const [filter, setFilter] = useState('all')
   const [form, setForm] = useState({title:'',body:'',scope:'all',targetBranch:'all',targetDept:'all',channel:'platform'})
   const [saved, setSaved] = useState(false)
-  const [waNumbers, setWaNumbers] = useState<Record<string,string>>(() => hydrate('hicc_wa_numbers' as any, {}))
+  const [waNumbers, setWaNumbers] = useState<Record<string,string>>(() => hydrate('sanctuaryhq_wa_numbers' as any, {}))
 
   const filtered = filter==='all'?items:filter==='pending'?items.filter(a=>a.status==='pending'):items.filter(a=>a.scope===filter)
 
@@ -225,7 +225,7 @@ export default function Announcements() {
                 <div style={{display:'flex',gap:8}}>
                   <input className="input" value={waNumbers[b.id]||''} onChange={e=>setWaNumbers(prev=>({...prev,[b.id]:e.target.value}))} placeholder={b.country==='NG'?'+234 800 000 0000':b.country==='UK'?'+44 700 000 0000':'+1 000 000 0000'} style={{fontSize:12,fontFamily:'var(--font-mono)'}}/>
                   <button onClick={async () => {
-                    persist('hicc_wa_numbers' as any, waNumbers)
+                    persist('sanctuaryhq_wa_numbers' as any, waNumbers)
                     if (supabase) {
                       await supabase.from('announcements').upsert({
                         id: `wa_number_${b.id}`,

@@ -41,7 +41,7 @@ const SAMPLE_PROFILES: Profile[] = [
   { id:'p1', name:'Segun Adeyemi', branch:'lekki', email:'segun@hicc.org', phone:'+234 810 111 2222', profession:'Software Engineer', industry:'Technology', company:'Flutterwave', bio:'Building payment infrastructure for Africa. Passionate about tech-enabled church growth.', passions:['Tech for Good','Youth Empowerment'], skills:['React','Node.js','Python','AWS'], linkedin:'linkedin.com/in/segun', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2022' },
   { id:'p2', name:'Tolu Mensah', branch:'lekki', email:'tolu@hicc.org', profession:'Investment Banker', industry:'Finance & Banking', company:'Stanbic IBTC', bio:'15 years in capital markets. Happy to mentor young professionals in finance.', passions:['Financial Literacy','Leadership & Mentoring'], skills:['Financial Modelling','M&A','Excel'], linkedin:'', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2020' },
   { id:'p3', name:'Ngozi Kalu', branch:'lekki', email:'ngozi@hicc.org', profession:'Medical Doctor', industry:'Healthcare', company:'Lagos University Teaching Hospital', bio:'Paediatrician. Interested in community health outreach.', passions:['Healthcare Outreach','Community Development'], skills:['Paediatrics','Research','Public Health'], linkedin:'', jobStatus:'none', showPhone:false, showEmail:false, joinedYear:'2021' },
-  { id:'p4', name:'Pastor Kanmi Adeyemi', branch:'ikeja', email:'kanmi@hicc.org', profession:'Pastor & Life Coach', industry:'Education', company:'Harvesters International', bio:'Passionate about developing leaders and helping professionals find purpose.', passions:['Leadership & Mentoring','Youth Empowerment'], skills:['Coaching','Leadership','Public Speaking'], linkedin:'', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2019' },
+  { id:'p4', name:'Pastor Kanmi Adeyemi', branch:'ikeja', email:'kanmi@hicc.org', profession:'Pastor & Life Coach', industry:'Education', company:'SanctuaryHQ International', bio:'Passionate about developing leaders and helping professionals find purpose.', passions:['Leadership & Mentoring','Youth Empowerment'], skills:['Coaching','Leadership','Public Speaking'], linkedin:'', jobStatus:'open', showPhone:false, showEmail:true, joinedYear:'2019' },
   { id:'p5', name:'Emeka Obi', branch:'lekki', email:'emeka@hicc.org', profession:'Architect', industry:'Real Estate', company:'Studio Emeka', bio:'Award-winning architect. Looking for Kingdom-aligned real estate projects.', passions:['Community Development','Creative Arts'], skills:['AutoCAD','Revit','Project Management'], linkedin:'linkedin.com/in/emeka', jobStatus:'active', showPhone:false, showEmail:true, joinedYear:'2023' },
 ]
 
@@ -168,10 +168,10 @@ function ProfileDetail({ profile, phoneVisible, onBack }: { profile:Profile; pho
 export default function Network() {
   const { user } = useSession()
   const [tab, setTab] = useState<'directory'|'opportunities'|'profile'>('directory')
-  const [profiles, setProfiles] = useState<Profile[]>(() => hydrate('hicc_network_profiles' as any, SAMPLE_PROFILES))
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(() => hydrate('hicc_network_opps' as any, SAMPLE_OPPORTUNITIES))
+  const [profiles, setProfiles] = useState<Profile[]>(() => hydrate('sanctuaryhq_network_profiles' as any, SAMPLE_PROFILES))
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(() => hydrate('sanctuaryhq_network_opps' as any, SAMPLE_OPPORTUNITIES))
   const [viewProfile, setViewProfile] = useState<Profile|null>(null)
-  const [phoneVisible] = useState(() => { try { return JSON.parse(localStorage.getItem('hicc_phone_visible')||'false') } catch { return false } })
+  const [phoneVisible] = useState(() => { try { return JSON.parse(localStorage.getItem('sanctuaryhq_phone_visible')||'false') } catch { return false } })
 
   // Filters — directory
   const [search, setSearch] = useState('')
@@ -215,7 +215,7 @@ export default function Network() {
       ? profiles.map(p => p.id===updated.id ? updated : p)
       : [...profiles, updated]
     setProfiles(next)
-    persist('hicc_network_profiles' as any, next)
+    persist('sanctuaryhq_network_profiles' as any, next)
     // Sync to Supabase network_profiles table
     if (supabase && user?.id) {
       await supabase.from('network_profiles').upsert({
@@ -246,7 +246,7 @@ export default function Network() {
     }
     const next = [opp, ...opportunities]
     setOpportunities(next)
-    persist('hicc_network_opps' as any, next)
+    persist('sanctuaryhq_network_opps' as any, next)
     // Save to Supabase for cross-device visibility
     if (supabase && user?.id) {
       supabase.from('network_opportunities').insert({
@@ -314,7 +314,7 @@ export default function Network() {
       {/* Header */}
       <div style={{ marginBottom:20 }}>
         <div style={{ fontWeight:800,fontSize:18,fontFamily:'var(--font-display)',color:'var(--t-1)',marginBottom:4 }}>Kingdom Professional Network</div>
-        <p style={{ fontSize:13,color:'var(--t-2)',lineHeight:1.6 }}>Connect with professionals in the Harvesters community. Discover talent, share opportunities, and build Kingdom relationships across all branches.</p>
+        <p style={{ fontSize:13,color:'var(--t-2)',lineHeight:1.6 }}>Connect with professionals in the SanctuaryHQ community. Discover talent, share opportunities, and build Kingdom relationships across all branches.</p>
       </div>
 
       {/* Stats strip */}
@@ -370,7 +370,7 @@ export default function Network() {
       {tab==='opportunities' && (
         <>
           <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16 }}>
-            <div style={{ fontSize:13,color:'var(--t-2)' }}>Verified openings posted by Harvesters workers</div>
+            <div style={{ fontSize:13,color:'var(--t-2)' }}>Verified openings posted by SanctuaryHQ workers</div>
             <button className="btn btn-brand btn-sm" onClick={()=>setShowOppForm(v=>!v)}>+ Post opportunity</button>
           </div>
 

@@ -340,7 +340,7 @@ export default function Growth({ onNavigate }: { onNavigate: (p:string)=>void })
               { r:'No small group (19%)',          a:'Auto-assign first-timers to a small group within 2 weeks.',              p:'High',   c:'var(--brand)'  },
               { r:'Joined another church (22%)',   a:'Strengthen discipleship depth and community belonging programmes.',      p:'High',   c:'var(--accent)' },
               { r:'Irregular → lapse (16%)',       a:'Trigger pastoral check-in after 3 consecutive missed Sundays.',         p:'Medium', c:'var(--amber)'  },
-              { r:'Relocated (28%)',               a:'Create seamless transfer process to nearest HICC branch.',              p:'Medium', c:'var(--blue)'   },
+              { r:'Relocated (28%)',               a:'Create seamless transfer process to nearest SanctuaryHQ branch.',              p:'Medium', c:'var(--blue)'   },
               { r:'Life circumstances (10%)',      a:'Pastoral care outreach via unit leader within 14 days.',                p:'Low',    c:'var(--purple)' },
             ].map(item=>(
               <div key={item.r} style={{ padding:'10px 12px',background:'var(--s-3)',borderRadius:'var(--r)',borderLeft:`3px solid ${item.c}`,marginBottom:8,border:`0.5px solid var(--border)`,borderLeftWidth:3 }}>

@@ -292,7 +292,7 @@ function OrgSettingsPanel() {
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13.5, fontWeight: 700, marginBottom: 4 }}>Platform name</h3>
         <p style={{ fontSize: 12.5, color: 'var(--t-2)', marginBottom: 12 }}>Choose the branded name displayed across the platform.</p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 12 }}>
-          {['ChurchOS', 'SanctuaryHQ', 'PulpitPro'].map(n => (
+          {['SanctuaryHQ', 'SanctuaryHQ', 'PulpitPro'].map(n => (
             <button key={n} onClick={() => setForm(f => ({ ...f, appName: n }))}
               style={{
                 padding: '14px 10px', borderRadius: 'var(--r)', border: `2px solid ${form.appName === n ? 'var(--brand)' : 'var(--border)'}`,

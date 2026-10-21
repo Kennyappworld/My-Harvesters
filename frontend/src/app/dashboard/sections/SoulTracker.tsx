@@ -36,7 +36,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
 export default function SoulTracker({ onNavigate }: { onNavigate: (p: string) => void }) {
   const { user } = useSession()
   const [tab, setTab] = useState<'tracker'|'capture'|'schedule'>('tracker')
-  const [souls, setSouls] = useState(() => hydrate('hicc_souls' as any, SAMPLE_SOULS))
+  const [souls, setSouls] = useState(() => hydrate('sanctuaryhq_souls' as any, SAMPLE_SOULS))
 
   // Load real souls from Supabase on mount
   useEffect(() => {
@@ -69,7 +69,7 @@ export default function SoulTracker({ onNavigate }: { onNavigate: (p: string) =>
     const nameParts = form.name.trim().split(' ')
     const first = nameParts[0]; const last = nameParts.slice(1).join(' ') || '—'
     const newSoul = { id:`s${Date.now()}`, name:form.name, branch:form.branch, date:form.date, status:'active', step:1, phone:form.phone, feedback:false, prayer:false }
-    setSouls((prev:any[]) => { const n=[newSoul,...prev]; persist('hicc_souls' as any, n); return n })
+    setSouls((prev:any[]) => { const n=[newSoul,...prev]; persist('sanctuaryhq_souls' as any, n); return n })
     if (supabase && user?.id) {
       await supabase.from('soul_records').insert({
         first_name: first, last_name: last, phone: form.phone, email: form.email,
@@ -215,7 +215,7 @@ export default function SoulTracker({ onNavigate }: { onNavigate: (p: string) =>
             </div>
             <div style={{ marginBottom:18 }}>
               <label style={{ fontSize:11.5, fontWeight:500, color:'var(--t-2)', display:'block', marginBottom:5 }}>Notes (optional)</label>
-              <textarea className="input" rows={2} placeholder="How they heard about HICC, any specific prayer needs…" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} style={{ resize:'vertical' }}/>
+              <textarea className="input" rows={2} placeholder="How they heard about SanctuaryHQ, any specific prayer needs…" value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} style={{ resize:'vertical' }}/>
             </div>
             <button type="submit" className="btn btn-brand" style={{ width:'100%', justifyContent:'center', padding:'10px' }}>
               Record soul + start follow-up

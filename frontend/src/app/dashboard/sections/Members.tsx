@@ -18,7 +18,7 @@ const FALLBACK_MEMBERS = [
 
 export default function Members({ onNavigate, memberSearch, onMemberSearchConsumed }: { onNavigate:(p:string)=>void; memberSearch?:string; onMemberSearchConsumed?:()=>void }) {
   const { user } = useSession()
-  const [members, setMembers] = useState<any[]>(() => hydrate('hicc_members' as any, FALLBACK_MEMBERS))
+  const [members, setMembers] = useState<any[]>(() => hydrate('sanctuaryhq_members' as any, FALLBACK_MEMBERS))
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
 
@@ -83,7 +83,7 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
       joined: new Date().toLocaleDateString('en-US',{month:'short',year:'numeric'}),
       growth:0, attendance:0, photo:''
     }
-    setMembers(prev => { const next = [...prev, newMember]; persist('hicc_members' as any, next); return next })
+    setMembers(prev => { const next = [...prev, newMember]; persist('sanctuaryhq_members' as any, next); return next })
     // Write to Supabase workers table
     if (supabase && user?.id) {
       await supabase.from('workers').insert({

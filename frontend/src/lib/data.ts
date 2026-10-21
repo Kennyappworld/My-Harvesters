@@ -5,7 +5,7 @@
  * The FALLBACK_BRANCHES and FALLBACK_DEPARTMENTS below are only used when the
  * DB has no rows yet, or when Supabase is not configured.
  *
- * All HICC-specific church data has been removed — this module is now
+ * All SanctuaryHQ-specific church data has been removed — this module is now
  * church-agnostic.  Chart seed data (memberGrowthMonthly, etc.) is also
  * replaced by live Supabase queries in the respective section components.
  */

@@ -48,7 +48,7 @@ export default function MemberVerification() {
   const [ratingComponents, setRatingComponents] = useState(['Attendance','Giving','Prayer','Serving'])
   const [expiry, setExpiry]               = useState('30 days')
   const [ratingScale, setRatingScale]     = useState<[number,number]>([1,5])
-  const [platformName, setPlatformName]   = useState('Harvesters International Christian Centre Workforce Community')
+  const [platformName, setPlatformName]   = useState('SanctuaryHQ Workforce Community')
 
   const toggleComponent = (comp: string) => {
     setRatingComponents(prev =>
@@ -61,7 +61,7 @@ export default function MemberVerification() {
     setTimeout(() => setSaved(false), 2500)
   }
 
-  const [memberList, setMemberList] = useState(() => hydrate('hicc_verif_members' as any, SAMPLE_MEMBERS))
+  const [memberList, setMemberList] = useState(() => hydrate('sanctuaryhq_verif_members' as any, SAMPLE_MEMBERS))
 
   useEffect(() => {
     if (!supabase) return
@@ -81,7 +81,7 @@ export default function MemberVerification() {
             }
           })
           setMemberList(mapped)
-          persist('hicc_verif_members' as any, mapped)
+          persist('sanctuaryhq_verif_members' as any, mapped)
         }
       } catch {}
     }

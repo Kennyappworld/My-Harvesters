@@ -11,7 +11,7 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLI
 
 export default function Prayer() {
   const { user } = useSession()
-  const [requests, setRequests] = useState(() => hydrate('hicc_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
+  const [requests, setRequests] = useState(() => hydrate('sanctuaryhq_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ text: '', scope: 'unit' })
@@ -72,7 +72,7 @@ export default function Prayer() {
   }, [])
 
   const toggle = (id: string) =>
-    setRequests((prev: any[]) => { const n = prev.map(r => r.id === id ? { ...r, interceding: r.isInterceding ? r.interceding - 1 : r.interceding + 1, isInterceding: !r.isInterceding } : r); persist('hicc_prayer_requests', n); return n })
+    setRequests((prev: any[]) => { const n = prev.map(r => r.id === id ? { ...r, interceding: r.isInterceding ? r.interceding - 1 : r.interceding + 1, isInterceding: !r.isInterceding } : r); persist('sanctuaryhq_prayer_requests', n); return n })
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()

@@ -1,5 +1,5 @@
 /**
- * Push notification utilities — HICC Workforce Community
+ * Push notification utilities — SanctuaryHQ Community
  */
 
 export async function requestNotificationPermission(): Promise<boolean> {

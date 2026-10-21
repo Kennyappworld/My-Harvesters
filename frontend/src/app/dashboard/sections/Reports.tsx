@@ -61,7 +61,7 @@ export default function Reports() {
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = `HICC-Report-${selectedMonth}-${selectedBranch}.csv`
+    a.href = url; a.download = `SanctuaryHQ-Report-${selectedMonth}-${selectedBranch}.csv`
     a.click(); URL.revokeObjectURL(url)
     setGenerated(true); setTimeout(()=>setGenerated(false), 3000)
   }

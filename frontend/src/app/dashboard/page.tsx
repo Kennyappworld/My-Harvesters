@@ -421,7 +421,7 @@ const Sidebar = React.memo(function Sidebar({
           </div>
           <div>
             <div style={{fontSize:13,fontWeight:800,fontFamily:'var(--font-display)',color:'white',letterSpacing:'-0.01em',lineHeight:1.2}}>{settings.name || 'Your Church'}</div>
-            <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>{settings.appName || 'ChurchOS'}</div>
+            <div style={{fontSize:9.5,color:'var(--gold)',letterSpacing:'0.06em',fontWeight:600,textTransform:'uppercase'}}>{settings.appName || 'SanctuaryHQ'}</div>
           </div>
         </div>
       </div>
@@ -454,8 +454,8 @@ const Sidebar = React.memo(function Sidebar({
         </div>
         <button onClick={async()=>{
           if (!window.confirm('Sign out?')) return
-          document.cookie='churchos_session=; path=/; max-age=0'
-          document.cookie='hicc_session=; path=/; max-age=0'
+          document.cookie='sanctuaryhq_session=; path=/; max-age=0'
+          document.cookie='sanctuaryhq_session=; path=/; max-age=0'
           sessionStorage.clear()
           const sUrl=process.env.NEXT_PUBLIC_SUPABASE_URL
           const sKey=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -483,10 +483,10 @@ export default function Dashboard() {
       const granted = await requestNotificationPermission()
       if (granted) {
         // Check for overdue soul follow-ups once per session
-        const lastCheck = sessionStorage.getItem('churchos_followup_check')
+        const lastCheck = sessionStorage.getItem('sanctuaryhq_followup_check')
         const now = Date.now()
         if (!lastCheck || now - parseInt(lastCheck) > 4 * 60 * 60 * 1000) {
-          sessionStorage.setItem('churchos_followup_check', String(now))
+          sessionStorage.setItem('sanctuaryhq_followup_check', String(now))
           await checkSoulFollowUpReminders(user.id)
         }
       }
@@ -501,8 +501,8 @@ export default function Dashboard() {
     const reset = () => {
       clearTimeout(timer)
       timer = setTimeout(() => {
-        document.cookie='churchos_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-        document.cookie='hicc_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie='sanctuaryhq_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+        document.cookie='sanctuaryhq_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
         sessionStorage.clear()
         window.location.href = '/login?reason=session_expired'
       }, TIMEOUT)

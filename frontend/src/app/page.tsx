@@ -29,7 +29,7 @@ export default function Landing() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="16" height="16"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
                 </div>
             }
-            <span style={{ fontSize:14, fontWeight:800, fontFamily:'var(--font-display)', letterSpacing:'-.01em', color:'white' }}>Harvesters</span>
+            <span style={{ fontSize:14, fontWeight:800, fontFamily:'var(--font-display)', letterSpacing:'-.01em', color:'white' }}>SanctuaryHQ</span>
           </div>
           <div style={{ display:'flex', gap:8, alignItems:'center' }}>
             <Link href="/signup" style={{ fontSize:13, color:'rgba(255,255,255,.5)', textDecoration:'none', padding:'7px 14px' }}>Register</Link>
@@ -51,17 +51,17 @@ export default function Landing() {
 
         {/* Church name */}
         <p style={{ fontSize:11, fontWeight:700, color:'var(--gold)', letterSpacing:'.14em', textTransform:'uppercase', marginBottom:18 }}>
-          Harvesters International Christian Centre
+          SanctuaryHQ
         </p>
 
         {/* Headline */}
         <h1 style={{ fontFamily:'var(--font-display)', fontSize:'clamp(2rem,5.5vw,3.6rem)', fontWeight:800, letterSpacing:'-.04em', lineHeight:1.08, color:'white', marginBottom:16, maxWidth:680 }}>
-          Welcome to Harvesters' Workforce Community
+          Your Church, Fully Organised
         </h1>
 
         {/* Single unifying statement */}
-        <p style={{ fontSize:'clamp(14px,1.8vw,16.5px)', color:'rgba(255,255,255,.5)', lineHeight:1.75, maxWidth:420, marginBottom:40, fontStyle:'italic' }}>
-          Changing lives by pioneering thriving churches in key global cities — bringing hope, connecting people to God, and leading every member to become a fully devoted follower of Christ.
+        <p style={{ fontSize:'clamp(14px,1.8vw,16.5px)', color:'rgba(255,255,255,.5)', lineHeight:1.75, maxWidth:440, marginBottom:40 }}>
+          SanctuaryHQ brings your entire ministry team into one platform — members, attendance, departments, events, and more. Built for churches of every size.
         </p>
 
         {/* CTAs only — nothing else below */}
@@ -84,7 +84,7 @@ export default function Landing() {
       {/* Footer — copyright + powered by only */}
       <footer style={{ borderTop:'1px solid rgba(255,255,255,.06)', padding:'1rem 1.5rem', display:'flex', flexDirection:'column', alignItems:'center', gap:0 }}>
         <p style={{ fontSize:11, color:'rgba(255,255,255,.18)', marginBottom:4 }}>
-          © {new Date().getFullYear()} Harvesters International Christian Centre. All rights reserved.
+          © {new Date().getFullYear()} SanctuaryHQ. All rights reserved.
         </p>
         <PoweredBy dark={true}/>
       </footer>

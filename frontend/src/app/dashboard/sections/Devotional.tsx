@@ -203,7 +203,7 @@ function UploadModal({ plan, onSave, onClose }: { plan: DevotionalPlan | null; o
 }
 
 export default function Devotional() {
-  const [plans, setPlans] = useState<DevotionalPlan[]>(() => hydrate('hicc_devotional_plans', [SAMPLE_PLAN]))
+  const [plans, setPlans] = useState<DevotionalPlan[]>(() => hydrate('sanctuaryhq_devotional_plans', [SAMPLE_PLAN]))
   const [showUpload, setShowUpload] = useState(false)
   const [selectedDate, setSelectedDate] = useState(getTodayStr())
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -223,7 +223,7 @@ export default function Devotional() {
       try {
         const plan = JSON.parse(data[0].body) as DevotionalPlan
         setPlans([plan])
-        persist('hicc_devotional_plans', [plan])
+        persist('sanctuaryhq_devotional_plans', [plan])
       } catch {}
     }
   }
@@ -244,7 +244,7 @@ export default function Devotional() {
   const savePlan = async (plan: DevotionalPlan) => {
     const next = [plan, ...plans.filter(p => p.id !== plan.id)]
     setPlans(next)
-    persist('hicc_devotional_plans', next)
+    persist('sanctuaryhq_devotional_plans', next)
     // Also store in Supabase announcements so all workers get it
     if (supabase) {
       await supabase.from('announcements').upsert({

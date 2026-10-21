@@ -1,7 +1,7 @@
 {
-  "name": "Harvesters International Christian Centre",
-  "short_name": "Harvesters",
-  "description": "Harvesters International Christian Centre — Workforce Community",
+  "name": "SanctuaryHQ International Christian Centre",
+  "short_name": "SanctuaryHQ",
+  "description": "SanctuaryHQ International Christian Centre — Workforce Community",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0D1F17",

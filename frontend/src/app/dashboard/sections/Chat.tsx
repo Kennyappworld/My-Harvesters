@@ -51,15 +51,15 @@ export default function Chat() {
   const { user } = useSession()
   const isSuperAdmin = user?.role === 'senior_pastor' || user?.role === 'admin'
 
-  const [channels, setChannels] = useState<Channel[]>(() => hydrate('hicc_chat_channels_v2', INIT_CHANNELS))
+  const [channels, setChannels] = useState<Channel[]>(() => hydrate('sanctuaryhq_chat_channels_v2', INIT_CHANNELS))
   const [active, setActive] = useState(INIT_CHANNELS[0].id)
   const [input, setInput] = useState('')
   const [realtimeReady, setRealtimeReady] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [showInvite, setShowInvite] = useState(false)
   const [showAccessMgr, setShowAccessMgr] = useState(false)
-  const [invites, setInvites] = useState<Invite[]>(() => hydrate('hicc_chat_invites', []))
-  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>(() => hydrate('hicc_access_requests' as any, []))
+  const [invites, setInvites] = useState<Invite[]>(() => hydrate('sanctuaryhq_chat_invites', []))
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>(() => hydrate('sanctuaryhq_access_requests' as any, []))
   const [newGroup, setNewGroup] = useState({ name:'', scope:'unit' })
   const [memberSearch, setMemberSearch] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -156,7 +156,7 @@ export default function Chat() {
     const text = input.trim(); setInput('')
     const name = user?.name || 'Worker'
     const opt: Msg = { id:`opt_${Date.now()}`, from:name, initials:name.slice(0,2).toUpperCase(), text, time:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}), mine:true }
-    setChannels(prev => { const next = prev.map(c => c.id===active ? {...c, messages:[...(c.messages||[]), opt]} : c); if(!supabase) persist('hicc_chat_channels_v2', next); return next })
+    setChannels(prev => { const next = prev.map(c => c.id===active ? {...c, messages:[...(c.messages||[]), opt]} : c); if(!supabase) persist('sanctuaryhq_chat_channels_v2', next); return next })
     scrollBottom()
     if (supabase && user?.id) await supabase.from('chat_messages').insert({ channel:active, sender_id:user.id, sender_name:name, body:text })
   }
@@ -176,7 +176,7 @@ export default function Chat() {
       unread:0, messages:[], members:[user?.id||'me'], createdBy:user?.id||'me', custom:true,
     }
     const next = [...channels, grp]
-    setChannels(next); persist('hicc_chat_channels_v2', next)
+    setChannels(next); persist('sanctuaryhq_chat_channels_v2', next)
     setActive(id); setShowCreate(false); setNewGroup({ name:'', scope:'unit' })
     // Persist both membership records to Supabase
     if (supabase && user?.id) {
@@ -192,7 +192,7 @@ export default function Chat() {
 
   const deleteGroup = () => {
     const next = channels.filter(c => c.id !== active)
-    setChannels(next); persist('hicc_chat_channels_v2', next)
+    setChannels(next); persist('sanctuaryhq_chat_channels_v2', next)
     setActive(next[0]?.id || INIT_CHANNELS[0].id)
     setShowDeleteConfirm(false)
   }
@@ -203,7 +203,7 @@ export default function Chat() {
       memberId:member.id, memberName:member.name,
       invitedBy:user?.name||'Admin', status:'pending',
     }
-    const next = [...invites, invite]; setInvites(next); persist('hicc_chat_invites', next)
+    const next = [...invites, invite]; setInvites(next); persist('sanctuaryhq_chat_invites', next)
     setShowInvite(false)
   }
 
@@ -218,7 +218,7 @@ export default function Chat() {
       status:'pending', requestedAt:new Date().toISOString(),
     }
     const next = [...accessRequests, req]
-    setAccessRequests(next); persist('hicc_access_requests' as any, next)
+    setAccessRequests(next); persist('sanctuaryhq_access_requests' as any, next)
     setRequestSent(active)
     setTimeout(() => setRequestSent(null), 3000)
   }
@@ -239,15 +239,15 @@ export default function Chat() {
         ? {...c, members:[...(c.members||[]), req.requesterId], sub:`${(c.members||[]).length+1} members`}
         : c
       )
-      persist('hicc_chat_channels_v2', next); return next
+      persist('sanctuaryhq_chat_channels_v2', next); return next
     })
     const next = accessRequests.map(r => r.id===reqId ? {...r, status:'approved' as const} : r)
-    setAccessRequests(next); persist('hicc_access_requests' as any, next)
+    setAccessRequests(next); persist('sanctuaryhq_access_requests' as any, next)
   }
 
   const rejectAccessRequest = (reqId: string) => {
     const next = accessRequests.map(r => r.id===reqId ? {...r, status:'rejected' as const} : r)
-    setAccessRequests(next); persist('hicc_access_requests' as any, next)
+    setAccessRequests(next); persist('sanctuaryhq_access_requests' as any, next)
   }
 
   const approveInvite = (inviteId: string) => {
@@ -258,15 +258,15 @@ export default function Chat() {
         ? {...c, members:[...(c.members||[]), inv.memberId], sub:`${(c.members||[]).length+1} members`}
         : c
       )
-      persist('hicc_chat_channels_v2', next); return next
+      persist('sanctuaryhq_chat_channels_v2', next); return next
     })
     const next = invites.map(i => i.id===inviteId ? {...i, status:'approved' as const} : i)
-    setInvites(next); persist('hicc_chat_invites', next)
+    setInvites(next); persist('sanctuaryhq_chat_invites', next)
   }
 
   const rejectInvite = (inviteId: string) => {
     const next = invites.map(i => i.id===inviteId ? {...i, status:'rejected' as const} : i)
-    setInvites(next); persist('hicc_chat_invites', next)
+    setInvites(next); persist('sanctuaryhq_chat_invites', next)
   }
 
   const approveAll = () => {

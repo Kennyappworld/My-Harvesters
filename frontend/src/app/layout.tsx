@@ -9,11 +9,11 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Harvesters International Christian Centre — Workforce Community',
-  description: 'Workforce Community for Harvesters International Christian Centre',
+  title: 'SanctuaryHQ — Workforce Community',
+  description: 'Workforce Community for SanctuaryHQ',
   robots: { index: false, follow: false },
   manifest: '/manifest.json',
-  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'HICC' },
+  appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'SanctuaryHQ' },
   icons: { icon: '/icon-192.png', apple: '/icon-192.png' },
 }
 

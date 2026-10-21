@@ -1,5 +1,5 @@
 /**
- * Animation utilities — HICC Workforce Community
+ * Animation utilities — SanctuaryHQ Community
  * Countup, entrance stagger, progress fill, spring toast
  */
 

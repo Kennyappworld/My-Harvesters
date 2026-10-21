@@ -234,3 +234,35 @@ export const ROLE_COLORS: Record<string, string> = {
   worker:         '#2B6CB0',
   guest:          '#6B7280',
 }
+
+// ── Backward-compat aliases (consumed by section components) ──────────────────
+
+/** Alias: synchronous empty arrays — components load real data from Supabase */
+export const branches: Branch[] = []
+export const DEPARTMENTS: Department[] = []
+export const announcements: unknown[] = []
+
+// Chart seed shapes (components replace with live Supabase data)
+export type GrowthPoint = { month: string; total: number; new: number; left: number }
+export const memberGrowthMonthly: GrowthPoint[] = []
+
+export type AttendanceRecord = { date: string; count: number; branch?: string }
+export const weeklyAttendance: AttendanceRecord[] = []
+
+export type CohortRow = { cohort: string; m0: number; m1: number; m2: number; m3: number; m6: number; m12: number }
+export const retentionCohorts: CohortRow[] = []
+
+export type RetentionPoint = { month: string; rate: number }
+export const retentionMonthly: RetentionPoint[] = []
+
+export type FunnelStep = { stage: string; count: number }
+export const firstTimerFunnel: FunnelStep[] = []
+
+export type ChurnReason = { reason: string; count: number }
+export const churnReasons: ChurnReason[] = []
+
+export type ServiceRecord = { date: string; service: string; branch: string; count: number }
+export const SERVICE_RECORDS: ServiceRecord[] = []
+
+// Alias for components importing BRANCH_COLORS
+export const BRANCH_COLORS: Record<string, string> = {}

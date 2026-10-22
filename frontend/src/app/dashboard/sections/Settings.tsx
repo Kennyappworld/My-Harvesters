@@ -843,29 +843,120 @@ function QRGenerator() {
   const { departments } = useDepartments()
   const [qrBranch, setQrBranch] = useState('')
   const [qrDept, setQrDept] = useState('')
-  const [qrMode, setQrMode] = useState<'branch' | 'dept' | 'combined'>('branch')
+  const [qrMode, setQrMode] = useState<'general' | 'branch' | 'dept' | 'combined'>('general')
+  const [copied, setCopied] = useState(false)
+  const qrRef = useRef<HTMLDivElement>(null)
 
-  const BASE = typeof window !== 'undefined'
-    ? `${window.location.protocol}//${window.location.host}/signup`
-    : '/signup'
+  const HOST = typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.host}`
+    : ''
 
-  const qrUrl = qrMode === 'branch' ? `${BASE}?branch=${qrBranch}`
-    : qrMode === 'dept'   ? `${BASE}?dept=${qrDept}`
-    : `${BASE}?branch=${qrBranch}&dept=${qrDept}`
+  // Prefer /join/[slug] if org has a slug, else fall back to /signup
+  const slug = settings.slug && settings.slug !== 'default' ? settings.slug : null
 
+  function buildUrl() {
+    const qs = new URLSearchParams()
+    if (qrMode === 'branch' || qrMode === 'combined') {
+      if (qrBranch) qs.set('branch', qrBranch)
+    }
+    if (qrMode === 'dept' || qrMode === 'combined') {
+      if (qrDept) qs.set('dept', qrDept)
+    }
+    const base = slug ? `${HOST}/join/${slug}` : `${HOST}/signup`
+    const qstr = qs.toString()
+    return qstr ? `${base}?${qstr}` : base
+  }
+
+  const qrUrl = buildUrl()
   const selectedBranch = branches.find(b => b.branch_key === qrBranch)
   const selectedDept   = departments.find(d => d.dept_key === qrDept)
 
+  function copyLink() {
+    navigator.clipboard?.writeText(qrUrl).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function downloadQR() {
+    // Convert the SVG inside qrRef to a canvas, then download as PNG
+    if (!qrRef.current) return
+    const svg = qrRef.current.querySelector('svg')
+    if (!svg) return
+    const serializer = new XMLSerializer()
+    const svgStr = serializer.serializeToString(svg)
+    const blob = new Blob([svgStr], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    // Draw to canvas for PNG
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = 400
+      canvas.height = 440
+      const ctx = canvas.getContext('2d')!
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, 400, 440)
+      ctx.drawImage(img, 40, 20, 320, 320)
+      // Label
+      ctx.fillStyle = '#111111'
+      ctx.font = 'bold 18px system-ui, sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(settings.name, 200, 370)
+      if (selectedBranch) {
+        ctx.font = '14px system-ui, sans-serif'
+        ctx.fillStyle = '#555555'
+        ctx.fillText(selectedBranch.name, 200, 392)
+      }
+      ctx.font = '11px monospace'
+      ctx.fillStyle = '#888888'
+      const shortUrl = qrUrl.replace(/^https?:\/\//, '')
+      ctx.fillText(shortUrl.length > 55 ? shortUrl.slice(0, 52) + '…' : shortUrl, 200, 420)
+      // Download
+      canvas.toBlob(b => {
+        if (!b) return
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(b)
+        const label = [settings.name, selectedBranch?.name, selectedDept?.name].filter(Boolean).join('-').replace(/\s+/g, '_')
+        a.download = `signup-qr-${label || 'general'}.png`
+        a.click()
+        URL.revokeObjectURL(a.href)
+      }, 'image/png')
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
+  }
+
   return (
-    <div style={{ maxWidth: 500 }}>
-      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>QR Signup Codes</div>
+    <div style={{ maxWidth: 520 }}>
+      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Signup Link &amp; QR Code</div>
+
+      {/* Shareable link card */}
+      {slug && (
+        <div className="card card-p" style={{ marginBottom: 14, background: 'var(--green-lt)', border: '1.5px solid var(--brand)' }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--brand)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+            Your public signup link
+          </div>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ flex: 1, background: 'var(--s-bg)', border: '1px solid var(--border)', borderRadius: 'var(--r)', padding: '8px 12px', fontSize: 12.5, color: 'var(--t-1)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+              {HOST}/join/{slug}
+            </div>
+            <button className="btn btn-sm" onClick={() => { navigator.clipboard?.writeText(`${HOST}/join/${slug}`).catch(() => {}); setCopied(true); setTimeout(() => setCopied(false), 2000) }}>
+              {copied ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <p style={{ fontSize: 11, color: 'var(--t-3)', marginTop: 6 }}>
+            Share this link with new members. They can fill the form without an account.
+          </p>
+        </div>
+      )}
+
+      {/* QR options */}
       <div className="card card-p" style={{ marginBottom: 14 }}>
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 13.5, fontWeight: 700, marginBottom: 12 }}>Generate QR code</h3>
         <div style={{ marginBottom: 10 }}>
           <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 5 }}>QR code type</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {[['branch', 'By branch'], ['dept', 'By department'], ['combined', 'Branch + Dept']].map(([v, l]) => (
-              <button key={v} onClick={() => setQrMode(v as any)} style={{ flex: 1, padding: '8px 4px', borderRadius: 'var(--r)', border: `1.5px solid ${qrMode === v ? 'var(--brand)' : 'var(--border)'}`, background: qrMode === v ? 'var(--green-lt)' : 'var(--s-3)', cursor: 'pointer', fontSize: 12, fontWeight: qrMode === v ? 700 : 400, color: qrMode === v ? 'var(--brand)' : 'var(--t-2)' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[['general', 'General'], ['branch', 'By branch'], ['dept', 'By department'], ['combined', 'Branch + Dept']].map(([v, l]) => (
+              <button key={v} onClick={() => setQrMode(v as any)} style={{ flex: 1, minWidth: 80, padding: '8px 4px', borderRadius: 'var(--r)', border: `1.5px solid ${qrMode === v ? 'var(--brand)' : 'var(--border)'}`, background: qrMode === v ? 'var(--green-lt)' : 'var(--s-3)', cursor: 'pointer', fontSize: 12, fontWeight: qrMode === v ? 700 : 400, color: qrMode === v ? 'var(--brand)' : 'var(--t-2)' }}>
                 {l}
               </button>
             ))}
@@ -891,15 +982,28 @@ function QRGenerator() {
         )}
       </div>
 
+      {/* QR display + actions */}
       <div className="card card-p" style={{ textAlign: 'center' }}>
-        <QRCodeWidget value={qrUrl} size={200} />
-        <div style={{ marginTop: 14, fontSize: 13, fontWeight: 600, color: 'var(--t-1)' }}>
+        <div ref={qrRef} style={{ display: 'inline-block', padding: 12, background: '#fff', borderRadius: 8 }}>
+          <QRCodeWidget value={qrUrl} size={200} />
+        </div>
+        <div style={{ marginTop: 12, fontSize: 13, fontWeight: 600, color: 'var(--t-1)' }}>
           {settings.name}
           {selectedBranch && ` · ${selectedBranch.name}`}
           {selectedDept && ` · ${selectedDept.name}`}
         </div>
-        <p style={{ fontSize: 11.5, color: 'var(--t-3)', marginTop: 4, wordBreak: 'break-all' }}>{qrUrl}</p>
-        <button className="btn btn-sm" onClick={() => navigator.clipboard?.writeText(qrUrl)} style={{ marginTop: 10 }}>Copy link</button>
+        <p style={{ fontSize: 11, color: 'var(--t-3)', marginTop: 4, wordBreak: 'break-all', maxWidth: 380, margin: '4px auto 0' }}>{qrUrl}</p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
+          <button className="btn btn-sm" onClick={copyLink}>
+            {copied ? '✓ Link copied' : '🔗 Copy link'}
+          </button>
+          <button className="btn btn-sm" onClick={downloadQR} style={{ background: 'var(--brand)', color: '#fff', border: 'none' }}>
+            ⬇ Download QR
+          </button>
+        </div>
+        <p style={{ fontSize: 11, color: 'var(--t-3)', marginTop: 10 }}>
+          Print or display the QR code — members scan to open the signup form instantly
+        </p>
       </div>
     </div>
   )

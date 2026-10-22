@@ -35,7 +35,7 @@ export async function GET() {
     const sb = createClient(url, key, { auth: { persistSession: false } })
     const { data, error } = await sb
       .from('organisations')
-      .select('id,name,tagline,logo_url,app_name,powered_by_text,powered_by_url,powered_by_visible,primary_color,accent_color,allow_self_reg,signup_fields')
+      .select('id,slug,name,tagline,logo_url,app_name,powered_by_text,powered_by_url,powered_by_visible,primary_color,accent_color,allow_self_reg,signup_fields')
       .limit(1)
       .single()
 

@@ -27,6 +27,8 @@ const MembershipCard= dynamic(() => import('./sections/MembershipCard'),    { lo
 const BranchDash    = dynamic(() => import('./sections/BranchDashboard'),   { loading: () => <PageLoader/> })
 const Devotional    = dynamic(() => import('./sections/Devotional'),        { loading: () => <PageLoader/> })
 const Network       = dynamic(() => import('./sections/Network'),           { loading: () => <PageLoader/> })
+const BirthdayEngine= dynamic(() => import('./sections/BirthdayEngine'),   { loading: () => <PageLoader/> })
+const GlobalSearch  = dynamic(() => import('@/components/GlobalSearch'),    { ssr: false })
 
 function PageLoader() {
   return (
@@ -57,6 +59,7 @@ const NAV = [
   ]},
   { section: 'PEOPLE', items: [
     { key: 'members',      label: 'Members',             icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2' },
+    { key: 'birthdays',    label: 'Birthday Engine',     icon: 'M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16', badge: '🎂', bc: 'nb-brand' },
     { key: 'network',      label: 'Kingdom Network',     icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75', badge: 'New', bc: 'nb-green' },
     { key: 'soultracker',  label: 'Soul Tracker',        icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z', badge: 'New', bc: 'nb-green' },
     { key: 'memberverif',  label: 'Member Verification', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14M22 4 12 14.01l-3-3' },
@@ -83,6 +86,7 @@ const TITLES: Record<string, { title: string; sub: string }> = {
   meetings:     { title: 'Meetings',             sub: 'Schedule, attend & summarise' },
   events:       { title: 'Events',               sub: 'Create · Approve · Manage registrations' },
   network:      { title: 'Kingdom Network',      sub: 'Directory · Opportunities · Connections' },
+  birthdays:    { title: 'Birthday Engine',      sub: 'Notice board · Date range search · Bulk wishes' },
   members:      { title: 'Members',              sub: 'Directory, profiles & growth passport' },
   soultracker:  { title: 'Soul Tracker',         sub: 'New converts & automated follow-up' },
   memberverif:  { title: 'Member Verification',  sub: '6-month threshold · Referral links' },
@@ -102,6 +106,7 @@ const PAGES: Record<string, React.ComponentType<any>> = {
   memberverif: MemberVerif, volunteer: Volunteer, attendance: Attendance,
   reports: Reports, settings: Settings, pastoral: PastoralPulse,
   devotional: Devotional, membcard: MembershipCard, branches: BranchDash, network: Network,
+  birthdays: BirthdayEngine,
 }
 
 // ── BROADCAST MODAL ──────────────────────────────────────────────────────────
@@ -645,25 +650,11 @@ export default function Dashboard() {
           </div>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Global search */}
-            <div className="topbar-search" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--t-4)" strokeWidth="2" width="13" height="13" style={{ position: 'absolute', left: 10, pointerEvents: 'none' }}>
-                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-              </svg>
-              <input
-                className="input"
-                placeholder="Search members, prayers…"
-                style={{ paddingLeft: 30, fontSize: 12.5, height: 34, width: 210, borderRadius: 'var(--r-full)' }}
-                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                  if (e.key === 'Enter') {
-                    const val = (e.target as HTMLInputElement).value.trim()
-                    if (!val) return
-                    window.dispatchEvent(new CustomEvent('sanctuaryhq-navigate', { detail: { page: 'members', search: val } }))
-                    ;(e.target as HTMLInputElement).value = ''
-                  }
-                }}
-              />
-            </div>
+            {/* Global search — Cmd/Ctrl+K spotlight */}
+            <GlobalSearch onNavigate={(section, extra) => {
+              changePage(section.toLowerCase())
+              if (extra?.memberSearch) setMemberSearch(extra.memberSearch)
+            }} />
 
             <button className="btn btn-ghost btn-icon" aria-label="Notifications">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="17" height="17"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>

@@ -1,10 +1,36 @@
 'use client'
-import { useState, useRef, useEffect, ChangeEvent } from 'react'
+import { useState, useRef, useEffect, useMemo, ChangeEvent } from 'react'
 import { notify } from '@/lib/toast'
 import { branches, DEPARTMENTS } from '@/lib/data'
 import { persist, hydrate } from '@/lib/store'
 import { useSession } from '@/lib/useSession'
 import { createClient } from '@supabase/supabase-js'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function exportMembersCSV(list: any[], label = 'members') {
+  const headers = ['Name','Phone','Email','Branch','Department','Role','Status','Joined','Birthday']
+  const rows = list.map(m => [
+    m.name, m.phone || '', m.email || '',
+    branches.find((b:any) => b.id === m.branch)?.name || m.branch || '',
+    DEPARTMENTS.find((d:any) => d.id === m.dept)?.name || m.dept || '',
+    m.role || 'Member', m.status || 'active', m.joined || '', m.birthday || '',
+  ])
+  const csv = [headers, ...rows].map(r => r.map((v:string) => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv' })
+  const url  = URL.createObjectURL(blob)
+  const a    = Object.assign(document.createElement('a'), { href: url, download: `${label}-${new Date().toISOString().slice(0,10)}.csv` })
+  a.click(); URL.revokeObjectURL(url)
+  notify.success(`Exported ${list.length} member${list.length !== 1 ? 's' : ''}`)
+}
+
+function parseJoinedDate(joined: string): Date | null {
+  // "Jun 2023" or "2023-06-01"
+  if (!joined) return null
+  if (joined.includes('-')) return new Date(joined)
+  const d = new Date(joined + ' 1')
+  return isNaN(d.getTime()) ? null : d
+}
 
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
@@ -29,6 +55,14 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
   }, [memberSearch])
   const [filterBranch, setFilterBranch] = useState('all')
   const [filterDept, setFilterDept] = useState('all')
+  const [joinFrom, setJoinFrom]   = useState('')
+  const [joinTo, setJoinTo]       = useState('')
+  const [bulkMode, setBulkMode]   = useState(false)
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set())
+  const [bulkMsgOpen, setBulkMsgOpen] = useState(false)
+  const [bulkMsg, setBulkMsg]     = useState('')
+  const [bulkChannel, setBulkChannel] = useState<'sms'|'whatsapp'>('whatsapp')
+  const [bulkSending, setBulkSending] = useState(false)
   const [selected, setSelected] = useState<any>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -134,12 +168,60 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
     }
   }
 
-  const filtered = members.filter(m => {
+  const filtered = useMemo(() => members.filter(m => {
     const q = search.toLowerCase()
-    return (m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q)) &&
-      (filterBranch==='all' || m.branch===filterBranch) &&
-      (filterDept==='all' || m.dept===filterDept)
+    if (!(m.name?.toLowerCase().includes(q) || m.email?.toLowerCase().includes(q) || m.phone?.includes(q))) return false
+    if (filterBranch !== 'all' && m.branch !== filterBranch) return false
+    if (filterDept   !== 'all' && m.dept   !== filterDept)   return false
+    // Join-date range filter
+    if (joinFrom || joinTo) {
+      const d = parseJoinedDate(m.joined)
+      if (!d) return false
+      if (joinFrom && d < new Date(joinFrom)) return false
+      if (joinTo   && d > new Date(joinTo))   return false
+    }
+    return true
+  }), [members, search, filterBranch, filterDept, joinFrom, joinTo])
+
+  const checkedMembers = useMemo(() => filtered.filter(m => checkedIds.has(m.id)), [filtered, checkedIds])
+
+  const toggleCheck = (id: string) => setCheckedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
   })
+  const toggleAll = () => {
+    if (checkedIds.size === filtered.length) setCheckedIds(new Set())
+    else setCheckedIds(new Set(filtered.map((m:any) => m.id)))
+  }
+
+  const sendBulkWhatsApp = () => {
+    checkedMembers.forEach((m, i) => {
+      setTimeout(() => {
+        const msg = encodeURIComponent(bulkMsg.replace(/\{name\}/g, m.name.split(' ')[0]))
+        const phone = (m.phone || '').replace(/\D/g,'')
+        if (phone) window.open(`https://wa.me/${phone}?text=${msg}`, '_blank')
+      }, i * 600)
+    })
+    notify.success(`Opened WhatsApp for ${checkedMembers.length} member${checkedMembers.length!==1?'s':''}`)
+    setBulkMsgOpen(false)
+  }
+
+  const sendBulkSMS = async () => {
+    setBulkSending(true)
+    try {
+      const payload = checkedMembers.map(m => ({
+        to: (m.phone || '').replace(/\D/g,''),
+        message: bulkMsg.replace(/\{name\}/g, m.name.split(' ')[0]),
+      })).filter((p:any) => p.to.length >= 7)
+      const res  = await fetch('/api/send-sms', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ messages: payload }) })
+      const data = await res.json()
+      if (data.sent) notify.success(`SMS sent to ${data.sent} member${data.sent!==1?'s':''}`)
+      else notify.error(data.error || 'SMS send failed')
+    } catch { notify.error('Failed to send SMS') }
+    setBulkSending(false)
+    setBulkMsgOpen(false)
+  }
 
   const thisMonth = new Date().toLocaleDateString('en-US',{month:'short'})
   const birthdays = members.filter(m => m.birthday?.startsWith(thisMonth))
@@ -194,10 +276,58 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
               <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)' }}>Members</div>
               <div style={{ fontSize:12, color:'var(--t-2)', marginTop:2 }}>
                 {loading ? 'Loading from database…' : `${filtered.length} showing · ${members.length} total`}
+                {checkedIds.size > 0 && <span style={{color:'#c9a84c',fontWeight:700}}> · {checkedIds.size} selected</span>}
               </div>
             </div>
-            <button className="btn btn-brand btn-sm" onClick={()=>setShowAdd(v=>!v)}>+ Add member</button>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {/* Bulk action bar */}
+              {bulkMode && checkedIds.size > 0 && (
+                <>
+                  <button className="btn btn-sm" onClick={() => exportMembersCSV(checkedMembers, 'selected-members')}>↓ Export ({checkedIds.size})</button>
+                  <button onClick={() => { setBulkChannel('whatsapp'); setBulkMsgOpen(true) }} style={{
+                    padding:'6px 12px', borderRadius:8, fontWeight:600, fontSize:12, cursor:'pointer',
+                    background:'rgba(37,211,102,0.10)', border:'1px solid rgba(37,211,102,0.28)', color:'#25d366',
+                  }}>💬 WA ({checkedIds.size})</button>
+                  <button onClick={() => { setBulkChannel('sms'); setBulkMsgOpen(true) }} className="btn btn-sm">📱 SMS ({checkedIds.size})</button>
+                </>
+              )}
+              <button className={`btn btn-sm ${bulkMode?'btn-brand':''}`} onClick={()=>{setBulkMode(v=>!v);setCheckedIds(new Set())}}>
+                {bulkMode ? '✓ Done selecting' : '☑ Select'}
+              </button>
+              <button className="btn btn-sm" onClick={() => exportMembersCSV(filtered, 'members')}>↓ Export</button>
+              <button className="btn btn-brand btn-sm" onClick={()=>setShowAdd(v=>!v)}>+ Add member</button>
+            </div>
           </div>
+
+          {/* Bulk message composer */}
+          {bulkMsgOpen && (
+            <div style={{
+              position:'fixed', inset:0, zIndex:999, background:'rgba(0,0,0,0.6)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+            }} onClick={()=>setBulkMsgOpen(false)}>
+              <div onClick={e=>e.stopPropagation()} style={{
+                background:'var(--s-2)', borderRadius:16, padding:24, width:'min(500px,92vw)',
+                border:'1px solid var(--border-md)',
+              }}>
+                <div style={{fontWeight:700,fontSize:15,marginBottom:4}}>
+                  {bulkChannel==='whatsapp' ? '💬 Bulk WhatsApp' : '📱 Bulk SMS'} to {checkedIds.size} members
+                </div>
+                <div style={{fontSize:11.5,color:'var(--t-3)',marginBottom:12}}>Use <code style={{color:'#c9a84c'}}>{'{name}'}</code> for first name</div>
+                <textarea value={bulkMsg} onChange={e=>setBulkMsg(e.target.value)} rows={5}
+                  placeholder="Type your message here… Hi {name}, this is a message from the church…"
+                  style={{width:'100%',boxSizing:'border-box',padding:'10px 12px',borderRadius:9,background:'var(--s-4)',border:'1px solid var(--border)',color:'var(--t-1)',fontSize:13,resize:'vertical',outline:'none',fontFamily:'var(--font-body)'}}
+                />
+                <div style={{display:'flex',gap:10,marginTop:12}}>
+                  <button disabled={!bulkMsg.trim() || bulkSending}
+                    onClick={bulkChannel==='whatsapp' ? sendBulkWhatsApp : sendBulkSMS}
+                    className="btn btn-brand" style={{flex:1}}>
+                    {bulkSending ? 'Sending…' : bulkChannel==='whatsapp' ? 'Open WhatsApp' : 'Send SMS'}
+                  </button>
+                  <button className="btn btn-ghost" onClick={()=>setBulkMsgOpen(false)}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {birthdays.length > 0 && (
             <div style={{ padding:'12px 16px', background:'rgba(245,158,11,0.10)', borderRadius:'var(--r)', marginBottom:14, border:'1px solid rgba(245,158,11,0.25)', display:'flex', alignItems:'center', gap:10 }}>
@@ -227,36 +357,61 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
             </div>
           )}
 
-          <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap' }}>
-            <input className="input" placeholder="Search members…" value={search} onChange={e=>setSearch(e.target.value)} style={{ width:220 }}/>
+          <div style={{ display:'flex', gap:10, marginBottom:14, flexWrap:'wrap', alignItems:'flex-end' }}>
+            <input className="input" placeholder="Search name, email, phone…" value={search} onChange={e=>setSearch(e.target.value)} style={{ width:220 }}/>
             <select className="input" value={filterBranch} onChange={e=>setFilterBranch(e.target.value)} style={{ width:160 }}>
               <option value="all">All branches</option>
-              {branches.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+              {branches.map((b:any)=><option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
             <select className="input" value={filterDept} onChange={e=>setFilterDept(e.target.value)} style={{ width:180 }}>
               <option value="all">All departments</option>
-              {DEPARTMENTS.map(d=><option key={d.id} value={d.id}>{d.icon} {d.name}</option>)}
+              {DEPARTMENTS.map((d:any)=><option key={d.id} value={d.id}>{d.icon} {d.name}</option>)}
             </select>
+            {/* Join date range */}
+            <div style={{display:'flex',gap:6,alignItems:'center'}}>
+              <span style={{fontSize:11,color:'var(--t-3)',whiteSpace:'nowrap'}}>Joined:</span>
+              <input type="date" value={joinFrom} onChange={e=>setJoinFrom(e.target.value)} className="input" style={{width:140}} title="Joined from"/>
+              <span style={{fontSize:11,color:'var(--t-3)'}}>–</span>
+              <input type="date" value={joinTo} onChange={e=>setJoinTo(e.target.value)} className="input" style={{width:140}} title="Joined to"/>
+              {(joinFrom||joinTo) && <button className="btn btn-ghost btn-sm" onClick={()=>{setJoinFrom('');setJoinTo('')}}>✕</button>}
+            </div>
           </div>
 
           <div className="card card-p">
             <table className="tbl">
-              <thead><tr><th>Name</th><th>Branch</th><th>Department</th><th>Role</th><th>Status</th></tr></thead>
+              <thead>
+                <tr>
+                  {bulkMode && <th style={{width:32}}><input type="checkbox" checked={checkedIds.size===filtered.length&&filtered.length>0} onChange={toggleAll} style={{accentColor:'#c9a84c'}}/></th>}
+                  <th>Name</th><th>Branch</th><th>Department</th><th>Joined</th><th>Status</th>
+                </tr>
+              </thead>
               <tbody>
-                {loading && <tr><td colSpan={5} style={{ textAlign:'center', padding:'2rem', color:'var(--t-3)' }}>Loading members…</td></tr>}
+                {loading && <tr><td colSpan={6} style={{ textAlign:'center', padding:'2rem', color:'var(--t-3)' }}>Loading members…</td></tr>}
                 {!loading && filtered.map((m:any) => (
-                  <tr key={m.id} style={{ cursor:'pointer' }} onClick={()=>setSelected(m)} tabIndex={0} role="button">
-                    <td><strong>{m.name}</strong><div style={{ fontSize:11, color:'var(--t-3)' }}>{m.email}</div></td>
-                    <td style={{ fontSize:12 }}>{branches.find(b=>b.id===m.branch)?.name||m.branch}</td>
-                    <td style={{ fontSize:12 }}>{DEPARTMENTS.find(d=>d.id===m.dept)?.icon} {DEPARTMENTS.find(d=>d.id===m.dept)?.name||m.dept}</td>
-                    <td style={{ fontSize:12 }}>{m.role}</td>
+                  <tr key={m.id} style={{ cursor:'pointer' }}
+                    onClick={() => bulkMode ? toggleCheck(m.id) : setSelected(m)}
+                    tabIndex={0} role="button"
+                    className={checkedIds.has(m.id) ? 'row-selected' : ''}>
+                    {bulkMode && (
+                      <td onClick={e=>e.stopPropagation()}>
+                        <input type="checkbox" checked={checkedIds.has(m.id)} onChange={()=>toggleCheck(m.id)} style={{accentColor:'#c9a84c'}}/>
+                      </td>
+                    )}
+                    <td>
+                      <strong>{m.name}</strong>
+                      <div style={{ fontSize:11, color:'var(--t-3)' }}>{m.phone || m.email}</div>
+                    </td>
+                    <td style={{ fontSize:12 }}>{(branches as any[]).find((b:any)=>b.id===m.branch)?.name||m.branch}</td>
+                    <td style={{ fontSize:12 }}>{(DEPARTMENTS as any[]).find((d:any)=>d.id===m.dept)?.icon} {(DEPARTMENTS as any[]).find((d:any)=>d.id===m.dept)?.name||m.dept}</td>
+                    <td style={{ fontSize:12 }}>{m.joined||'—'}</td>
                     <td><span className={`chip chip-${m.status==='active'?'green':'amber'}`}>{m.status}</span></td>
                   </tr>
                 ))}
-                {!loading && filtered.length===0 && <tr><td colSpan={5} style={{ textAlign:'center', padding:'2rem', color:'var(--t-3)' }}>No members found.</td></tr>}
+                {!loading && filtered.length===0 && <tr><td colSpan={6} style={{ textAlign:'center', padding:'2rem', color:'var(--t-3)' }}>No members found.</td></tr>}
               </tbody>
             </table>
           </div>
+          <style>{`.row-selected{background:rgba(201,168,76,0.06)!important}`}</style>
         </>
       )}
     </div>

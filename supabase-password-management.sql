@@ -37,17 +37,20 @@ CREATE INDEX IF NOT EXISTS idx_workers_must_change_password
 
 UPDATE public.workers
 SET
-  must_change_password = TRUE,
-  updated_at           = NOW()
+  must_change_password = TRUE
 WHERE email = 'user@example.com';   -- ← change this
 
 
 -- ── 5. ADMIN: RESET MULTIPLE USERS AT ONCE ──────────────────
--- Force all workers in a branch to reset:
-
+-- Option A: Force ALL active workers to reset (org-wide security reset):
 UPDATE public.workers
-SET must_change_password = TRUE, updated_at = NOW()
-WHERE branch_key = 'main-campus';  -- ← change to your branch key
+SET must_change_password = TRUE
+WHERE status = 'active';
+
+-- Option B: Force only a specific branch to reset:
+-- UPDATE public.workers
+-- SET must_change_password = TRUE
+-- WHERE branch_id = 'lekki';  -- ← your branch_id value
 
 
 -- ── 6. ADMIN: CHANGE A USER'S AUTH PASSWORD DIRECTLY ────────
@@ -102,12 +105,9 @@ CREATE POLICY "Admins read password reset log" ON public.password_reset_log
 -- ── 8. TRIGGER: AUTO-CLEAR must_change_password ON AUTH UPDATE ──
 -- When a user successfully changes their password via Supabase Auth,
 -- this trigger updates the workers table automatically.
--- NOTE: auth.users triggers require Supabase DB webhooks or
--- a Supabase Edge Function on auth.users UPDATE.
--- The app already handles this in /reset-password/page.tsx via
--- supabase.from('workers').update({ must_change_password: false })
--- so this trigger is optional / belt-and-suspenders.
+-- Run the entire block below in one go in the Supabase SQL Editor.
 
+-- Step 1: Create the trigger function
 CREATE OR REPLACE FUNCTION public.handle_password_changed()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -120,20 +120,25 @@ BEGIN
   SET
     must_change_password = FALSE,
     password_changed_at  = NOW(),
-    password_reset_count = password_reset_count + 1
+    password_reset_count = COALESCE(password_reset_count, 0) + 1
   WHERE id = NEW.id;
   RETURN NEW;
 END;
 $$;
 
--- Attach the trigger to auth.users (requires Supabase superuser / dashboard)
--- Run in the SQL editor — it fires when a user's encrypted_password changes:
+-- Step 2: Drop old trigger if it exists, then create fresh
 DROP TRIGGER IF EXISTS on_auth_password_changed ON auth.users;
+
 CREATE TRIGGER on_auth_password_changed
   AFTER UPDATE OF encrypted_password ON auth.users
   FOR EACH ROW
   WHEN (OLD.encrypted_password IS DISTINCT FROM NEW.encrypted_password)
   EXECUTE FUNCTION public.handle_password_changed();
+
+-- Step 3: Confirm it was created
+SELECT trigger_name, event_manipulation, event_object_table, action_timing
+FROM information_schema.triggers
+WHERE trigger_name = 'on_auth_password_changed';
 
 
 -- ── 9. VIEW: ACCOUNTS PENDING PASSWORD RESET ─────────────────
@@ -145,7 +150,7 @@ SELECT
   w.email,
   w.full_name,
   w.role,
-  w.branch_key,
+  w.branch_id,
   w.must_change_password,
   w.password_changed_at,
   w.created_at
@@ -182,7 +187,7 @@ CREATE POLICY "Workers update own safe fields" ON public.workers
 -- ── 11. USEFUL ADMIN QUERIES ─────────────────────────────────
 
 -- List all users who need to reset their password:
-SELECT id, email, full_name, role, branch_key, created_at
+SELECT id, email, full_name, role, branch_id, created_at
 FROM public.workers
 WHERE must_change_password = TRUE
 ORDER BY created_at DESC;
@@ -197,5 +202,7 @@ ORDER BY password_changed_at DESC NULLS LAST;
 
 -- Clear the flag for a specific user after admin-assisted reset:
 UPDATE public.workers
-SET must_change_password = FALSE, password_changed_at = NOW()
+SET
+  must_change_password = FALSE,
+  password_changed_at  = NOW()
 WHERE email = 'user@example.com';   -- ← change this

@@ -8,11 +8,11 @@ import type { RegistrationResponseJSON } from '@simplewebauthn/server'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-const supabaseAdmin = createClient(
+function getSupabaseAdmin() { return createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
-)
+) }
 
 const RP_ID     = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost'
 const ORIGIN    = process.env.NEXT_PUBLIC_APP_ORIGIN ?? 'http://localhost:3000'
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken)
+    const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(accessToken)
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
     }
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     )
     const challenge = clientDataJSON.challenge as string
 
-    const { data: challengeRow, error: challengeErr } = await supabaseAdmin
+    const { data: challengeRow, error: challengeErr } = await getSupabaseAdmin()
       .from('passkey_challenges')
       .select('*')
       .eq('challenge', challenge)
@@ -70,13 +70,13 @@ export async function POST(req: NextRequest) {
     const { credential } = verification.registrationInfo
 
     // ── 4. Mark challenge as used ────────────────────────────
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('passkey_challenges')
       .update({ used: true })
       .eq('id', challengeRow.id)
 
     // ── 5. Save credential ───────────────────────────────────
-    const { error: insertErr } = await supabaseAdmin
+    const { error: insertErr } = await getSupabaseAdmin()
       .from('passkey_credentials')
       .insert({
         worker_id:     user.id,

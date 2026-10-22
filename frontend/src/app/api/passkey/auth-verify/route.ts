@@ -8,11 +8,11 @@ import { verifyAuthenticationResponse } from '@simplewebauthn/server'
 import type { AuthenticationResponseJSON } from '@simplewebauthn/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseAdmin = createClient(
+function getSupabaseAdmin() { return createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
-)
+) }
 
 const RP_ID  = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost'
 const ORIGIN = process.env.NEXT_PUBLIC_APP_ORIGIN ?? 'http://localhost:3000'
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     const challenge = clientDataJSON.challenge as string
 
     // ── 2. Find challenge in DB ──────────────────────────────
-    const { data: challengeRow } = await supabaseAdmin
+    const { data: challengeRow } = await getSupabaseAdmin()
       .from('passkey_challenges')
       .select('*')
       .eq('challenge', challenge)
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     // ── 3. Find the credential in DB ─────────────────────────
     const credentialId = body.response.id
-    const { data: credRow } = await supabaseAdmin
+    const { data: credRow } = await getSupabaseAdmin()
       .from('passkey_credentials')
       .select('*, worker_id')
       .eq('credential_id', credentialId)
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 5. Update counter + last_used_at (replay-attack protection) ──
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('passkey_credentials')
       .update({
         counter:      verification.authenticationInfo.newCounter,
@@ -83,13 +83,13 @@ export async function POST(req: NextRequest) {
       .eq('id', credRow.id)
 
     // Mark challenge used
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('passkey_challenges')
       .update({ used: true })
       .eq('id', challengeRow.id)
 
     // ── 6. Look up the worker's email and create a Supabase session ──
-    const { data: worker } = await supabaseAdmin
+    const { data: worker } = await getSupabaseAdmin()
       .from('workers')
       .select('id, email, role, status, must_change_password')
       .eq('id', credRow.worker_id)
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate a magic link token so the client can sign in without knowing the password
-    const { data: linkData, error: linkErr } = await supabaseAdmin.auth.admin.generateLink({
+    const { data: linkData, error: linkErr } = await getSupabaseAdmin().auth.admin.generateLink({
       type:  'magiclink',
       email: worker.email,
     })

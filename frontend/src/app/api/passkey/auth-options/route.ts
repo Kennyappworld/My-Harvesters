@@ -8,11 +8,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { generateAuthenticationOptions } from '@simplewebauthn/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseAdmin = createClient(
+function getSupabaseAdmin() { return createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
-)
+) }
 
 const RP_ID = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost'
 
@@ -45,14 +45,14 @@ export async function POST(req: NextRequest) {
     let allowCredentials: { id: string; transports: AuthenticatorTransport[] }[] = []
 
     if (email) {
-      const { data: worker } = await supabaseAdmin
+      const { data: worker } = await getSupabaseAdmin()
         .from('workers')
         .select('id')
         .eq('email', email.toLowerCase().trim())
         .single()
 
       if (worker) {
-        const { data: creds } = await supabaseAdmin
+        const { data: creds } = await getSupabaseAdmin()
           .from('passkey_credentials')
           .select('credential_id, transports')
           .eq('worker_id', worker.id)
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Store challenge — no worker_id yet (we find it on verify)
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('passkey_challenges')
       .insert({
         challenge: options.challenge,

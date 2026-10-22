@@ -16,10 +16,9 @@ export function usePasskey() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+    : null
 
   // ── Check support ────────────────────────────────────────────
   const isSupported = browserSupportsWebAuthn()
@@ -103,6 +102,7 @@ export function usePasskey() {
       }
 
       // Step 4: exchange the magic-link token for a Supabase session
+      if (!supabase) throw new Error('Supabase not configured')
       const { error: sessionErr } = await supabase.auth.verifyOtp({
         email:     verifyData.email,
         token:     verifyData.token,

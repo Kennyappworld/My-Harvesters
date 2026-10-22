@@ -8,11 +8,11 @@ import { generateRegistrationOptions } from '@simplewebauthn/server'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-const supabaseAdmin = createClient(
+function getSupabaseAdmin() { return createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
   { auth: { persistSession: false } }
-)
+) }
 
 const RP_NAME = 'SanctuaryHQ'
 const RP_ID   = process.env.NEXT_PUBLIC_APP_DOMAIN ?? 'localhost' // e.g. my-harvesters.vercel.app
@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(accessToken)
+    const { data: { user }, error: authError } = await getSupabaseAdmin().auth.getUser(accessToken)
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
     }
 
     // ── 2. Load existing passkeys to exclude (prevent re-registering same device) ──
-    const { data: existing } = await supabaseAdmin
+    const { data: existing } = await getSupabaseAdmin()
       .from('passkey_credentials')
       .select('credential_id, transports')
       .eq('worker_id', user.id)
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     })
 
     // ── 4. Store challenge in DB (expires in 5 min) ──────────
-    await supabaseAdmin
+    await getSupabaseAdmin()
       .from('passkey_challenges')
       .insert({
         challenge:  options.challenge,

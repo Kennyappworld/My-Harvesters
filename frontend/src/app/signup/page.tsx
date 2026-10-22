@@ -3,7 +3,7 @@ import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@supabase/supabase-js'
-import { useOrgSettings } from '@/lib/orgSettings'
+import { useOrgSettings, DEFAULT_SIGNUP_FIELDS, SignupField } from '@/lib/orgSettings'
 import { useBranches, useDepartments } from '@/lib/data'
 
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (
@@ -69,7 +69,9 @@ function SignupForm() {
 
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
-    name: '', phone: '', email: '', branch: branchParam, dept: deptParam, firstTimer: 'no', dob: '',
+    name: '', phone: '', email: '', branch: branchParam, dept: deptParam, firstTimer: 'no',
+    dobMonth: '', dobDay: '',
+    extraFields: {} as Record<string, string>,
   })
   const [done, setDone] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -116,6 +118,11 @@ function SignupForm() {
     }
     recordSignupAttempt()
 
+    // Build DOB string (MM-DD, no year)
+    const dobValue = form.dobMonth && form.dobDay
+      ? `${form.dobMonth.padStart(2,'0')}-${form.dobDay.padStart(2,'0')}`
+      : null
+
     try {
       if (supabase) {
         await supabase.from('workers').insert({
@@ -127,7 +134,8 @@ function SignupForm() {
           department:  form.dept || null,
           role:        'worker',
           first_timer: form.firstTimer === 'yes',
-          dob:         form.dob || null,
+          dob:         dobValue,
+          extra_fields: Object.keys(form.extraFields).length > 0 ? form.extraFields : null,
           status:      settings.requireApproval ? 'pending' : 'active',
           must_change_password: true,
         })
@@ -339,12 +347,65 @@ function SignupForm() {
                 />
               </div>
               <div>
-                <label style={labelSt}>Date of birth <span style={{ opacity: 0.5, fontStyle: 'normal', textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
-                <input style={{ ...inputSt, colorScheme: 'dark' }} type="date" value={form.dob} onChange={e => setForm(f => ({ ...f, dob: e.target.value }))}
-                  onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
-                  onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}
-                />
+                <label style={labelSt}>Date of birth <span style={{ opacity: 0.5, fontStyle: 'normal', textTransform: 'none', letterSpacing: 0 }}>(optional — month &amp; day only)</span></label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <select style={{ ...inputSt, flex: 1, backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%234a6080' stroke-width='1.5' d='M4 6l4 4 4-4'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', backgroundSize: '16px', paddingRight: 28, cursor: 'pointer' }}
+                    value={form.dobMonth} onChange={e => setForm(f => ({ ...f, dobMonth: e.target.value }))}
+                    onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
+                    onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}
+                  >
+                    <option value="">Month</option>
+                    {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m,i) => (
+                      <option key={i+1} value={String(i+1).padStart(2,'0')}>{m}</option>
+                    ))}
+                  </select>
+                  <select style={{ ...inputSt, width: 100, backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%234a6080' stroke-width='1.5' d='M4 6l4 4 4-4'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', backgroundSize: '16px', paddingRight: 28, cursor: 'pointer' }}
+                    value={form.dobDay} onChange={e => setForm(f => ({ ...f, dobDay: e.target.value }))}
+                    onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
+                    onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}
+                  >
+                    <option value="">Day</option>
+                    {Array.from({length: 31}, (_,i) => i+1).map(d => (
+                      <option key={d} value={String(d).padStart(2,'0')}>{d}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
+              {/* Custom step-1 fields */}
+              {(settings.signupFields || DEFAULT_SIGNUP_FIELDS).filter(f => f.step === 1 && !f.system).map(field => (
+                <div key={field.id}>
+                  <label style={labelSt}>{field.label}{field.required ? ' *' : ' '}
+                    {!field.required && <span style={{ opacity: 0.5, fontStyle: 'normal', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>}
+                  </label>
+                  {field.type === 'textarea' ? (
+                    <textarea style={{ ...inputSt, height: 80, padding: '10px 12px', resize: 'vertical' as const }}
+                      value={form.extraFields[field.id] || ''} required={field.required}
+                      placeholder={field.placeholder || ''}
+                      onChange={e => setForm(f => ({ ...f, extraFields: { ...f.extraFields, [field.id]: e.target.value } }))}
+                      onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
+                      onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}
+                    />
+                  ) : field.type === 'select' ? (
+                    <select style={{ ...inputSt, backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%234a6080' stroke-width='1.5' d='M4 6l4 4 4-4'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', backgroundSize: '16px', paddingRight: 30, cursor: 'pointer' }}
+                      value={form.extraFields[field.id] || ''} required={field.required}
+                      onChange={e => setForm(f => ({ ...f, extraFields: { ...f.extraFields, [field.id]: e.target.value } }))}
+                      onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
+                      onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}
+                    >
+                      <option value="">Select…</option>
+                      {(field.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  ) : (
+                    <input style={inputSt} type={field.type} value={form.extraFields[field.id] || ''}
+                      required={field.required} placeholder={field.placeholder || ''}
+                      onChange={e => setForm(f => ({ ...f, extraFields: { ...f.extraFields, [field.id]: e.target.value } }))}
+                      onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
+                      onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}
+                    />
+                  )}
+                </div>
+              ))}
+
               {branches.length > 0 && (
                 <div>
                   <label style={labelSt}>Campus / Branch *</label>
@@ -406,6 +467,35 @@ function SignupForm() {
                   ))}
                 </div>
               </div>
+
+              {/* Custom step-2 fields */}
+              {(settings.signupFields || DEFAULT_SIGNUP_FIELDS).filter(f => f.step === 2 && !f.system).map(field => (
+                <div key={field.id}>
+                  <label style={labelSt}>{field.label}{field.required ? ' *' : ' '}
+                    {!field.required && <span style={{ opacity: 0.5, fontStyle: 'normal', textTransform: 'none', letterSpacing: 0 }}>(optional)</span>}
+                  </label>
+                  {field.type === 'textarea' ? (
+                    <textarea style={{ ...inputSt, height: 80, padding: '10px 12px', resize: 'vertical' as const }}
+                      value={form.extraFields[field.id] || ''} required={field.required}
+                      placeholder={field.placeholder || ''}
+                      onChange={e => setForm(f => ({ ...f, extraFields: { ...f.extraFields, [field.id]: e.target.value } }))}
+                    />
+                  ) : field.type === 'select' ? (
+                    <select style={{ ...inputSt, backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%234a6080' stroke-width='1.5' d='M4 6l4 4 4-4'/%3E%3C/svg%3E\")", backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center', backgroundSize: '16px', paddingRight: 30, cursor: 'pointer' }}
+                      value={form.extraFields[field.id] || ''} required={field.required}
+                      onChange={e => setForm(f => ({ ...f, extraFields: { ...f.extraFields, [field.id]: e.target.value } }))}
+                    >
+                      <option value="">Select…</option>
+                      {(field.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  ) : (
+                    <input style={inputSt} type={field.type} value={form.extraFields[field.id] || ''}
+                      required={field.required} placeholder={field.placeholder || ''}
+                      onChange={e => setForm(f => ({ ...f, extraFields: { ...f.extraFields, [field.id]: e.target.value } }))}
+                    />
+                  )}
+                </div>
+              ))}
 
               {departments.length > 0 && (
                 <div>

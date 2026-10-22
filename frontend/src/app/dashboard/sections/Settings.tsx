@@ -2,7 +2,7 @@
 import { useSession } from '@/lib/useSession'
 import { useState, useEffect, useRef, useCallback, ChangeEvent } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { useOrgSettings, saveOrgSettings, OrgSettings } from '@/lib/orgSettings'
+import { useOrgSettings, saveOrgSettings, OrgSettings, SignupField, DEFAULT_SIGNUP_FIELDS } from '@/lib/orgSettings'
 import { useBranches, useDepartments, BRANCH_COLOR_PALETTE, DEPT_COLOR_PALETTE, ROLE_LABELS, ROLE_COLORS } from '@/lib/data'
 import { notify } from '@/lib/toast'
 import { QRCodeSVG } from 'qrcode.react'
@@ -905,6 +905,216 @@ function QRGenerator() {
   )
 }
 
+// ── Signup Form Builder ───────────────────────────────────────────────────────
+function SignupFormBuilder() {
+  const { settings, loading } = useOrgSettings()
+  const [fields, setFields] = useState<SignupField[]>([])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [editIdx, setEditIdx] = useState<number | null>(null)
+  const [newField, setNewField] = useState<Partial<SignupField>>({ label: '', type: 'text', required: false, step: 1, placeholder: '', options: [] })
+  const [optionInput, setOptionInput] = useState('')
+  const [showAdd, setShowAdd] = useState(false)
+
+  useEffect(() => {
+    if (!loading) {
+      setFields(settings.signupFields?.length ? settings.signupFields : DEFAULT_SIGNUP_FIELDS)
+    }
+  }, [loading, settings])
+
+  const save = async () => {
+    setSaving(true)
+    const result = await saveOrgSettings(settings.id, { signupFields: fields })
+    if (!result.ok) {
+      notify.error('Failed to save: ' + (result.error || 'Unknown error'))
+    } else {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    }
+    setSaving(false)
+  }
+
+  const toggleRequired = (idx: number) => {
+    setFields(fs => fs.map((f, i) => i === idx ? { ...f, required: !f.required } : f))
+  }
+
+  const removeField = (idx: number) => {
+    setFields(fs => fs.filter((_, i) => i !== idx))
+  }
+
+  const moveField = (idx: number, dir: -1 | 1) => {
+    setFields(fs => {
+      const next = [...fs]
+      const swap = idx + dir
+      if (swap < 0 || swap >= next.length) return fs
+      ;[next[idx], next[swap]] = [next[swap], next[idx]]
+      return next.map((f, i) => ({ ...f, order: i }))
+    })
+  }
+
+  const addField = () => {
+    if (!newField.label?.trim()) { notify.error('Label is required'); return }
+    const id = newField.label!.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').slice(0, 40)
+    if (fields.some(f => f.id === id)) { notify.error('A field with this label already exists'); return }
+    const field: SignupField = {
+      id,
+      label: newField.label!.trim(),
+      type: newField.type as SignupField['type'] || 'text',
+      required: newField.required || false,
+      step: newField.step as 1 | 2 || 1,
+      placeholder: newField.placeholder || '',
+      options: newField.type === 'select' ? (newField.options || []) : undefined,
+      order: fields.length,
+      system: false,
+    }
+    setFields(fs => [...fs, field])
+    setNewField({ label: '', type: 'text', required: false, step: 1, placeholder: '', options: [] })
+    setOptionInput('')
+    setShowAdd(false)
+  }
+
+  const FIELD_TYPES: { value: SignupField['type']; label: string }[] = [
+    { value: 'text',        label: 'Short text' },
+    { value: 'tel',         label: 'Phone number' },
+    { value: 'email',       label: 'Email' },
+    { value: 'textarea',    label: 'Long text / paragraph' },
+    { value: 'select',      label: 'Dropdown (choose one)' },
+  ]
+
+  if (loading) return <div style={{ padding: 24, color: 'var(--t-3)', fontSize: 13 }}>Loading…</div>
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 3 }}>Signup Form Fields</div>
+          <div style={{ fontSize: 12, color: 'var(--t-3)' }}>
+            Customise what first-timers see when they register. System fields (🔒) can't be removed, but you can make them optional.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-brand btn-sm" onClick={() => setShowAdd(s => !s)}>+ Add field</button>
+          <button className="btn btn-sm" onClick={save} disabled={saving} style={{ minWidth: 80 }}>
+            {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+
+      {/* Add field panel */}
+      {showAdd && (
+        <div className="card card-p" style={{ marginBottom: 14, border: '1.5px solid var(--brand)' }}>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: 'var(--brand)' }}>New custom field</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10, marginBottom: 12 }}>
+            <div>
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 4 }}>Label *</label>
+              <input className="input" placeholder="e.g. Home address" value={newField.label || ''} onChange={e => setNewField(f => ({ ...f, label: e.target.value }))} />
+            </div>
+            <div>
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 4 }}>Field type</label>
+              <select className="input" value={newField.type || 'text'} onChange={e => setNewField(f => ({ ...f, type: e.target.value as SignupField['type'], options: [] }))}>
+                {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 4 }}>Form step</label>
+              <select className="input" value={newField.step || 1} onChange={e => setNewField(f => ({ ...f, step: Number(e.target.value) as 1|2 }))}>
+                <option value={1}>Step 1 — Personal details</option>
+                <option value={2}>Step 2 — Get involved</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 4 }}>Placeholder text</label>
+              <input className="input" placeholder="Hint shown inside field" value={newField.placeholder || ''} onChange={e => setNewField(f => ({ ...f, placeholder: e.target.value }))} />
+            </div>
+          </div>
+
+          {/* Options for select type */}
+          {newField.type === 'select' && (
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 4 }}>Dropdown options</label>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input className="input" placeholder="Add an option…" value={optionInput} style={{ flex: 1 }}
+                  onChange={e => setOptionInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (optionInput.trim()) { setNewField(f => ({ ...f, options: [...(f.options||[]), optionInput.trim()] })); setOptionInput('') } } }}
+                />
+                <button className="btn btn-sm" onClick={() => { if (optionInput.trim()) { setNewField(f => ({ ...f, options: [...(f.options||[]), optionInput.trim()] })); setOptionInput('') } }}>Add</button>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {(newField.options || []).map((opt, i) => (
+                  <span key={i} style={{ fontSize: 11.5, padding: '3px 10px', borderRadius: 20, background: 'var(--s-3)', color: 'var(--t-1)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {opt}
+                    <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--t-3)', padding: 0, fontSize: 13, lineHeight: 1 }}
+                      onClick={() => setNewField(f => ({ ...f, options: (f.options||[]).filter((_,j) => j !== i) }))}>×</button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: 'var(--t-1)' }}>
+              <input type="checkbox" checked={newField.required || false} onChange={e => setNewField(f => ({ ...f, required: e.target.checked }))} />
+              Required field
+            </label>
+            <button className="btn btn-brand btn-sm" onClick={addField}>Add field</button>
+            <button className="btn btn-ghost btn-sm" onClick={() => setShowAdd(false)}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 1 fields */}
+      {[1, 2].map(step => (
+        <div key={step} style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--t-3)', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 8 }}>
+            Step {step} — {step === 1 ? 'Personal Details' : 'Get Involved'}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {fields.filter(f => f.step === step).map((field, absIdx) => {
+              const realIdx = fields.indexOf(field)
+              return (
+                <div key={field.id} className="card card-p" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    <button className="btn btn-icon btn-ghost btn-sm" style={{ padding: '2px 4px', opacity: realIdx === 0 ? 0.3 : 1 }} onClick={() => moveField(realIdx, -1)} disabled={realIdx === 0}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="10"><path d="M18 15l-6-6-6 6"/></svg>
+                    </button>
+                    <button className="btn btn-icon btn-ghost btn-sm" style={{ padding: '2px 4px', opacity: realIdx === fields.length-1 ? 0.3 : 1 }} onClick={() => moveField(realIdx, 1)} disabled={realIdx === fields.length-1}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="10" height="10"><path d="M6 9l6 6 6-6"/></svg>
+                    </button>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {field.system && <span title="System field — cannot be deleted">🔒</span>}
+                      {field.label}
+                      {field.required && <span style={{ fontSize: 10.5, color: '#ef4444', fontWeight: 700 }}>REQUIRED</span>}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--t-3)' }}>
+                      {FIELD_TYPES.find(t => t.value === field.type)?.label || field.type}
+                      {field.options?.length ? ` · ${field.options.length} options` : ''}
+                    </div>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', fontSize: 12, color: 'var(--t-2)', whiteSpace: 'nowrap' }}>
+                    <input type="checkbox" checked={field.required} onChange={() => toggleRequired(realIdx)} />
+                    Required
+                  </label>
+                  {!field.system && (
+                    <button className="btn btn-icon btn-ghost btn-sm" onClick={() => removeField(realIdx)} style={{ color: 'var(--t-3)', flexShrink: 0 }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      ))}
+
+      <button className="btn btn-brand btn-sm" onClick={save} disabled={saving}>
+        {saving ? 'Saving…' : saved ? '✓ Saved' : 'Save form layout'}
+      </button>
+    </div>
+  )
+}
+
 // ── User Manager ──────────────────────────────────────────────────────────────
 function UserManager() {
   const [users, setUsers] = useState<any[]>([])
@@ -1154,7 +1364,7 @@ function UserManager() {
 // ── Main Settings component ───────────────────────────────────────────────────
 export default function Settings() {
   const { user } = useSession()
-  const [tab, setTab] = useState<'users' | 'branches' | 'departments' | 'qr' | 'general' | 'profile'>('users')
+  const [tab, setTab] = useState<'users' | 'branches' | 'departments' | 'qr' | 'general' | 'profile' | 'signup_form'>('users')
 
   const isAdmin = ['developer', 'senior_pastor', 'pastor', 'admin'].includes(user?.role || '')
 
@@ -1164,6 +1374,7 @@ export default function Settings() {
     { id: 'branches',    label: 'Branches',      icon: '🏛️', adminOnly: true },
     { id: 'departments', label: 'Departments',   icon: '📋', adminOnly: true },
     { id: 'qr',          label: 'QR Codes',      icon: '📷', adminOnly: true },
+    { id: 'signup_form', label: 'Signup Form',   icon: '📝', adminOnly: true },
     { id: 'profile',     label: 'My Profile',    icon: '👤', adminOnly: false },
   ] as const
 
@@ -1198,6 +1409,7 @@ export default function Settings() {
       {tab === 'branches'    && isAdmin && <BranchManager />}
       {tab === 'departments' && isAdmin && <DepartmentManager />}
       {tab === 'qr'          && isAdmin && <QRGenerator />}
+      {tab === 'signup_form' && isAdmin && <SignupFormBuilder />}
       {tab === 'profile'     && <ProfileEditor />}
     </div>
   )

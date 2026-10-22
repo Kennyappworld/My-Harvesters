@@ -12,6 +12,19 @@ import { createClient } from '@supabase/supabase-js'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+// Custom field definition for the signup / first-timer form
+export type SignupField = {
+  id:          string          // unique key e.g. "home_address"
+  label:       string          // display label e.g. "Home Address"
+  type:        'text' | 'tel' | 'email' | 'textarea' | 'select' | 'dob_monthday'
+  required:    boolean
+  placeholder?: string
+  options?:    string[]        // for select type
+  step:        1 | 2           // which step of the signup form to show on
+  order:       number
+  system:      boolean         // true = built-in field (can't delete, just toggle required)
+}
+
 export type OrgSettings = {
   id:               string
   slug:             string
@@ -35,7 +48,17 @@ export type OrgSettings = {
   allowSelfReg:     boolean
   requireApproval:  boolean
   followupStages:   string[]
+  signupFields:     SignupField[]
 }
+
+// Default signup fields (system fields always present)
+export const DEFAULT_SIGNUP_FIELDS: SignupField[] = [
+  { id: 'name',        label: 'Full name',           type: 'text',         required: true,  step: 1, order: 0,  system: true },
+  { id: 'phone',       label: 'Phone number',        type: 'tel',          required: true,  step: 1, order: 1,  system: true },
+  { id: 'email',       label: 'Email address',       type: 'email',        required: false, step: 1, order: 2,  system: true },
+  { id: 'dob',         label: 'Date of birth',       type: 'dob_monthday', required: false, step: 1, order: 3,  system: true },
+  { id: 'first_timer', label: 'First-time visitor?', type: 'select',       required: false, step: 2, order: 10, system: true, options: ['Yes, first time! 🙋', 'Visited before'] },
+]
 
 // ── Defaults (used before DB load & when Supabase is not configured) ──────────
 
@@ -62,6 +85,7 @@ export const ORG_DEFAULTS: OrgSettings = {
   allowSelfReg:     true,
   requireApproval:  true,
   followupStages:   ['2 weeks', '4 weeks', '3 months', '4 months'],
+  signupFields:     DEFAULT_SIGNUP_FIELDS,
 }
 
 // ── localStorage cache key ────────────────────────────────────────────────────
@@ -112,6 +136,9 @@ function rowToSettings(row: Record<string, unknown>): OrgSettings {
     followupStages:   Array.isArray(row.followup_stages)
       ? (row.followup_stages as string[])
       : ORG_DEFAULTS.followupStages,
+    signupFields:     Array.isArray(row.signup_fields)
+      ? (row.signup_fields as SignupField[])
+      : DEFAULT_SIGNUP_FIELDS,
   }
 }
 
@@ -139,6 +166,7 @@ function settingsToRow(s: Partial<OrgSettings>): Record<string, unknown> {
   if (s.allowSelfReg     !== undefined) row.allow_self_reg      = s.allowSelfReg
   if (s.requireApproval  !== undefined) row.require_approval    = s.requireApproval
   if (s.followupStages   !== undefined) row.followup_stages     = s.followupStages
+  if (s.signupFields     !== undefined) row.signup_fields       = s.signupFields
   return row
 }
 

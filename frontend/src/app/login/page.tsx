@@ -161,7 +161,12 @@ export default function LoginPage() {
         window.location.href = '/dashboard'
       }
     } catch (err: any) {
-      setError('Cannot reach the server. Please check your connection and try again.')
+      const msg = err?.message ?? ''
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed')) {
+        setError('Cannot reach the server. Check your internet connection and try again.')
+      } else {
+        setError('Something went wrong. Please refresh the page and try again.')
+      }
       setLoading(false)
     }
   }, [email, password])
@@ -289,19 +294,29 @@ export default function LoginPage() {
             {/* Error alert */}
             {error && (
               <div style={{
-                padding: '10px 13px',
+                padding: '12px 14px',
                 borderRadius: 10,
-                background: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.20)',
-                display: 'flex', gap: 9, alignItems: 'flex-start',
+                background: 'rgba(239,68,68,0.10)',
+                border: '1.5px solid rgba(239,68,68,0.28)',
+                display: 'flex', gap: 10, alignItems: 'flex-start',
               }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0, marginTop: 1 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" width="15" height="15" style={{ flexShrink: 0, marginTop: 2 }}>
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <div style={{ fontSize: 12.5, color: '#fca5a5', lineHeight: 1.55 }}>
-                  {error}
+                <div style={{ fontSize: 13, color: '#fca5a5', lineHeight: 1.6 }}>
+                  <div>{error}</div>
+                  {(error.toLowerCase().includes('password') || error.toLowerCase().includes('wrong')) && (
+                    <a href="/forgot-password" style={{ display: 'inline-block', marginTop: 5, fontSize: 12, color: '#c9a84c', fontWeight: 700, textDecoration: 'underline' }}>
+                      Reset your password →
+                    </a>
+                  )}
+                  {(error.toLowerCase().includes('email') && error.toLowerCase().includes('no account')) && (
+                    <div style={{ marginTop: 5, fontSize: 11.5, opacity: 0.75 }}>
+                      Double-check for typos — email is case-sensitive
+                    </div>
+                  )}
                   {rateLock && resetIn > 0 && (
-                    <div style={{ marginTop: 3, opacity: 0.7, fontSize: 11.5 }}>Resets in ~{formatMs(resetIn)}</div>
+                    <div style={{ marginTop: 4, opacity: 0.75, fontSize: 11.5 }}>Try again in {formatMs(resetIn)}</div>
                   )}
                 </div>
               </div>

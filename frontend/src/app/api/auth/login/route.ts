@@ -61,32 +61,93 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email and password are required.' }, { status: 400 })
   }
 
+  // Validate email format first
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
+    return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
+  }
+
   try {
-    const supabase = getSupabase()
-
-    // 1. Sign in
-    const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (authErr || !data?.session) {
-      const msg = authErr?.message ?? ''
-      if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
-        return NextResponse.json({ error: 'Incorrect email or password.' }, { status: 401 })
-      }
-      if (msg.toLowerCase().includes('email not confirmed')) {
-        return NextResponse.json({ error: 'Please confirm your email before signing in.' }, { status: 401 })
-      }
-      return NextResponse.json({ error: msg || 'Sign in failed.' }, { status: 401 })
+    let supabase: ReturnType<typeof createClient>
+    try {
+      supabase = getSupabase()
+    } catch {
+      console.error('[/api/auth/login] Supabase not configured — missing env vars')
+      return NextResponse.json(
+        { error: 'Server is not configured yet. Please contact your administrator.' },
+        { status: 503 }
+      )
     }
 
-    // Use authed client for subsequent queries
-    const authClient = createClient(
+    // 1. Check if email exists (gives a better "email not found" message)
+    const adminClient = createClient(
       process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { persistSession: false } }
     )
 
-    // 2. Load worker record
-    const { data: worker, error: wErr } = await authClient
+    const { data: existingUser } = await adminClient
+      .from('workers')
+      .select('email,status')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (!existingUser) {
+      // No worker record — check auth.users to distinguish "wrong email" from "not set up"
+      const { data: authList } = await adminClient.auth.admin.listUsers()
+      const authUserExists = authList?.users?.some((u: { email?: string }) => u.email?.toLowerCase() === email)
+      if (!authUserExists) {
+        return NextResponse.json(
+          { error: 'No account found with that email address. Check your email and try again.' },
+          { status: 401 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Your account exists but is not fully set up. Contact your administrator.' },
+        { status: 403 }
+      )
+    }
+
+    if (existingUser.status === 'inactive') {
+      return NextResponse.json(
+        { error: 'Your account has been deactivated. Contact your administrator to regain access.' },
+        { status: 403 }
+      )
+    }
+
+    // 2. Sign in with password
+    const { data, error: authErr } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authErr || !data?.session) {
+      const msg = (authErr?.message ?? '').toLowerCase()
+      if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('wrong')) {
+        return NextResponse.json(
+          { error: 'Wrong password. Please try again, or use "Forgot password" below.' },
+          { status: 401 }
+        )
+      }
+      if (msg.includes('email not confirmed')) {
+        return NextResponse.json(
+          { error: 'Please check your email and click the confirmation link before signing in.' },
+          { status: 401 }
+        )
+      }
+      if (msg.includes('too many') || msg.includes('rate')) {
+        return NextResponse.json(
+          { error: 'Too many failed attempts. Please wait a few minutes before trying again.' },
+          { status: 429 }
+        )
+      }
+      // Log the raw message for debugging but don't expose internals
+      console.error('[/api/auth/login] Auth error:', authErr?.message)
+      return NextResponse.json(
+        { error: authErr?.message || 'Sign in failed. Please try again.' },
+        { status: 401 }
+      )
+    }
+
+    // 3. Load full worker record
+    const { data: worker, error: wErr } = await adminClient
       .from('workers')
       .select('id,email,full_name,role,status,branch_key,department,avatar_url,must_change_password')
       .eq('email', email)
@@ -95,20 +156,12 @@ export async function POST(req: NextRequest) {
     if (wErr || !worker) {
       await supabase.auth.signOut()
       return NextResponse.json(
-        { error: 'Your account is not set up yet. Contact your administrator.' },
+        { error: 'Your worker profile could not be loaded. Contact your administrator.' },
         { status: 403 }
       )
     }
 
-    if (worker.status === 'inactive') {
-      await supabase.auth.signOut()
-      return NextResponse.json(
-        { error: 'Your account is inactive. Contact your administrator.' },
-        { status: 403 }
-      )
-    }
-
-    // 3. Return worker data — session cookie set by client as before
+    // 4. Return worker data
     return NextResponse.json({
       ok: true,
       worker: {
@@ -123,9 +176,9 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (err: unknown) {
-    console.error('[/api/auth/login]', err)
+    console.error('[/api/auth/login] Unexpected error:', err)
     return NextResponse.json(
-      { error: 'Server error. Please try again.' },
+      { error: 'An unexpected error occurred. Please try again in a moment.' },
       { status: 500 }
     )
   }

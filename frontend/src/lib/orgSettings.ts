@@ -177,22 +177,13 @@ export function getOrgSettings(): OrgSettings {
   return readCache()
 }
 
-/** Loads settings from Supabase and refreshes the cache. Returns the result. */
+/** Loads settings via server-side API route (no Supabase URL needed in browser). */
 export async function loadOrgSettings(): Promise<OrgSettings> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-           ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!url || !key) return readCache()
-
   try {
-    const sb = createClient(url, key)
-    const { data, error } = await sb
-      .from('organisations')
-      .select('*')
-      .limit(1)
-      .single()
-
-    if (error || !data) return readCache()
+    const res = await fetch('/api/org-settings', { cache: 'no-store' })
+    if (!res.ok) return readCache()
+    const data = await res.json()
+    if (!data || data.error) return readCache()
     const settings = rowToSettings(data as Record<string, unknown>)
     writeCache(settings)
     return settings

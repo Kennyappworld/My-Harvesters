@@ -120,46 +120,22 @@ export default function LoginPage() {
     recordAttempt()
 
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      if (!url || !key) throw new Error('App is not configured. Contact your administrator.')
+      // Call server-side API route — Supabase URL never needed in the browser
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimEmail, password }),
+      })
 
-      const supabase = createClient(url, key)
-      const { data, error: authErr } = await supabase.auth.signInWithPassword({ email: trimEmail, password })
+      const json = await res.json()
 
-      if (authErr || !data?.session) {
-        const msg = authErr?.message || 'Sign in failed'
-        if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('credentials')) {
-          setError('Incorrect email or password.')
-        } else if (msg.toLowerCase().includes('email not confirmed')) {
-          setError('Please confirm your email before signing in.')
-        } else {
-          setError(msg)
-        }
+      if (!res.ok || !json.ok) {
+        setError(json.error || 'Sign in failed.')
         setLoading(false)
         return
       }
 
-      const { data: worker, error: wErr } = await supabase
-        .from('workers')
-        .select('id,email,full_name,role,status,branch_key,department,avatar_url')
-        .eq('email', trimEmail)
-        .single()
-
-      if (wErr || !worker) {
-        await supabase.auth.signOut()
-        setError('Your account is not set up yet. Contact your administrator.')
-        setLoading(false)
-        return
-      }
-
-      if (worker.status === 'inactive') {
-        await supabase.auth.signOut()
-        setError('Your account is inactive. Contact your administrator.')
-        setLoading(false)
-        return
-      }
+      const worker = json.worker
 
       // Generate cryptographically secure session token
       const tokenBytes = new Uint8Array(32)
@@ -167,7 +143,7 @@ export default function LoginPage() {
       const sessionToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
 
       sessionStorage.setItem('shq_user', JSON.stringify({
-        id: worker.id, email: worker.email, name: worker.full_name,
+        id: worker.id, email: worker.email, name: worker.name,
         role: worker.role, branch_key: worker.branch_key,
         department: worker.department, avatar_url: worker.avatar_url,
       }))
@@ -178,9 +154,14 @@ export default function LoginPage() {
       document.cookie = `sanctuaryhq_session=${sessionToken}; path=/; expires=${expires}; SameSite=Lax${isSecure ? '; Secure' : ''}`
 
       try { sessionStorage.removeItem(RATE_KEY) } catch {}
-      window.location.href = '/dashboard'
+
+      if (worker.mustChangePassword) {
+        window.location.href = '/change-password'
+      } else {
+        window.location.href = '/dashboard'
+      }
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.')
+      setError('Cannot reach the server. Please check your connection and try again.')
       setLoading(false)
     }
   }, [email, password])

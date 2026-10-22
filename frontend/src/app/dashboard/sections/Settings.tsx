@@ -6,6 +6,7 @@ import { useOrgSettings, saveOrgSettings, OrgSettings } from '@/lib/orgSettings'
 import { useBranches, useDepartments, BRANCH_COLOR_PALETTE, DEPT_COLOR_PALETTE, ROLE_LABELS, ROLE_COLORS } from '@/lib/data'
 import { notify } from '@/lib/toast'
 import { QRCodeSVG } from 'qrcode.react'
+import { usePasskey } from '@/hooks/usePasskey'
 
 // ── Supabase client ───────────────────────────────────────────────────────────
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (
@@ -148,7 +149,178 @@ function ProfileEditor() {
             </button>
           </form>
         </div>
+
+        {/* ── Biometric / Passkey card ── */}
+        <PasskeyCard />
       </div>
+    </div>
+  )
+}
+
+function PasskeyCard() {
+  const passkey = usePasskey()
+  const [biometricOk, setBiometricOk]     = useState(false)
+  const [passkeys,    setPasskeys]         = useState<any[]>([])
+  const [deviceName,  setDeviceName]       = useState('My Device')
+  const [registering, setRegistering]      = useState(false)
+  const [msg,         setMsg]              = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+  const [loadingList, setLoadingList]      = useState(true)
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  useEffect(() => {
+    if (passkey.isSupported) {
+      passkey.checkBiometricAvailable().then(setBiometricOk)
+    }
+    loadPasskeys()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function loadPasskeys() {
+    setLoadingList(true)
+    const { data } = await supabase
+      .from('passkey_credentials')
+      .select('id, device_name, created_at, last_used_at, is_active')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+    setPasskeys(data ?? [])
+    setLoadingList(false)
+  }
+
+  async function handleRegister() {
+    setRegistering(true)
+    setMsg(null)
+    const ok = await passkey.registerPasskey(deviceName || 'My Device')
+    if (ok) {
+      setMsg({ type: 'ok', text: 'Passkey registered! You can now sign in with your fingerprint or Face ID.' })
+      setDeviceName('My Device')
+      loadPasskeys()
+    } else if (passkey.error) {
+      setMsg({ type: 'err', text: passkey.error })
+    }
+    setRegistering(false)
+  }
+
+  async function handleRevoke(id: string) {
+    await supabase
+      .from('passkey_credentials')
+      .update({ is_active: false })
+      .eq('id', id)
+    loadPasskeys()
+    notify.success('Passkey removed.')
+  }
+
+  const fmt = (d: string) => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+
+  if (!biometricOk && !loadingList && passkeys.length === 0) {
+    return (
+      <div className="card card-p">
+        <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>Biometric Login</div>
+        <p style={{ fontSize: 12, color: 'var(--t-3)', margin: 0 }}>
+          Your device or browser does not support passkeys / biometric login yet.
+          This feature works on modern Android, iPhone, Windows Hello and Mac Touch ID.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="card card-p">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        {/* Fingerprint icon */}
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--brand)" strokeWidth="1.8" width="18" height="18">
+          <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+          <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+          <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+          <path d="M2 12a10 10 0 0 1 18-6"/>
+          <path d="M2 17c1 0 1.5-.5 1.5-1.5S2 14 2 13a10 10 0 0 1 3.17-7.26"/>
+          <path d="M20 12c0 5-2.5 8.5-5 10"/>
+          <path d="M7 14c0 4.74.5 8 2.5 9.5"/>
+          <path d="M12 6a6 6 0 0 1 6 6c0 .55-.07 1.29-.2 2"/>
+        </svg>
+        <span style={{ fontWeight: 600, fontSize: 13 }}>Biometric Login (Passkeys)</span>
+      </div>
+
+      <p style={{ fontSize: 12, color: 'var(--t-3)', marginBottom: 14, lineHeight: 1.6 }}>
+        Register your fingerprint or Face ID to sign in without typing your password.
+        Works on your phone, laptop, or any device with biometrics.
+      </p>
+
+      {msg && (
+        <div style={{
+          padding: '8px 12px', borderRadius: 'var(--r)', fontSize: 12, marginBottom: 12,
+          background: msg.type === 'ok' ? 'var(--green-lt)' : 'var(--red-lt)',
+          color: msg.type === 'ok' ? 'var(--green)' : 'var(--red)',
+          fontWeight: 600,
+        }}>
+          {msg.type === 'ok' ? '✓ ' : '⚠ '}{msg.text}
+        </div>
+      )}
+
+      {/* Register new passkey */}
+      {biometricOk && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'flex-end' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 5 }}>
+              Device name (e.g. "My iPhone")
+            </label>
+            <input
+              className="input"
+              value={deviceName}
+              onChange={e => setDeviceName(e.target.value)}
+              placeholder="My Device"
+              maxLength={40}
+            />
+          </div>
+          <button
+            className="btn btn-brand btn-sm"
+            onClick={handleRegister}
+            disabled={registering || passkey.loading}
+            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+          >
+            {registering ? 'Registering…' : '+ Add passkey'}
+          </button>
+        </div>
+      )}
+
+      {/* Existing passkeys list */}
+      {loadingList ? (
+        <div style={{ fontSize: 12, color: 'var(--t-3)' }}>Loading…</div>
+      ) : passkeys.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'var(--t-3)' }}>No passkeys registered yet.</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--t-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 2 }}>
+            Registered devices
+          </div>
+          {passkeys.map(pk => (
+            <div key={pk.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '9px 12px',
+              background: 'var(--bg-2)',
+              borderRadius: 'var(--r)',
+              border: '1px solid var(--border)',
+              gap: 12,
+            }}>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--t-1)' }}>{pk.device_name || 'Device'}</div>
+                <div style={{ fontSize: 11, color: 'var(--t-3)', marginTop: 2 }}>
+                  Added {fmt(pk.created_at)}
+                  {pk.last_used_at && ` · Last used ${fmt(pk.last_used_at)}`}
+                </div>
+              </div>
+              <button
+                className="btn btn-sm"
+                onClick={() => handleRevoke(pk.id)}
+                style={{ background: 'var(--red-lt)', color: 'var(--red)', border: 'none', flexShrink: 0 }}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

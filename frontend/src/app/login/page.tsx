@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useOrgSettings } from '@/lib/orgSettings'
 import PoweredBy from '@/lib/PoweredBy'
+import { usePasskey } from '@/hooks/usePasskey'
 
 // Rate limit: max 5 attempts per 10 min window (per session)
 const RATE_KEY    = 'shq_login_attempts'
@@ -41,13 +42,23 @@ function formatMs(ms: number) {
 
 export default function LoginPage() {
   const { settings, loading: settingsLoading } = useOrgSettings()
-  const [email,    setEmail]    = useState('')
-  const [password, setPassword] = useState('')
-  const [showPw,   setShowPw]   = useState(false)
-  const [error,    setError]    = useState('')
-  const [loading,  setLoading]  = useState(false)
-  const [rateLock, setRateLock] = useState(false)
-  const [resetIn,  setResetIn]  = useState(0)
+  const [email,       setEmail]       = useState('')
+  const [password,    setPassword]    = useState('')
+  const [showPw,      setShowPw]      = useState(false)
+  const [error,       setError]       = useState('')
+  const [loading,     setLoading]     = useState(false)
+  const [rateLock,    setRateLock]    = useState(false)
+  const [resetIn,     setResetIn]     = useState(0)
+  const [biometricOk, setBiometricOk] = useState(false)
+
+  const passkey = usePasskey()
+
+  // Check biometric support
+  useEffect(() => {
+    if (passkey.isSupported) {
+      passkey.checkBiometricAvailable().then(setBiometricOk)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Check if already logged in
   useEffect(() => {
@@ -75,6 +86,20 @@ export default function LoginPage() {
     }, 5000)
     return () => clearInterval(t)
   }, [rateLock])
+
+  const handleBiometric = useCallback(async () => {
+    setError('')
+    const result = await passkey.authenticateWithPasskey(email || undefined)
+    if (result.success) {
+      if (result.mustChangePassword) {
+        window.location.href = '/change-password'
+      } else {
+        window.location.href = '/dashboard'
+      }
+    } else if (passkey.error) {
+      setError(passkey.error)
+    }
+  }, [email, passkey])
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -420,6 +445,68 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            {/* Biometric / Passkey button — shown only when device supports it */}
+            {biometricOk && (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '2px 0' }}>
+                  <div style={{ flex: 1, height: 1, background: '#1e2d45' }}/>
+                  <span style={{ fontSize: 11, color: '#4a6080', whiteSpace: 'nowrap' }}>or sign in with</span>
+                  <div style={{ flex: 1, height: 1, background: '#1e2d45' }}/>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleBiometric}
+                  disabled={passkey.loading || loading || rateLock}
+                  style={{
+                    width: '100%', height: 44,
+                    background: 'rgba(201,168,76,0.06)',
+                    border: '1px solid rgba(201,168,76,0.22)',
+                    borderRadius: 10,
+                    color: '#c9a84c',
+                    fontSize: 13.5, fontWeight: 600,
+                    cursor: (passkey.loading || loading || rateLock) ? 'not-allowed' : 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                    transition: 'all .15s',
+                    opacity: (passkey.loading || loading || rateLock) ? 0.5 : 1,
+                  }}
+                  onMouseEnter={e => {
+                    if (!passkey.loading && !loading && !rateLock) {
+                      e.currentTarget.style.background = 'rgba(201,168,76,0.12)'
+                      e.currentTarget.style.borderColor = 'rgba(201,168,76,0.40)'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(201,168,76,0.06)'
+                    e.currentTarget.style.borderColor = 'rgba(201,168,76,0.22)'
+                  }}
+                >
+                  {passkey.loading ? (
+                    <>
+                      <svg style={{ animation: 'spin 0.75s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                      </svg>
+                      Verifying…
+                    </>
+                  ) : (
+                    <>
+                      {/* Fingerprint icon */}
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="18" height="18">
+                        <path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/>
+                        <path d="M14 13.12c0 2.38 0 6.38-1 8.88"/>
+                        <path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/>
+                        <path d="M2 12a10 10 0 0 1 18-6"/>
+                        <path d="M2 17c1 0 1.5-.5 1.5-1.5S2 14 2 13a10 10 0 0 1 3.17-7.26"/>
+                        <path d="M20 12c0 5-2.5 8.5-5 10"/>
+                        <path d="M7 14c0 4.74.5 8 2.5 9.5"/>
+                        <path d="M12 6a6 6 0 0 1 6 6c0 .55-.07 1.29-.2 2"/>
+                      </svg>
+                      Fingerprint / Face ID
+                    </>
+                  )}
+                </button>
+              </>
+            )}
 
             {/* Submit */}
             <button

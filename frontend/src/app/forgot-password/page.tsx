@@ -52,20 +52,24 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     recordAttempt()
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-      if (!url || !key) throw new Error('App is not configured.')
-      const supabase = createClient(url, key)
-      // Supabase sends a reset email; redirectTo must match your site URL + /reset-password
-      const { error: resetErr } = await supabase.auth.resetPasswordForEmail(trimEmail, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Use server-side route — no Supabase keys needed in the browser
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimEmail }),
       })
-      if (resetErr) throw resetErr
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error || 'Something went wrong. Please try again.')
+      }
       // Always show success — never reveal if email exists (prevents enumeration)
       setSent(true)
     } catch (err: any) {
-      setError(err?.message || 'Something went wrong. Please try again.')
+      if (err?.message?.includes('fetch') || err?.message?.includes('network')) {
+        setError('Cannot reach the server. Check your internet connection.')
+      } else {
+        setError(err?.message || 'Something went wrong. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

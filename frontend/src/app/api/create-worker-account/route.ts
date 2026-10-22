@@ -23,12 +23,14 @@ const ADMIN_ROLES = new Set(['developer', 'senior_pastor', 'pastor', 'admin'])
 
 // ── Request body type ─────────────────────────────────────────────────────────
 type CreateWorkerBody = {
-  email:      string
-  password:   string
-  name:       string
+  email:       string
+  password:    string
+  name:        string
+  phone?:      string
   branch_key?: string
-  dept?:      string
-  role?:      string
+  dept?:       string
+  role?:       string
+  resetOnly?:  boolean   // if true, just reset password for existing user
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -80,12 +82,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return json({ error: 'Invalid request body' }, 400)
   }
 
-  const { email, password, name, branch_key, dept, role } = body
+  const { email, password, name, phone, branch_key, dept, role, resetOnly } = body
 
   // Required fields
   if (!email || typeof email !== 'string') return json({ error: 'email is required' }, 400)
   if (!password || typeof password !== 'string') return json({ error: 'password is required' }, 400)
-  if (!name || typeof name !== 'string') return json({ error: 'name is required' }, 400)
+  if (!resetOnly && (!name || typeof name !== 'string')) return json({ error: 'name is required' }, 400)
 
   // Sanitise email
   const cleanEmail = email.trim().toLowerCase()
@@ -108,6 +110,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     : ['unit_head', 'worker']
   const cleanRole = typeof role === 'string' && allowedNewRoles.includes(role) ? role : 'worker'
 
+  // ── 4a. Reset-only: just update password for existing user ───────────────
+  if (resetOnly) {
+    const { data: existingWorker } = await adminClient
+      .from('workers')
+      .select('id')
+      .eq('email', cleanEmail)
+      .single()
+    if (!existingWorker?.id) return json({ error: 'Worker not found' }, 404)
+    const { error: pwErr } = await adminClient.auth.admin.updateUserById(existingWorker.id, {
+      password,
+    })
+    if (pwErr) return json({ error: 'Failed to reset password' }, 500)
+    await adminClient.from('workers').update({ must_change_password: true }).eq('id', existingWorker.id)
+    return json({ ok: true })
+  }
+
   // ── 4. Create Supabase auth user ─────────────────────────────────────────
   const { data, error: createErr } = await adminClient.auth.admin.createUser({
     email: cleanEmail,
@@ -126,7 +144,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       // Idempotent — user already exists, just update their worker record
       await adminClient
         .from('workers')
-        .update({ status: 'active', must_change_password: true })
+        .update({ status: 'active', must_change_password: true, phone: phone?.trim() ?? undefined })
         .eq('email', cleanEmail)
       return json({ ok: true, note: 'Account already exists — set to active' })
     }
@@ -147,8 +165,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         email:             cleanEmail,
         full_name:         cleanName,
         role:              cleanRole,
-        branch_key:        branch_key ?? '',
+        branch_id:         branch_key ?? '',
         department:        dept ?? '',
+        phone:             phone?.trim() ?? '',
         status:            'active',
         must_change_password: true,
       }, { onConflict: 'id' })

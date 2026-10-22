@@ -914,7 +914,8 @@ function UserManager() {
   const [showAdd, setShowAdd] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
   const [credModal, setCredModal] = useState<{ user: any; tempPass: string } | null>(null)
-  const [userForm, setUserForm] = useState({ name: '', email: '', role: 'worker', branch_key: '', dept: '' })
+  const [resetConfirm, setResetConfirm] = useState<string | null>(null)
+  const [userForm, setUserForm] = useState({ name: '', email: '', phone: '', role: 'worker', branch_key: '', dept: '' })
   const { user: currentUser } = useSession()
   const { branches } = useBranches()
   const { departments } = useDepartments()
@@ -925,7 +926,7 @@ function UserManager() {
     try {
       const { data } = await supabase
         .from('workers')
-        .select('id,email,full_name,role,branch_key,department,status,created_at,last_seen,phone')
+        .select('id,email,full_name,role,branch_id,department,status,created_at,last_seen,phone,must_change_password')
         .order('created_at', { ascending: false })
         .limit(500)
       if (data) setUsers(data)
@@ -966,6 +967,22 @@ function UserManager() {
     if (supabase) await supabase.from('workers').update({ status: 'deleted' }).eq('id', id)
   }
 
+  const resetPassword = async (u: any) => {
+    const tempPass = genTempPass()
+    setResetConfirm(null)
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        await fetch('/api/create-worker-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({ email: u.email, password: tempPass, name: u.full_name, branch_key: u.branch_id, dept: u.department, resetOnly: true }),
+        })
+      } catch {}
+    }
+    setCredModal({ user: u, tempPass })
+  }
+
   const filtered = users.filter(u => {
     const matchRole = filter === 'all' || filter === 'pending' ? (filter === 'pending' ? u.status === 'pending' : true) : u.role === filter
     const matchSearch = !search || u.full_name?.toLowerCase().includes(search.toLowerCase()) || u.email?.toLowerCase().includes(search.toLowerCase())
@@ -977,7 +994,7 @@ function UserManager() {
       {credModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div className="card card-p" style={{ maxWidth: 420, width: '100%' }}>
-            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Account approved ✓</div>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>Login credentials ✓</div>
             <p style={{ fontSize: 13, color: 'var(--t-2)', marginBottom: 14 }}>Share these credentials with <strong>{credModal.user.full_name}</strong> via WhatsApp or email.</p>
             <div style={{ background: 'var(--s-3)', borderRadius: 'var(--r)', padding: '12px 16px', fontFamily: 'var(--font-mono)', fontSize: 13, lineHeight: 2, marginBottom: 14 }}>
               <div><strong>Email:</strong> {credModal.user.email}</div>
@@ -1021,10 +1038,10 @@ function UserManager() {
         <div className="card card-p" style={{ marginBottom: 14, border: '1.5px solid var(--brand)' }}>
           <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: 'var(--brand)' }}>Invite new worker</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 10 }}>
-            {[['Full name', 'name', 'text'], ['Email address', 'email', 'email']].map(([l, k, t]) => (
+            {[['Full name', 'name', 'text'], ['Email address', 'email', 'email'], ['Phone number *', 'phone', 'tel']].map(([l, k, t]) => (
               <div key={k}>
                 <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--t-2)', display: 'block', marginBottom: 4 }}>{l}</label>
-                <input className="input" type={t} value={(userForm as any)[k]} onChange={e => setUserForm(f => ({ ...f, [k]: e.target.value }))} />
+                <input className="input" type={t} placeholder={k === 'phone' ? '+234 800 000 0000' : undefined} value={(userForm as any)[k]} onChange={e => setUserForm(f => ({ ...f, [k]: e.target.value }))} />
               </div>
             ))}
             <div>
@@ -1054,18 +1071,21 @@ function UserManager() {
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
             <button className="btn btn-brand btn-sm" onClick={async () => {
-              if (!userForm.name || !userForm.email) return
+              if (!userForm.name || !userForm.email) return notify.error('Name and email are required.')
+              if (!userForm.phone) return notify.error('Phone number is required.')
+              const phoneClean = userForm.phone.replace(/[\s\-\(\)]/g, '')
+              if (!/^[\+]?[0-9]{7,15}$/.test(phoneClean)) return notify.error('Please enter a valid phone number.')
               const tempPass = genTempPass()
               if (supabase) {
                 const { data: { session } } = await supabase.auth.getSession()
                 const res = await fetch('/api/create-worker-account', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
-                  body: JSON.stringify({ email: userForm.email, password: tempPass, name: userForm.name, branch_key: userForm.branch_key, dept: userForm.dept, role: userForm.role }),
+                  body: JSON.stringify({ email: userForm.email, password: tempPass, name: userForm.name, phone: userForm.phone, branch_key: userForm.branch_key, dept: userForm.dept, role: userForm.role }),
                 })
                 if (res.ok) {
                   setCredModal({ user: { email: userForm.email, full_name: userForm.name }, tempPass })
-                  setUserForm({ name: '', email: '', role: 'worker', branch_key: '', dept: '' })
+                  setUserForm({ name: '', email: '', phone: '', role: 'worker', branch_key: '', dept: '' })
                   setShowAdd(false)
                   load()
                 } else {
@@ -1092,24 +1112,34 @@ function UserManager() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 600, fontSize: 13 }}>{u.full_name}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--t-3)' }}>{u.email} {u.branch_key ? `· ${u.branch_key}` : ''}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--t-3)' }}>{u.email}{u.phone ? ` · ${u.phone}` : ''}{u.branch_id ? ` · ${u.branch_id}` : ''}</div>
+                {u.must_change_password && <div style={{ fontSize: 10.5, color: '#f59e0b', marginTop: 1 }}>⚠ Must change password</div>}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                 <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, padding: '3px 8px', borderRadius: 20, background: `${ROLE_COLORS[u.role] || '#6B7280'}18`, color: ROLE_COLORS[u.role] || '#6B7280' }}>
                   {ROLE_LABELS[u.role] || u.role}
                 </span>
                 {u.status === 'pending' && (
                   <button className="btn btn-sm btn-brand" onClick={() => approveUser(u)} style={{ fontSize: 11 }}>Approve</button>
                 )}
-                {deleteConfirm === u.id ? (
+                {resetConfirm === u.id ? (
                   <>
-                    <button className="btn btn-sm btn-danger" onClick={() => deleteUser(u.id)} style={{ fontSize: 11 }}>Confirm</button>
+                    <span style={{ fontSize: 11, color: 'var(--t-2)' }}>Reset password?</span>
+                    <button className="btn btn-sm btn-brand" onClick={() => resetPassword(u)} style={{ fontSize: 11 }}>Yes</button>
+                    <button className="btn btn-sm btn-ghost" onClick={() => setResetConfirm(null)} style={{ fontSize: 11 }}>No</button>
+                  </>
+                ) : deleteConfirm === u.id ? (
+                  <>
+                    <button className="btn btn-sm btn-danger" onClick={() => deleteUser(u.id)} style={{ fontSize: 11 }}>Confirm delete</button>
                     <button className="btn btn-sm btn-ghost" onClick={() => setDeleteConfirm(null)} style={{ fontSize: 11 }}>Cancel</button>
                   </>
                 ) : (
-                  <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setDeleteConfirm(u.id)} style={{ color: 'var(--t-3)' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
-                  </button>
+                  <>
+                    <button className="btn btn-ghost btn-sm" onClick={() => setResetConfirm(u.id)} style={{ fontSize: 11, color: 'var(--t-2)' }}>Reset pwd</button>
+                    <button className="btn btn-ghost btn-icon btn-sm" onClick={() => setDeleteConfirm(u.id)} style={{ color: 'var(--t-3)' }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /></svg>
+                    </button>
+                  </>
                 )}
               </div>
             </div>

@@ -349,16 +349,23 @@ export default function LoginPage() {
 
             {/* Password */}
             <div>
-              <label htmlFor="password" style={{
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
+                <label htmlFor="password" style={{
                 display: 'block',
                 fontSize: 10.5, fontWeight: 600,
                 color: '#7a8fa8',
                 letterSpacing: '0.09em',
                 textTransform: 'uppercase',
-                marginBottom: 7,
+                margin: 0,
               }}>
                 Password
               </label>
+                <a href="/forgot-password" style={{ fontSize: 11, color: '#c9a84c', textDecoration: 'none', fontWeight: 600, opacity: 0.85 }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = '0.85')}>
+                  Forgot password?
+                </a>
+              </div>
               <div style={{ position: 'relative' }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="#4a6080" strokeWidth="1.8" width="14" height="14"
                   style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>

@@ -43,7 +43,7 @@ function MiniChart({ data, color }: { data: number[]; color: string }) {
           </linearGradient>
         </defs>
         <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.8} fill={`url(#bg${color.replace('#','')})`} dot={false}/>
-        <Tooltip contentStyle={{fontSize:11,padding:'4px 8px',borderRadius:6,border:'none',background:'rgba(13,31,22,0.9)',color:'white'}} formatter={(v:number)=>[v.toLocaleString(),'New members']}/>
+        <Tooltip contentStyle={{fontSize:11,padding:'4px 8px',borderRadius:6,border:'none',background:'rgba(13,20,36,0.95)',color:'white'}} formatter={(v:number)=>[v.toLocaleString(),'New members']}/>
       </AreaChart>
     </ResponsiveContainer>
   )

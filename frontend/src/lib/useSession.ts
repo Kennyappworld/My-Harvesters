@@ -72,7 +72,7 @@ export function useSession() {
       // Always load role from workers table — not from JWT metadata
       const { data: worker } = await supabase
         .from('workers')
-        .select('id, org_id, full_name, role, branch_key, branch_id, department, phone, avatar_url, must_change_password, status')
+        .select('id, org_id, full_name, role, branch_key, branch_id, department, phone, avatar_url, must_change_password, status, email')
         .eq('id', session.user.id)
         .single()
 

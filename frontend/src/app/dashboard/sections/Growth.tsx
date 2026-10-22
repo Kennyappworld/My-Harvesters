@@ -64,16 +64,17 @@ export default function Growth({ onNavigate }: { onNavigate: (p:string)=>void })
   const [sel, setSel] = useState(['lekki','gbagada','ikeja','london','houston'])
   const [fw, setFw] = useState(7)
 
-  const f = firstTimerFunnel[fw]
-  const may = memberGrowthMonthly[4], apr = memberGrowthMonthly[3]
+  const f = firstTimerFunnel[fw] ?? { firstTimers:0, returnedWk2:0, joinedGroup:0, becameMember:0, week:'–' }
+  const may = memberGrowthMonthly[4] ?? { total:0, new:0, left:0, month:'–' }
+  const apr = memberGrowthMonthly[3] ?? { total:0, new:0, left:0, month:'–' }
   // Override KPI tiles with live Supabase counts when available
   const displayWorkers = liveWorkerCount !== null ? liveWorkerCount : (memberGrowthMonthly.reduce((a:any,b:any)=>a+b.total,0))
   const displaySouls = liveSoulCount !== null ? liveSoulCount : 0
-  const gPct = (((may.total-apr.total)/apr.total)*100).toFixed(1)
-  const avgR = retentionMonthly[4].avg.toFixed(1)
-  const conv = ((f.becameMember/f.firstTimers)*100).toFixed(1)
-  const totalRisk = retentionCohorts.reduce((a,b)=>a+b.atRisk,0)
-  const totalQ    = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
+  const gPct = apr.total > 0 ? (((may.total-apr.total)/apr.total)*100).toFixed(1) : '0.0'
+  const avgR = (retentionMonthly[4]?.avg ?? 0).toFixed(1)
+  const conv = f.firstTimers > 0 ? ((f.becameMember/f.firstTimers)*100).toFixed(1) : '0.0'
+  const totalRisk = retentionCohorts.reduce((a,b)=>a+(b.atRisk??0),0)
+  const totalQ    = retentionCohorts.reduce((a,b)=>a+(b.goneQuiet??0),0)
 
   const tog = (k:string) => setSel(p=>p.includes(k)?p.length>1?p.filter(x=>x!==k):p:[...p,k])
 

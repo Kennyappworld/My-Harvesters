@@ -12,23 +12,28 @@
 
 // ── Branch type ───────────────────────────────────────────────────────────────
 
-export type BranchType = 'hq' | 'branch' | 'satellite' | 'international' | 'online'
+export type BranchType = 'hq' | 'branch' | 'satellite' | 'international' | 'online' | 'review'
 
 export type Branch = {
   id:          string     // UUID from Supabase branches table
   branch_key:  string     // slug-style key (e.g. 'main-campus')
   name:        string
   short_name:  string
+  short?:      string     // alias for short_name
   location:    string
   country:     string
   type:        BranchType
   pastor_name: string
+  pastor?:     string     // alias for pastor_name
   phone:       string
   email:       string
   color:       string
   founded_year: number
+  founded?:    number     // alias for founded_year
   is_active:   boolean
   sort_order:  number
+  members?:    number     // populated at runtime from analytics
+  attendance?: number     // populated at runtime from analytics
 }
 
 export type Department = {
@@ -240,7 +245,15 @@ export const ROLE_COLORS: Record<string, string> = {
 /** Alias: synchronous empty arrays — components load real data from Supabase */
 export const branches: Branch[] = []
 export const DEPARTMENTS: Department[] = []
-export const announcements: unknown[] = []
+
+export type Announcement = {
+  id: string; title: string; body: string; scope: string;
+  from?: string; to?: string; date?: string;
+  status?: 'published' | 'pending' | 'draft';
+  reached?: number; read?: number;
+  [key: string]: any
+}
+export const announcements: Announcement[] = []
 
 // Chart seed shapes (components replace with live Supabase data)
 export type GrowthPoint = { month: string; total: number; new: number; left: number }
@@ -249,20 +262,28 @@ export const memberGrowthMonthly: GrowthPoint[] = []
 export type AttendanceRecord = { date: string; count: number; branch?: string }
 export const weeklyAttendance: AttendanceRecord[] = []
 
-export type CohortRow = { cohort: string; m0: number; m1: number; m2: number; m3: number; m6: number; m12: number }
+export type CohortRow = { cohort: string; m0: number; m1: number; m2: number; m3: number; m6: number; m12: number; id?: string; r3m?: number; r6m?: number; r12m?: number; atRisk?: number; goneQuiet?: number; branch?: string }
 export const retentionCohorts: CohortRow[] = []
 
-export type RetentionPoint = { month: string; rate: number }
+export type RetentionPoint = { month: string; rate: number; avg?: number }
 export const retentionMonthly: RetentionPoint[] = []
 
-export type FunnelStep = { stage: string; count: number }
+export type FunnelStep = { stage: string; count: number; firstTimers?: number; returnedWk2?: number; joinedGroup?: number; becameMember?: number; week?: string }
 export const firstTimerFunnel: FunnelStep[] = []
 
-export type ChurnReason = { reason: string; count: number }
+export type ChurnReason = { reason: string; count: number; color?: string; pct?: number }
 export const churnReasons: ChurnReason[] = []
 
-export type ServiceRecord = { date: string; service: string; branch: string; count: number }
+export type ServiceRecord = { date: string; service: string; branch: string; count: number; branchId?: string; branchName?: string; id?: string; newMembers?: any[] }
 export const SERVICE_RECORDS: ServiceRecord[] = []
 
 // Alias for components importing BRANCH_COLORS
 export const BRANCH_COLORS: Record<string, string> = {}
+
+// ── Chat channels (empty — populated from Supabase) ───────────────────────────
+export type ChatChannel = { id: string; name: string; type: string; label?: string; scope?: string; initials?: string; sub?: string; description?: string; unread?: number; [key: string]: any }
+export const chatChannels: ChatChannel[] = []
+
+// ── Prayer requests (empty — populated from Supabase) ────────────────────────
+export type PrayerRequest = { id: string; body: string; author: string; date: string; elevated?: boolean; prayed_count?: number }
+export const prayerRequests: PrayerRequest[] = []

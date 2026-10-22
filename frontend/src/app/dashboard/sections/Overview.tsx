@@ -32,9 +32,9 @@ function NewMembersModal({ onClose }: { onClose:()=>void }) {
   return (
     <div style={{ position:'fixed',inset:0,zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(0,0,0,0.7)',padding:16 }} onClick={onClose}>
       <div style={{ background:'var(--s-2)',border:'1px solid var(--border-md)',borderRadius:'var(--r-2xl)',width:'100%',maxWidth:820,maxHeight:'88vh',overflow:'auto',boxShadow:'0 24px 64px rgba(13,31,22,0.28)' }} onClick={e=>e.stopPropagation()}>
-        <div style={{ padding:'20px 24px',borderBottom:'0.5px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'linear-gradient(90deg,#EBE9DF,#F4F2EA)',zIndex:1 }}>
+        <div style={{ padding:'20px 24px',borderBottom:'0.5px solid var(--border)',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'linear-gradient(90deg,#0d1424,#111827)',zIndex:1 }}>
           <div>
-            <div style={{ fontSize:16,fontWeight:800,fontFamily:'var(--font-display)' }}>New Members — May 2026</div>
+            <div style={{ fontSize:16,fontWeight:800,fontFamily:'var(--font-display)',color:'var(--t-1)' }}>New Members — May 2026</div>
             <div style={{ fontSize:12,color:'var(--t-2)',marginTop:2 }}>Recorded by branch at each service · {grandTotal} total this week</div>
           </div>
           <button onClick={onClose} className="btn btn-ghost btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
@@ -130,7 +130,7 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
   const { settings } = useOrgSettings()
   const [showNewMembers, setShowNewMembers] = useState(false)
   const quiet = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
-  const avgR  = retentionMonthly[4].avg.toFixed(1)
+  const avgR  = (retentionMonthly[4]?.avg ?? 0).toFixed(1)
   const totalNewThisWeek = SERVICE_RECORDS.reduce((a,r)=>a+r.newMembers.length,0)
   const [liveWorkers,      setLiveWorkers]      = useState<number|null>(null)
   const [liveSouls,        setLiveSouls]        = useState<number|null>(null)
@@ -176,20 +176,20 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
 
       {/* Sample data notice — only show when no live data yet */}
       {!isLive && (
-        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#92610A' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(245,158,11,0.07)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#f59e0b' }}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span>KPIs show <strong>sample data</strong> — they will update automatically as real records are entered.</span>
         </div>
       )}
       {isLive && (
-        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(27,158,90,0.07)', border:'1px solid rgba(27,158,90,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#166534' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 14px', background:'rgba(34,197,94,0.07)', border:'1px solid rgba(34,197,94,0.2)', borderRadius:'var(--r)', marginBottom:12, fontSize:11.5, color:'#86efac' }}>
           <div style={{ width:7,height:7,borderRadius:'50%',background:'#16a34a',flexShrink:0,boxShadow:'0 0 0 3px rgba(22,163,74,0.2)' }}/>
           <span><strong>Live database connected</strong> — KPIs updating from real records.</span>
         </div>
       )}
 
       {/* Mission statement */}
-      <div style={{ marginBottom:20, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(120deg, #0F2D1C 0%, #0A1F13 60%, #0C2518 100%)', padding:'0', boxShadow:'0 2px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)' }}>
+      <div style={{ marginBottom:20, position:'relative', overflow:'hidden', borderRadius:'var(--r-xl)', background:'linear-gradient(120deg, #0d1424 0%, #0a1020 60%, #111827 100%)', padding:'0', boxShadow:'0 2px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(201,168,76,0.06)', border:'1px solid #1e2d45' }}>
         {/* Faint cross watermark far right */}
         <div style={{ position:'absolute', right:-30, top:'50%', transform:'translateY(-50%)', opacity:0.04, pointerEvents:'none' }}>
           <svg viewBox="0 0 120 120" width="180" height="180" fill="white"><rect x="54" y="6" width="12" height="108"/><rect x="6" y="54" width="108" height="12"/></svg>

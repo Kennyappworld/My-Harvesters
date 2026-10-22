@@ -58,7 +58,6 @@ export default function LoginPage() {
     }
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'session_expired') {
-      // Clear any stale sessionStorage PII when session expires
       try { sessionStorage.removeItem('shq_user') } catch {}
       setError('Your session expired. Please sign in again.')
     }
@@ -148,7 +147,7 @@ export default function LoginPage() {
         department: worker.department, avatar_url: worker.avatar_url,
       }))
 
-      // Set cookie with Secure flag on HTTPS
+      // Set cookie with Secure flag on HTTPS, SameSite=Lax, 64-char hex token
       const expires = new Date(Date.now() + 30 * 60 * 1000).toUTCString()
       const isSecure = location.protocol === 'https:'
       document.cookie = `sanctuaryhq_session=${sessionToken}; path=/; expires=${expires}; SameSite=Lax${isSecure ? '; Secure' : ''}`
@@ -161,133 +160,250 @@ export default function LoginPage() {
     }
   }, [email, password])
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', height: 42, paddingLeft: 34, paddingRight: 12,
-    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 'var(--r)', color: 'white', fontSize: 13.5, outline: 'none',
-    transition: 'border-color .15s, box-shadow .15s', boxSizing: 'border-box',
-  }
-
   return (
     <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      background: 'linear-gradient(135deg, var(--dark) 0%, #0f2d1a 50%, var(--dark) 100%)',
+      minHeight: '100dvh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#06090f',
+      fontFamily: "'DM Sans', system-ui, sans-serif",
     }}>
-      {/* Subtle grid overlay */}
-      <div style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', opacity: 0.04,
-        backgroundImage: 'linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px)',
-        backgroundSize: '48px 48px',
-      }}/>
-      {/* Glow */}
-      <div style={{
-        position: 'fixed', top: '15%', left: '50%', transform: 'translateX(-50%)',
-        width: 600, height: 600,
-        background: 'radial-gradient(circle, rgba(22,101,52,0.25) 0%, transparent 70%)',
-        pointerEvents: 'none', zIndex: 0,
-      }}/>
+      {/* ── Background decorations ── */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+        {/* Gold glow top-right */}
+        <div style={{
+          position: 'absolute', top: '-120px', right: '-120px',
+          width: 500, height: 500,
+          background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 65%)',
+        }}/>
+        {/* Blue glow bottom-left */}
+        <div style={{
+          position: 'absolute', bottom: '-120px', left: '-120px',
+          width: 400, height: 400,
+          background: 'radial-gradient(circle, rgba(56,130,246,0.04) 0%, transparent 65%)',
+        }}/>
+        {/* Vertical center line */}
+        <div style={{
+          position: 'absolute', top: 0, bottom: 0, left: '50%',
+          width: 1,
+          background: 'linear-gradient(to bottom, transparent, rgba(201,168,76,0.06) 30%, rgba(201,168,76,0.06) 70%, transparent)',
+        }}/>
+      </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem 1rem', position: 'relative', zIndex: 1 }}>
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        {/* ── Logo & App Name ── */}
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: 'linear-gradient(135deg, var(--brand) 0%, #22c55e 100%)',
+            width: 68, height: 68, borderRadius: 18,
+            background: '#111827',
+            border: '1px solid rgba(201,168,76,0.28)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 1.25rem',
-            boxShadow: '0 12px 40px rgba(22,101,52,0.5)',
+            boxShadow: '0 8px 32px rgba(201,168,76,0.14), 0 2px 8px rgba(0,0,0,0.5)',
+            animation: 'glow-pulse 3s ease-in-out infinite',
+            overflow: 'hidden',
           }}>
             {!settingsLoading && settings.logoUrl
-              ? <img src={settings.logoUrl} alt="logo" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'cover' }}/>
-              : <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" width="28" height="28">
+              ? <img src={settings.logoUrl} alt="logo" style={{ width: 48, height: 48, borderRadius: 10, objectFit: 'cover' }}/>
+              : <svg viewBox="0 0 24 24" fill="none" stroke="#c9a84c" strokeWidth="1.8" width="30" height="30">
                   <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                   <path d="M2 17l10 5 10-5"/>
                   <path d="M2 12l10 5 10-5"/>
                 </svg>
             }
           </div>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(22px,5vw,28px)', fontWeight: 800, color: 'white', letterSpacing: '-0.03em', lineHeight: 1.1, margin: 0 }}>
+
+          <h1 style={{
+            fontFamily: "'Cormorant Garamond', Georgia, serif",
+            fontSize: 'clamp(24px, 5vw, 30px)',
+            fontWeight: 600,
+            color: '#e8edf5',
+            letterSpacing: '0.01em',
+            lineHeight: 1.1,
+            margin: 0,
+          }}>
             {settingsLoading ? 'SanctuaryHQ' : (settings.appName || 'SanctuaryHQ')}
           </h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginTop: 6, letterSpacing: '-0.01em' }}>
+
+          <p style={{ color: '#7a8fa8', fontSize: 13, marginTop: 7, letterSpacing: '0.01em' }}>
             {settingsLoading ? '' : (settings.tagline || 'Church Workforce Management')}
           </p>
+
           {!settingsLoading && settings.name && settings.name !== 'My Church' && (
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12.5, marginTop: 4, fontWeight: 600 }}>{settings.name}</p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              marginTop: 10,
+              background: 'rgba(201,168,76,0.07)',
+              border: '1px solid rgba(201,168,76,0.16)',
+              borderRadius: 99, padding: '3px 10px',
+            }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#c9a84c', boxShadow: '0 0 6px rgba(201,168,76,0.5)' }}/>
+              <span style={{ color: '#c9a84c', fontSize: 11.5, fontWeight: 600, letterSpacing: '0.01em' }}>{settings.name}</span>
+            </div>
           )}
         </div>
 
-        {/* Form card */}
+        {/* ── Form Card ── */}
         <div style={{
           width: '100%', maxWidth: 400,
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderRadius: 'var(--r-xl)',
-          backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(13,20,36,0.80)',
+          border: '1px solid #1e2d45',
+          borderRadius: 20,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
           overflow: 'hidden',
+          boxShadow: '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.03) inset',
         }}>
-          <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'white', letterSpacing: '-0.02em' }}>Sign in to your account</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>Workforce management portal</div>
+
+          {/* Card header */}
+          <div style={{
+            padding: '18px 24px 14px',
+            borderBottom: '1px solid #1e2d45',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div>
+              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#e8edf5', letterSpacing: '-0.01em' }}>
+                Sign in to your account
+              </div>
+              <div style={{ fontSize: 11.5, color: '#4a6080', marginTop: 2 }}>
+                Workforce management portal
+              </div>
+            </div>
+            <div style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: '#22c55e',
+              boxShadow: '0 0 8px rgba(34,197,94,0.5)',
+            }}/>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }} noValidate>
+          {/* Form body */}
+          <form onSubmit={handleSubmit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }} noValidate>
 
+            {/* Error alert */}
             {error && (
-              <div style={{ padding: '10px 12px', borderRadius: 'var(--r)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{
+                padding: '10px 13px',
+                borderRadius: 10,
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.20)',
+                display: 'flex', gap: 9, alignItems: 'flex-start',
+              }}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" width="14" height="14" style={{ flexShrink: 0, marginTop: 1 }}>
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <div style={{ fontSize: 12.5, color: '#fca5a5', lineHeight: 1.5 }}>
+                <div style={{ fontSize: 12.5, color: '#fca5a5', lineHeight: 1.55 }}>
                   {error}
-                  {rateLock && resetIn > 0 && <div style={{ marginTop: 4, opacity: 0.7 }}>Resets in ~{formatMs(resetIn)}</div>}
+                  {rateLock && resetIn > 0 && (
+                    <div style={{ marginTop: 3, opacity: 0.7, fontSize: 11.5 }}>Resets in ~{formatMs(resetIn)}</div>
+                  )}
                 </div>
               </div>
             )}
 
             {/* Email */}
             <div>
-              <label htmlFor="email" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>
-                Email address
+              <label htmlFor="email" style={{
+                display: 'block',
+                fontSize: 10.5, fontWeight: 600,
+                color: '#7a8fa8',
+                letterSpacing: '0.09em',
+                textTransform: 'uppercase',
+                marginBottom: 7,
+              }}>
+                Email Address
               </label>
               <div style={{ position: 'relative' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.8" width="14" height="14"
-                  style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4a6080" strokeWidth="1.8" width="14" height="14"
+                  style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
-                <input id="email" type="email" autoComplete="email" required
-                  value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="you@church.org"
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                   disabled={loading || rateLock}
-                  style={inputStyle}
-                  onFocus={e => { e.target.style.borderColor='rgba(34,197,94,0.5)'; e.target.style.boxShadow='0 0 0 3px rgba(34,197,94,0.12)' }}
-                  onBlur={e => { e.target.style.borderColor='rgba(255,255,255,0.1)'; e.target.style.boxShadow='none' }}
+                  style={{
+                    width: '100%', height: 44, paddingLeft: 36, paddingRight: 12,
+                    background: '#0d1424',
+                    border: '1px solid #1e2d45',
+                    borderRadius: 10,
+                    color: '#e8edf5',
+                    fontSize: 13.5,
+                    outline: 'none',
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    transition: 'border-color .15s, box-shadow .15s',
+                    boxSizing: 'border-box',
+                    opacity: (loading || rateLock) ? 0.5 : 1,
+                  }}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(201,168,76,0.45)'; e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.12)' }}
+                  onBlur={e => { e.target.style.borderColor = '#1e2d45'; e.target.style.boxShadow = 'none' }}
                 />
               </div>
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>
+              <label htmlFor="password" style={{
+                display: 'block',
+                fontSize: 10.5, fontWeight: 600,
+                color: '#7a8fa8',
+                letterSpacing: '0.09em',
+                textTransform: 'uppercase',
+                marginBottom: 7,
+              }}>
                 Password
               </label>
               <div style={{ position: 'relative' }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.8" width="14" height="14"
-                  style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#4a6080" strokeWidth="1.8" width="14" height="14"
+                  style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
-                <input id="password" type={showPw ? 'text' : 'password'} autoComplete="current-password" required
-                  value={password} onChange={e => setPassword(e.target.value)}
+                <input
+                  id="password"
+                  type={showPw ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={loading || rateLock}
-                  style={{ ...inputStyle, paddingRight: 42 }}
-                  onFocus={e => { e.target.style.borderColor='rgba(34,197,94,0.5)'; e.target.style.boxShadow='0 0 0 3px rgba(34,197,94,0.12)' }}
-                  onBlur={e => { e.target.style.borderColor='rgba(255,255,255,0.1)'; e.target.style.boxShadow='none' }}
+                  style={{
+                    width: '100%', height: 44, paddingLeft: 36, paddingRight: 44,
+                    background: '#0d1424',
+                    border: '1px solid #1e2d45',
+                    borderRadius: 10,
+                    color: '#e8edf5',
+                    fontSize: 13.5,
+                    outline: 'none',
+                    fontFamily: "'DM Sans', system-ui, sans-serif",
+                    transition: 'border-color .15s, box-shadow .15s',
+                    boxSizing: 'border-box',
+                    opacity: (loading || rateLock) ? 0.5 : 1,
+                  }}
+                  onFocus={e => { e.target.style.borderColor = 'rgba(201,168,76,0.45)'; e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.12)' }}
+                  onBlur={e => { e.target.style.borderColor = '#1e2d45'; e.target.style.boxShadow = 'none' }}
                 />
-                <button type="button" onClick={() => setShowPw(v => !v)} tabIndex={-1}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.3)', padding: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPw(v => !v)}
+                  tabIndex={-1}
+                  style={{
+                    position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: '#4a6080', padding: 3,
+                    transition: 'color .12s',
+                    display: 'flex', alignItems: 'center',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#7a8fa8')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#4a6080')}
+                >
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="15" height="15">
                     {showPw
                       ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
@@ -299,47 +415,98 @@ export default function LoginPage() {
             </div>
 
             {/* Submit */}
-            <button type="submit" disabled={loading || rateLock || !email || !password}
+            <button
+              type="submit"
+              disabled={loading || rateLock || !email || !password}
               style={{
-                width: '100%', height: 44, marginTop: 4,
-                background: (loading || rateLock) ? 'rgba(34,197,94,0.3)' : 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
-                border: 'none', borderRadius: 'var(--r)', color: 'white',
-                fontSize: 14, fontWeight: 700, cursor: (loading || rateLock) ? 'not-allowed' : 'pointer',
+                width: '100%', height: 46, marginTop: 2,
+                background: (loading || rateLock || !email || !password)
+                  ? 'rgba(201,168,76,0.25)'
+                  : 'linear-gradient(135deg, #8a6a20 0%, #c9a84c 60%, #e2c06c 100%)',
+                border: '1px solid ' + ((loading || rateLock || !email || !password) ? 'rgba(201,168,76,0.12)' : 'rgba(201,168,76,0.40)'),
+                borderRadius: 10,
+                color: (loading || rateLock || !email || !password) ? 'rgba(201,168,76,0.5)' : '#06090f',
+                fontSize: 14, fontWeight: 700,
+                cursor: (loading || rateLock || !email || !password) ? 'not-allowed' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                transition: 'all .15s', letterSpacing: '-0.01em',
-                boxShadow: (loading || rateLock) ? 'none' : '0 4px 20px rgba(22,163,74,0.35)',
-              }}>
+                transition: 'all .15s',
+                letterSpacing: '-0.01em',
+                boxShadow: (loading || rateLock || !email || !password)
+                  ? 'none'
+                  : '0 4px 20px rgba(201,168,76,0.25), inset 0 1px 0 rgba(255,255,255,0.15)',
+              }}
+              onMouseEnter={e => {
+                if (!loading && !rateLock && email && password) {
+                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(201,168,76,0.40), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.boxShadow = (!loading && !rateLock && email && password)
+                  ? '0 4px 20px rgba(201,168,76,0.25), inset 0 1px 0 rgba(255,255,255,0.15)'
+                  : 'none'
+                e.currentTarget.style.transform = 'translateY(0)'
+              }}
+            >
               {loading ? (
                 <>
-                  <svg className="anim-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                  <svg style={{ animation: 'spin 0.75s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="15" height="15">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                  </svg>
                   Signing in…
                 </>
               ) : rateLock ? (
                 <>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                   Too many attempts
                 </>
               ) : (
                 <>
-                  Sign in
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="14" height="14"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                  Sign In
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="13" height="13">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
                 </>
               )}
             </button>
           </form>
+
+          {/* Footer note inside card */}
+          <div style={{
+            padding: '12px 24px',
+            borderTop: '1px solid #1e2d45',
+            display: 'flex', alignItems: 'center', gap: 7,
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#4a6080" strokeWidth="1.8" width="12" height="12" style={{ flexShrink: 0 }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span style={{ fontSize: 11, color: '#4a6080', lineHeight: 1.5 }}>
+              Access is managed by your administrator. Contact them for accounts or password resets.
+            </span>
+          </div>
         </div>
 
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, lineHeight: 1.7 }}>
-            Access is managed by your church administrator.<br/>
-            Contact them if you need an account or to reset your password.
-          </p>
+        {/* Powered by */}
+        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+          <PoweredBy dark />
         </div>
       </div>
 
-      <div style={{ textAlign: 'center', padding: '1rem', position: 'relative', zIndex: 1 }}>
-        <PoweredBy dark={false}/>
-      </div>
+      {/* Keyframes */}
+      <style>{`
+        @keyframes glow-pulse {
+          0%, 100% { box-shadow: 0 8px 32px rgba(201,168,76,0.14), 0 2px 8px rgba(0,0,0,0.5); }
+          50%       { box-shadow: 0 8px 40px rgba(201,168,76,0.35), 0 2px 8px rgba(0,0,0,0.5); }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input:-webkit-autofill {
+          -webkit-box-shadow: 0 0 0 100px #0d1424 inset !important;
+          -webkit-text-fill-color: #e8edf5 !important;
+        }
+      `}</style>
     </div>
   )
 }

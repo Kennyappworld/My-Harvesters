@@ -11,7 +11,7 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLI
 
 export default function Prayer() {
   const { user } = useSession()
-  const [requests, setRequests] = useState(() => hydrate('sanctuaryhq_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
+  const [requests, setRequests] = useState<any[]>(() => hydrate('sanctuaryhq_prayer_requests', prayerRequests.map(r => ({ ...r, isInterceding: false }))))
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ text: '', scope: 'unit' })
@@ -155,7 +155,7 @@ export default function Prayer() {
                 <button onClick={() => toggle(r.id)} style={{ fontSize:12, color: r.isInterceding ? 'var(--brand)' : 'var(--t-3)', background:'none', border:'none', cursor:'pointer', padding:0, fontWeight: r.isInterceding ? 700 : 400 }}>
                   🙏 {r.isInterceding ? 'Interceding' : 'Intercede'} {r.interceding > 0 && `· ${r.interceding}`}
                 </button>
-                {r.elevated && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:100, background:'rgba(201,168,76,0.12)', color:'#92610A', fontWeight:600 }}>⬆ Elevated</span>}
+                {r.elevated && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:100, background:'rgba(201,168,76,0.12)', color:'#f59e0b', fontWeight:600 }}>⬆ Elevated</span>}
                 <button onClick={async () => {
                   if (!supabase) return
                   await supabase.from('prayer_requests').update({ answered: true }).eq('id', r.id)

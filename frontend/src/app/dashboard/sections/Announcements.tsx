@@ -22,7 +22,7 @@ function SmsConfig() {
       <div style={{fontSize:12.5,color:'var(--text-secondary)',lineHeight:1.7,marginBottom:12}}>
         Members without WhatsApp receive SMS as fallback via Termii.
       </div>
-      <div style={{padding:'10px 14px',background:'rgba(245,158,11,0.09)',borderRadius:'var(--r)',fontSize:12.5,color:'#92400e',border:'1px solid rgba(245,158,11,0.22)'}}>
+      <div style={{padding:'10px 14px',background:'rgba(245,158,11,0.09)',borderRadius:'var(--r)',fontSize:12.5,color:'#f59e0b',border:'1px solid rgba(245,158,11,0.22)'}}>
         🔒 <strong>Security notice:</strong> SMS API credentials are configured as server-side environment variables
         (<code style={{fontFamily:'var(--font-mono)',fontSize:11}}>TERMII_API_KEY</code> and <code style={{fontFamily:'var(--font-mono)',fontSize:11}}>TERMII_SENDER_ID</code>)
         and are never stored in the browser. Contact your administrator to update these credentials.
@@ -49,7 +49,7 @@ export default function Announcements() {
     const newAnn = {
       id:`ann${Date.now()}`,title:form.title,from:'You',to:form.scope==='all'?'All branches':form.targetBranch==='all'?'All branches':branches.find(b=>b.id===form.targetBranch)?.name||'',
       date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'}),
-      scope:form.scope as any,reached:0,read:0,status:'published',body:form.body
+      scope:form.scope as any,reached:0,read:0,status:'published' as const,body:form.body
     }
     setItems(prev=>[newAnn,...prev])
     setSaved(true); setTimeout(()=>{setSaved(false);setTab('feed');setForm({title:'',body:'',scope:'all',targetBranch:'all',targetDept:'all',channel:'platform'})},2000)
@@ -178,7 +178,7 @@ export default function Announcements() {
             </div>
 
             {(form.channel==='whatsapp'||form.channel==='sms'||form.channel==='all_channels') && (
-              <div style={{padding:'10px 14px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:'var(--r)',marginBottom:14,fontSize:12.5,color:'#92610A',lineHeight:1.65}}>
+              <div style={{padding:'10px 14px',background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.25)',borderRadius:'var(--r)',marginBottom:14,fontSize:12.5,color:'#f59e0b',lineHeight:1.65}}>
                 ⚠ <strong>WhatsApp/SMS gateway not yet connected.</strong> The announcement will be saved to the platform feed. To enable real WhatsApp delivery, connect your WhatsApp Business API credentials in Settings → Integrations.
               </div>
             )}

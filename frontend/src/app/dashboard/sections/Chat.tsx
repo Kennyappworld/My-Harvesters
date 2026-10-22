@@ -29,7 +29,16 @@ type Invite = {
   isAccessRequest?: boolean  // true = someone requesting to join, false = invite sent to them
 }
 
-const INIT_CHANNELS: Channel[] = chatChannels.map(c => ({ ...c, messages:[], members:[] }))
+const INIT_CHANNELS: Channel[] = chatChannels.map(c => ({
+  ...c,
+  label:    c.label    ?? c.name ?? 'Channel',
+  scope:    c.scope    ?? c.type ?? 'unit',
+  initials: c.initials ?? (c.name || 'CH').slice(0,2).toUpperCase(),
+  sub:      c.sub      ?? c.description ?? '',
+  unread:   c.unread   ?? 0,
+  messages: [],
+  members:  [],
+}))
 
 // Access requests (separate from invites — these come FROM non-members wanting IN)
 type AccessRequest = {

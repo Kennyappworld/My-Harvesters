@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@supabase/supabase-js'
 import { useOrgSettings } from '@/lib/orgSettings'
+import { useSession, hasRole } from '@/lib/useSession'
+import BirthdayWidget from './BirthdayWidget'
 
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
@@ -126,8 +128,249 @@ function CountUp({ to, duration=900, suffix='' }: { to:number; duration?:number;
   return <>{val.toLocaleString()}{suffix}</>
 }
 
+// ── Role-personalized panel components ────────────────────────────────────────
+
+function UnitHeadPanel({ user, onNavigate }: { user: any; onNavigate:(p:string)=>void }) {
+  const [pendingAnns,  setPendingAnns]  = useState<number>(0)
+  const [unitRoster,   setUnitRoster]   = useState<any[]>([])
+  const [rosterLoading, setRosterLoading] = useState(true)
+
+  const sb = supabase
+  useEffect(() => {
+    if (!sb) { setRosterLoading(false); return }
+    const load = async () => {
+      // Fetch pending announcement count
+      const { count } = await sb.from('announcements')
+        .select('*', { count:'exact', head:true })
+        .eq('submitted_by', user.id)
+        .in('status', ['submitted','dept_approved','collated'])
+      setPendingAnns(count ?? 0)
+
+      // Fetch unit roster (same department)
+      const { data } = await sb.from('workers')
+        .select('id, full_name, avatar_url, phone, department, status')
+        .eq('department', user.department)
+        .eq('status', 'active')
+        .limit(12)
+      setUnitRoster(data ?? [])
+      setRosterLoading(false)
+    }
+    load()
+  }, [user])
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:14, marginBottom:20 }}>
+      {/* Action shortcuts */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:10 }}>
+        {[
+          { icon:'📤', label:'Submit announcement', sub:'Notify the team', action:()=>onNavigate('announcements'), color:'var(--brand)' },
+          { icon:'🎂', label:'View all birthdays',  sub:'Full calendar',   action:()=>onNavigate('birthdays'),     color:'var(--purple)' },
+          { icon:'✅', label:'Attendance log',       sub:'Mark this week',  action:()=>onNavigate('attendance'),    color:'var(--green)' },
+          { icon:'📋', label:'My submissions',       sub:`${pendingAnns} in review`, action:()=>onNavigate('announcements'), color:'var(--amber)' },
+        ].map(t => (
+          <div key={t.label} className="card card-hover" onClick={t.action}
+            style={{ padding:'14px 16px', cursor:'pointer', borderTop:`2px solid ${t.color}33` }}>
+            <div style={{ fontSize:22, marginBottom:6 }}>{t.icon}</div>
+            <div style={{ fontWeight:700, fontSize:13 }}>{t.label}</div>
+            <div style={{ fontSize:11.5, color:'var(--t-3)', marginTop:2 }}>{t.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Birthday widget */}
+      <BirthdayWidget department={user.department} maxItems={5} onNavigate={onNavigate}/>
+
+      {/* Announcement status */}
+      {pendingAnns > 0 && (
+        <div onClick={() => onNavigate('announcements')}
+          style={{ padding:'11px 16px', background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'var(--r)', fontSize:13, color:'var(--amber)', cursor:'pointer', display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:16 }}>📤</span>
+          <span>You have <strong>{pendingAnns}</strong> announcement{pendingAnns !== 1 ? 's' : ''} in review. Tap to track progress.</span>
+        </div>
+      )}
+
+      {/* Roster preview */}
+      {!rosterLoading && unitRoster.length > 0 && (
+        <div className="card" style={{ padding:'14px 18px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div style={{ fontWeight:700, fontSize:13 }}>
+              {user.department} roster <span className="chip chip-gray" style={{ marginLeft:6 }}>{unitRoster.length}</span>
+            </div>
+            <button className="btn btn-ghost btn-sm" style={{ fontSize:11 }} onClick={() => onNavigate('members')}>
+              Full list →
+            </button>
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {unitRoster.slice(0,8).map(m => (
+              <div key={m.id} title={m.full_name}
+                style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 10px', background:'var(--s-3)', borderRadius:20, fontSize:12 }}>
+                <div style={{ width:24, height:24, borderRadius:'50%', overflow:'hidden', flexShrink:0, background:'rgba(99,102,241,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontWeight:800, fontSize:11, color:'var(--brand)' }}>
+                  {m.avatar_url
+                    ? <img src={m.avatar_url} alt={m.full_name} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                    : m.full_name.charAt(0)}
+                </div>
+                <span style={{ fontWeight:500 }}>{m.full_name.split(' ')[0]}</span>
+              </div>
+            ))}
+            {unitRoster.length > 8 && (
+              <div style={{ padding:'5px 10px', background:'var(--s-3)', borderRadius:20, fontSize:12, color:'var(--t-3)' }}>
+                +{unitRoster.length - 8} more
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function OpsHeadPanel({ user, onNavigate }: { user: any; onNavigate:(p:string)=>void }) {
+  const [pending, setPending]   = useState(0)
+  const [published, setPublished] = useState(0)
+  const sb = supabase
+  useEffect(() => {
+    if (!sb) return
+    const load = async () => {
+      const [p, pub] = await Promise.all([
+        sb.from('announcements').select('*',{count:'exact',head:true}).in('status',['submitted','dept_approved','collated']),
+        sb.from('announcements').select('*',{count:'exact',head:true}).eq('status','published'),
+      ])
+      setPending(p.count ?? 0)
+      setPublished(pub.count ?? 0)
+    }
+    load()
+  }, [])
+
+  return (
+    <div style={{ marginBottom:20 }}>
+      {/* Ops banner */}
+      <div style={{ padding:'14px 18px', background:'rgba(99,102,241,0.06)', border:'1px solid rgba(99,102,241,0.18)', borderRadius:'var(--r-xl)', marginBottom:14 }}>
+        <div style={{ fontWeight:800, fontSize:14, color:'var(--brand)', marginBottom:4 }}>Operations Head Dashboard</div>
+        <div style={{ fontSize:12.5, color:'var(--t-2)' }}>Review collated announcements, monitor department health, and track operational KPIs.</div>
+      </div>
+
+      {/* KPI strip */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))', gap:10, marginBottom:14 }}>
+        {[
+          { label:'Pending review',  n: pending,   color:'var(--amber)', click:'announcements' },
+          { label:'Published',        n: published, color:'var(--green)',  click:'announcements' },
+        ].map(k => (
+          <div key={k.label} className="metric-tile card-hover" onClick={() => onNavigate(k.click)} style={{ cursor:'pointer' }}>
+            <div className="metric-label">{k.label}</div>
+            <div className="metric-value" style={{ fontSize:'1.6rem', color: k.color }}>{k.n}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:14 }}>
+        <button className="btn btn-brand btn-sm" onClick={() => onNavigate('announcements')}>
+          📥 Review announcement inbox
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('reports')}>
+          📊 View reports
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('members')}>
+          👥 Member directory
+        </button>
+      </div>
+
+      {/* Birthday widget — all departments */}
+      <BirthdayWidget maxItems={4} onNavigate={onNavigate}/>
+    </div>
+  )
+}
+
+function AdminHeadPanel({ user, onNavigate }: { user: any; onNavigate:(p:string)=>void }) {
+  const [collated, setCollated] = useState(0)
+  const [submitted, setSubmitted] = useState(0)
+  const sb = supabase
+  useEffect(() => {
+    if (!sb) return
+    const load = async () => {
+      const [c, s] = await Promise.all([
+        sb.from('announcements').select('*',{count:'exact',head:true}).eq('status','collated'),
+        sb.from('announcements').select('*',{count:'exact',head:true}).eq('status','submitted'),
+      ])
+      setCollated(c.count ?? 0)
+      setSubmitted(s.count ?? 0)
+    }
+    load()
+  }, [])
+
+  return (
+    <div style={{ marginBottom:20 }}>
+      <div style={{ padding:'14px 18px', background:'rgba(16,185,129,0.05)', border:'1px solid rgba(16,185,129,0.18)', borderRadius:'var(--r-xl)', marginBottom:14 }}>
+        <div style={{ fontWeight:800, fontSize:14, color:'var(--green)', marginBottom:4 }}>Admin Head Dashboard</div>
+        <div style={{ fontSize:12.5, color:'var(--t-2)' }}>Collate unit submissions into the weekly bulletin and coordinate admin tasks.</div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(130px,1fr))', gap:10, marginBottom:14 }}>
+        {[
+          { label:'Submissions to collate', n: submitted, color:'var(--amber)' },
+          { label:'Collated for ops review', n: collated,  color:'var(--purple)' },
+        ].map(k => (
+          <div key={k.label} className="metric-tile" onClick={() => onNavigate('announcements')} style={{ cursor:'pointer' }}>
+            <div className="metric-label">{k.label}</div>
+            <div className="metric-value" style={{ fontSize:'1.6rem', color: k.color }}>{k.n}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:14 }}>
+        <button className="btn btn-brand btn-sm" onClick={() => onNavigate('announcements')}>
+          📋 Open bulletin builder
+        </button>
+        <button className="btn btn-ghost btn-sm" onClick={() => onNavigate('members')}>
+          👥 Member management
+        </button>
+      </div>
+
+      <BirthdayWidget maxItems={4} onNavigate={onNavigate}/>
+    </div>
+  )
+}
+
+function WorkerPanel({ user, onNavigate }: { user: any; onNavigate:(p:string)=>void }) {
+  return (
+    <div style={{ marginBottom:20 }}>
+      {/* Welcome card */}
+      <div style={{ padding:'16px 20px', background:'linear-gradient(110deg, rgba(99,102,241,0.08), rgba(99,102,241,0.02))', border:'1px solid rgba(99,102,241,0.15)', borderRadius:'var(--r-xl)', marginBottom:14 }}>
+        <div style={{ fontWeight:800, fontSize:15, marginBottom:4 }}>Welcome back{user?.name ? `, ${user.name.split(' ')[0]}` : ''} 👋</div>
+        <div style={{ fontSize:12.5, color:'var(--t-2)' }}>Here's your personal dashboard. Check upcoming assignments, announcements, and unit news.</div>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:10, marginBottom:14 }}>
+        {[
+          { icon:'📢', label:'Announcements',  sub:'Church notices',    page:'announcements' },
+          { icon:'🙏', label:'Prayer wall',    sub:'Post & pray',       page:'prayer' },
+          { icon:'📖', label:'Devotional',     sub:"Today's reading",   page:'devotional' },
+          { icon:'📅', label:'Events',         sub:'Upcoming',          page:'events' },
+        ].map(t => (
+          <div key={t.label} className="card card-hover" onClick={() => onNavigate(t.page)}
+            style={{ padding:'14px 16px', cursor:'pointer', textAlign:'center' }}>
+            <div style={{ fontSize:22, marginBottom:6 }}>{t.icon}</div>
+            <div style={{ fontWeight:700, fontSize:12.5 }}>{t.label}</div>
+            <div style={{ fontSize:11, color:'var(--t-3)', marginTop:2 }}>{t.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Compact birthday widget for worker's own dept */}
+      {user?.department && (
+        <BirthdayWidget department={user.department} maxItems={3} compact onNavigate={onNavigate}/>
+      )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }) {
   const { settings } = useOrgSettings()
+  const { user } = useSession()
+  const role = user?.role ?? 'worker'
   const [showNewMembers, setShowNewMembers] = useState(false)
   const quiet = retentionCohorts.reduce((a,b)=>a+b.goneQuiet,0)
   const avgR  = (retentionMonthly[4]?.avg ?? 0).toFixed(1)
@@ -170,6 +413,50 @@ export default function Overview({ onNavigate }: { onNavigate:(p:string)=>void }
     load()
   }, [])
 
+  // ── Role-gated early returns ──
+  if (role === 'unit_head') {
+    return (
+      <div>
+        <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)', marginBottom:16 }}>
+          My Dashboard
+        </div>
+        <UnitHeadPanel user={user} onNavigate={onNavigate}/>
+      </div>
+    )
+  }
+
+  if (role === 'ops_head') {
+    return (
+      <div>
+        <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)', marginBottom:16 }}>
+          Operations Overview
+        </div>
+        <OpsHeadPanel user={user} onNavigate={onNavigate}/>
+        {/* Also show org-wide stats below */}
+      </div>
+    )
+  }
+
+  if (role === 'admin_head') {
+    return (
+      <div>
+        <div style={{ fontWeight:800, fontSize:16, fontFamily:'var(--font-display)', marginBottom:16 }}>
+          Admin Overview
+        </div>
+        <AdminHeadPanel user={user} onNavigate={onNavigate}/>
+      </div>
+    )
+  }
+
+  if (role === 'worker' || role === 'guest') {
+    return (
+      <div>
+        <WorkerPanel user={user} onNavigate={onNavigate}/>
+      </div>
+    )
+  }
+
+  // senior_pastor / pastor / admin / developer → full org-wide view below
   return (
     <div>
       {showNewMembers && <NewMembersModal onClose={()=>setShowNewMembers(false)}/>}

@@ -125,6 +125,7 @@ const ROLE_AUDIENCES = [
 
 const BROADCAST_ROLES = [
   ['senior_pastor','Senior Pastor'],['pastor','Branch Pastor'],
+  ['ops_head','Operations Head'],['admin_head','Admin Head'],
   ['admin','Admin'],['unit_head','Unit Head'],['worker','Worker'],
 ]
 

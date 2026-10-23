@@ -1342,6 +1342,8 @@ function UserManager() {
           <option value="developer">Developer</option>
           <option value="senior_pastor">Senior Pastor</option>
           <option value="pastor">Pastor</option>
+          <option value="ops_head">Operations Head</option>
+          <option value="admin_head">Admin Head</option>
           <option value="admin">Admin</option>
           <option value="unit_head">Unit Head</option>
           <option value="worker">Worker</option>
@@ -1364,6 +1366,8 @@ function UserManager() {
                 <option value="worker">Worker</option>
                 <option value="unit_head">Unit Head</option>
                 <option value="admin">Admin</option>
+                <option value="admin_head">Admin Head</option>
+                <option value="ops_head">Operations Head</option>
                 <option value="pastor">Branch Pastor</option>
                 {currentUser?.role === 'developer' && <option value="senior_pastor">Senior Pastor</option>}
               </select>

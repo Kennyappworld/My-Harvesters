@@ -17,7 +17,7 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (
     (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!
   ) : null
 
-export type UserRole = 'developer' | 'senior_pastor' | 'pastor' | 'admin' | 'unit_head' | 'worker' | 'guest'
+export type UserRole = 'developer' | 'senior_pastor' | 'pastor' | 'ops_head' | 'admin_head' | 'admin' | 'unit_head' | 'worker' | 'guest'
 
 export type SessionUser = {
   id:          string
@@ -33,9 +33,11 @@ export type SessionUser = {
 }
 
 const ROLE_HIERARCHY: Record<UserRole, number> = {
-  developer:     6,
-  senior_pastor: 5,
-  pastor:        4,
+  developer:     7,
+  senior_pastor: 6,
+  pastor:        5,
+  ops_head:      4,   // Operations Head — oversees all departments operationally
+  admin_head:    4,   // Admin Head — oversees admin, membership, welfare
   admin:         3,
   unit_head:     2,
   worker:        1,
@@ -48,7 +50,7 @@ export function hasRole(userRole: UserRole, required: UserRole): boolean {
 
 // Allowed roles that can come from the DB workers table
 const VALID_ROLES = new Set<string>([
-  'developer', 'senior_pastor', 'pastor', 'admin', 'unit_head', 'worker', 'guest',
+  'developer', 'senior_pastor', 'pastor', 'ops_head', 'admin_head', 'admin', 'unit_head', 'worker', 'guest',
 ])
 
 function sanitizeRole(raw: unknown): UserRole {

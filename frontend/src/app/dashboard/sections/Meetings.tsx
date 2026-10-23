@@ -16,16 +16,18 @@ type Meeting = {
   agenda: string; attendants: Attendant[]; createdAt: string; meetLink: string
 }
 
+// Placeholder attendants — no real names, emails, phone numbers, or org-specific domains.
+// Will be replaced with live data from the workers/meetings tables.
 const SAMPLE_ATTENDANTS: Attendant[] = [
-  { name:'Pastor Bolaji Idowu',   role:'Senior Pastor',       email:'bolaji@hicc.org',   phone:'+234 810 000 0001', present:true },
-  { name:'Pastor Emeka Okafor',   role:'Gbagada Pastor',      email:'emeka@hicc.org',    phone:'+234 803 000 0002', present:true },
-  { name:'Pastor Taiwo Adeyemi',  role:'Ikeja Pastor',        email:'taiwo@hicc.org',    phone:'+234 706 000 0003', present:true },
-  { name:'Pastor Ngozi Eze',      role:'Anthony Pastor',      email:'ngozi@hicc.org',    phone:'+234 813 000 0004', present:false },
-  { name:'Pastor David Obi',      role:'Abuja Pastor',        email:'david@hicc.org',    phone:'+234 802 000 0005', present:true },
-  { name:'Pastor Funke Bello',    role:'Port Harcourt Pastor',email:'funke@hicc.org',    phone:'+234 809 000 0006', present:true },
-  { name:'Pastor Chidi Nwachukwu',role:'Ibadan Pastor',       email:'chidi@hicc.org',    phone:'+234 816 000 0007', present:true },
-  { name:'Pastor James Mensah',   role:'London Pastor',       email:'james@hicc.org',    phone:'+44 798 000 0008',  present:true },
-  { name:'Pastor Grace Adesanya', role:'Houston Pastor',      email:'grace@hicc.org',    phone:'+1 713 000 0009',   present:false },
+  { name:'Pastor A', role:'Senior Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor B', role:'Branch Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor C', role:'Branch Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor D', role:'Branch Pastor',       email:'', phone:'', present:false },
+  { name:'Pastor E', role:'Branch Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor F', role:'Branch Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor G', role:'Branch Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor H', role:'Branch Pastor',       email:'', phone:'', present:true  },
+  { name:'Pastor I', role:'Branch Pastor',       email:'', phone:'', present:false },
 ]
 
 const SAMPLE_MEETINGS: Meeting[] = [

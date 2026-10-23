@@ -129,7 +129,16 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
       }
 
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      await supabase.from('workers').update({ avatar_url: publicUrl }).eq('id', memberId)
+      // Update avatar_url via server API — not direct client mutation
+      const { data: { session } } = await supabase.auth.getSession()
+      await fetch('/api/worker/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({ avatar_url: publicUrl }),
+      })
       setMembers(prev => prev.map(m => m.id === memberId ? { ...m, photo: publicUrl } : m))
       if (selected?.id === memberId) setSelected((s: any) => ({ ...s, photo: publicUrl }))
       notify.success('Photo updated')
@@ -147,13 +156,24 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
       growth:0, attendance:0, photo:''
     }
     setMembers(prev => { const next = [...prev, newMember]; persist('sanctuaryhq_members' as any, next); return next })
-    // Write to Supabase workers table
+    // Register new member via server API — not direct client insert
     if (supabase && user?.id) {
-      await supabase.from('workers').insert({
-        email: form.email || null,
-        full_name: form.name, phone: form.phone,
-        branch_id: form.branch, department: form.dept, role: 'worker',
-      })
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        await fetch('/api/create-worker-account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({
+            email: form.email || null,
+            password: Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2).toUpperCase() + '1!',
+            name: form.name,
+            phone: form.phone,
+            branch_key: form.branch,
+            dept: form.dept,
+            role: 'worker',
+          }),
+        })
+      } catch {}
     }
     setForm({ name:'', phone:'', email:'', branch:'lekki', dept:'ushering', birthday:'' })
     setShowAdd(false); setSaving(false)
@@ -163,8 +183,16 @@ export default function Members({ onNavigate, memberSearch, onMemberSearchConsum
   const updateGrowth = async (memberId: string, level: number) => {
     setMembers(prev => prev.map(m => m.id===memberId ? {...m, growth:level} : m))
     if (selected) setSelected((s:any) => ({...s, growth:level}))
+    // Growth level update via server API — admin action on another member's record
     if (supabase) {
-      await supabase.from('workers').update({ department: `growth_l${level}` }).eq('id', memberId)
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        await fetch('/api/worker/profile', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({ target_id: memberId, department: `growth_l${level}` }), // admin targets another worker
+        })
+      } catch {}
     }
   }
 

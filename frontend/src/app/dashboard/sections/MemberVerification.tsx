@@ -8,13 +8,15 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (process.env.NEXT_PUBLI
   ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY))
   : null
 
+// Placeholder data — replace with live DB query once member verification table is ready.
+// No real names, emails, phone numbers, or org-specific domains are used here.
 const SAMPLE_MEMBERS = [
-  { id:'m1', name:'Emmanuel Abiola',  email:'emmanuel@hicc.org', branch:'Lekki HQ',  dept:'Ushering',        joined:'Nov 2022', months:31, rating:4.2, status:'eligible'   },
-  { id:'m2', name:'Funke Oladipo',    email:'funke.o@hicc.org',  branch:'Ikeja',      dept:'Prayer',          joined:'Dec 2023', months:18, rating:3.8, status:'eligible'   },
-  { id:'m3', name:'Ngozi Kalu',       email:'ngozi.k@hicc.org',  branch:'Lekki HQ',  dept:'Worship & Music', joined:'Oct 2024', months:8,  rating:4.5, status:'eligible'   },
-  { id:'m4', name:'Richard Eze',      email:'richard.e@hicc.org',branch:'Abuja',      dept:'Media',           joined:'Feb 2025', months:4,  rating:2.9, status:'ineligible' },
-  { id:'m5', name:'Toyin Okafor',     email:'toyin@hicc.org',    branch:'Lekki HQ',  dept:'KidsHouse',       joined:'Mar 2025', months:3,  rating:3.1, status:'ineligible' },
-  { id:'m6', name:'Kolade Nwachukwu', email:'kolade@gmail.com',  branch:'London UK', dept:'Outreach',        joined:'Jan 2025', months:5,  rating:3.6, status:'ineligible' },
+  { id:'m1', name:'Member A',  email:'', branch:'Main Branch',   dept:'Ushering',        joined:'Nov 2022', months:31, rating:4.2, status:'eligible'   },
+  { id:'m2', name:'Member B',  email:'', branch:'Branch 2',      dept:'Prayer',          joined:'Dec 2023', months:18, rating:3.8, status:'eligible'   },
+  { id:'m3', name:'Member C',  email:'', branch:'Main Branch',   dept:'Worship & Music', joined:'Oct 2024', months:8,  rating:4.5, status:'eligible'   },
+  { id:'m4', name:'Member D',  email:'', branch:'Branch 3',      dept:'Media',           joined:'Feb 2025', months:4,  rating:2.9, status:'ineligible' },
+  { id:'m5', name:'Member E',  email:'', branch:'Main Branch',   dept:'Children',        joined:'Mar 2025', months:3,  rating:3.1, status:'ineligible' },
+  { id:'m6', name:'Member F',  email:'', branch:'Branch 4',      dept:'Outreach',        joined:'Jan 2025', months:5,  rating:3.6, status:'ineligible' },
 ]
 
 const RATING_COMPONENTS = ['Attendance', 'Giving', 'Prayer', 'Serving', 'Small group']
@@ -140,7 +142,14 @@ export default function MemberVerification() {
                     <td><span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--brand)', fontSize:13 }}>{m.months}mo</span></td>
                     <td><Stars val={m.rating}/></td>
                     <td>
-                      <button className="btn btn-brand btn-sm" onClick={e=>{e.stopPropagation(); notify.success(`Link generated — hicc.org/join?ref=${m.id}`); navigator.clipboard?.writeText(`https://hicc.org/join?ref=${m.id}&branch=${m.branch.toLowerCase().replace(' ','-')}`).then(()=>notify.copy())}} style={{ fontSize:11 }}>
+                      <button className="btn btn-brand btn-sm" onClick={e=>{
+                        e.stopPropagation()
+                        // Build referral link from org's own domain (set via NEXT_PUBLIC_APP_ORIGIN env var)
+                        const base = (process.env.NEXT_PUBLIC_APP_ORIGIN ?? window.location.origin).replace(/\/$/, '')
+                        const link = `${base}/join?ref=${m.id}&branch=${encodeURIComponent(m.branch.toLowerCase().replace(/\s+/g,'-'))}`
+                        navigator.clipboard?.writeText(link).then(() => notify.copy()).catch(() => {})
+                        notify.success('Referral link copied')
+                      }} style={{ fontSize:11 }}>
                         Generate link
                       </button>
                     </td>

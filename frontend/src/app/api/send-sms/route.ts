@@ -80,7 +80,8 @@ export async function POST(req: NextRequest) {
         .select('role')
         .eq('id', user.id)
         .single()
-      const ALLOWED_ROLES = ['developer', 'admin', 'senior_pastor', 'pastor']
+      // ops_head and admin_head are at level 4 — allowed to send SMS broadcasts
+      const ALLOWED_ROLES = ['developer', 'senior_pastor', 'pastor', 'ops_head', 'admin_head', 'admin']
       if (!worker || !ALLOWED_ROLES.includes(worker.role)) {
         return NextResponse.json({ error: 'Forbidden — insufficient role' }, { status: 403 })
       }

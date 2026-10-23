@@ -19,7 +19,8 @@ const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY     ?? ''
 const anonKey        = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
                     ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
 
-const ADMIN_ROLES = new Set(['developer', 'senior_pastor', 'pastor', 'admin'])
+// ops_head and admin_head (level 4) are trusted to create accounts
+const ADMIN_ROLES = new Set(['developer', 'senior_pastor', 'pastor', 'ops_head', 'admin_head', 'admin'])
 
 // ── Request body type ─────────────────────────────────────────────────────────
 type CreateWorkerBody = {
@@ -104,10 +105,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   if (password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400)
   if (password.length > 128) return json({ error: 'Password too long' }, 400)
 
-  // Role can only be worker or unit_head when created by non-developer
-  const allowedNewRoles = callerWorker.role === 'developer'
-    ? ['developer', 'senior_pastor', 'pastor', 'admin', 'unit_head', 'worker']
-    : ['unit_head', 'worker']
+  // Role elevation rules — higher roles can only be set by developer or senior_pastor
+  const allowedNewRoles =
+    callerWorker.role === 'developer'
+      ? ['developer', 'senior_pastor', 'pastor', 'ops_head', 'admin_head', 'admin', 'unit_head', 'worker']
+    : callerWorker.role === 'senior_pastor'
+      ? ['pastor', 'ops_head', 'admin_head', 'admin', 'unit_head', 'worker']
+    : callerWorker.role === 'pastor' || callerWorker.role === 'ops_head' || callerWorker.role === 'admin_head'
+      ? ['admin', 'unit_head', 'worker']
+      : ['unit_head', 'worker']  // admin can only create unit_head/worker
   const cleanRole = typeof role === 'string' && allowedNewRoles.includes(role) ? role : 'worker'
 
   // ── 4a. Reset-only: just update password for existing user ───────────────

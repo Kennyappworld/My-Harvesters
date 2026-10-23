@@ -60,18 +60,16 @@ export default function LoginPage() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Check if already logged in
+  // Check if already logged in — use cookie only, never sessionStorage role
   useEffect(() => {
     const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('sanctuaryhq_session='))
-    if (hasCookie) {
-      const stored = sessionStorage.getItem('shq_user')
-      if (stored) { window.location.href = '/dashboard'; return }
-    }
+    if (hasCookie) { window.location.href = '/dashboard'; return }
     const params = new URLSearchParams(window.location.search)
     if (params.get('reason') === 'session_expired') {
-      try { sessionStorage.removeItem('shq_user') } catch {}
       setError('Your session expired. Please sign in again.')
     }
+    // Clear any legacy role cache that may have been stored
+    try { sessionStorage.removeItem('shq_user') } catch {}
   }, [])
 
   // Rate lock countdown
@@ -142,11 +140,8 @@ export default function LoginPage() {
       crypto.getRandomValues(tokenBytes)
       const sessionToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
 
-      sessionStorage.setItem('shq_user', JSON.stringify({
-        id: worker.id, email: worker.email, name: worker.name,
-        role: worker.role, branch_key: worker.branch_key,
-        department: worker.department, avatar_url: worker.avatar_url,
-      }))
+      // NOTE: role/profile is intentionally NOT stored in sessionStorage.
+      // useSession always loads role from the workers DB table via Supabase JWT.
 
       // Set cookie with Secure flag on HTTPS, SameSite=Lax, 64-char hex token
       const expires = new Date(Date.now() + 30 * 60 * 1000).toUTCString()

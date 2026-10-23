@@ -54,14 +54,25 @@ function ProfileEditor() {
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    if (supabase && user?.id) {
-      const { error } = await supabase.from('workers').update({
-        full_name: form.name.trim(),
-        phone: form.phone.trim(),
-        department: form.dept,
-        marital_status: form.marital_status || null,
-      }).eq('id', user.id)
-      if (error) { notify.error('Failed to save profile: ' + error.message); setSaving(false); return }
+    try {
+      const { data: { session } } = await supabase!.auth.getSession()
+      const res = await fetch('/api/worker/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? ''}`,
+        },
+        body: JSON.stringify({
+          full_name:      form.name.trim(),
+          phone:          form.phone.trim(),
+          department:     form.dept,
+          marital_status: form.marital_status || null,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) { notify.error('Failed to save profile: ' + (json.error || res.statusText)); setSaving(false); return }
+    } catch (err: any) {
+      notify.error('Failed to save profile: ' + (err?.message || 'Network error')); setSaving(false); return
     }
     setSaving(false); setSaved(true)
     refresh?.()
@@ -79,8 +90,13 @@ function ProfileEditor() {
     if (supabase) {
       const { error } = await supabase.auth.updateUser({ password: pwForm.next })
       if (error) { setPwErr(error.message); setPwSaving(false); return }
+      // Clear must_change_password flag via server API — not client-side mutation
       try {
-        await supabase.from('workers').update({ must_change_password: false }).eq('id', user?.id || '')
+        const { data: { session } } = await supabase.auth.getSession()
+        await fetch('/api/worker/profile?action=flag_password_changed', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+        })
       } catch {}
     }
     setPwSaving(false); setPwDone(true); setPwForm({ next: '', confirm: '' })
@@ -1260,17 +1276,23 @@ function UserManager() {
     const tempPass = genTempPass()
     setUsers(prev => prev.map(x => x.id === u.id ? { ...x, status: 'active' } : x))
     if (supabase) {
-      await supabase.from('workers').update({ status: 'active' }).eq('id', u.id)
-      if (u.email) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession()
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token ?? ''
+        // Update status via server API (not direct client mutation)
+        await fetch('/api/worker/status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ target_id: u.id, status: 'active' }),
+        })
+        if (u.email) {
           await fetch('/api/create-worker-account', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ email: u.email, password: tempPass, name: u.full_name, branch_key: u.branch_key, dept: u.department }),
           })
-        } catch {}
-      }
+        }
+      } catch {}
     }
     setCredModal({ user: u, tempPass })
   }
@@ -1278,7 +1300,16 @@ function UserManager() {
   const deleteUser = async (id: string) => {
     setUsers(prev => prev.filter(u => u.id !== id))
     setDeleteConfirm(null)
-    if (supabase) await supabase.from('workers').update({ status: 'deleted' }).eq('id', id)
+    if (supabase) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        await fetch('/api/worker/status', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({ target_id: id, status: 'deleted' }),
+        })
+      } catch {}
+    }
   }
 
   const resetPassword = async (u: any) => {

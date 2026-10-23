@@ -117,10 +117,11 @@ type AudienceGroup = {
 }
 
 const ROLE_AUDIENCES = [
-  { id: 'leadership', name: 'Leadership',  color: '#166534', roles: ['senior_pastor','pastor','admin'] },
-  { id: 'pastors',    name: 'All Pastors', color: '#7c3aed', roles: ['senior_pastor','pastor'] },
-  { id: 'unit_heads', name: 'Unit Heads',  color: '#0d9488', roles: ['unit_head'] },
-  { id: 'workers',    name: 'All Workers', color: '#2563eb', roles: ['worker'] },
+  { id: 'leadership', name: 'Leadership',     color: '#166534', roles: ['senior_pastor','pastor','ops_head','admin_head','admin'] },
+  { id: 'pastors',    name: 'Pastors',        color: '#7c3aed', roles: ['senior_pastor','pastor'] },
+  { id: 'ops_admin',  name: 'Ops & Admin',    color: '#b45309', roles: ['ops_head','admin_head'] },
+  { id: 'unit_heads', name: 'Unit Heads',     color: '#0d9488', roles: ['unit_head'] },
+  { id: 'workers',    name: 'All Workers',    color: '#2563eb', roles: ['worker'] },
 ]
 
 const BROADCAST_ROLES = [

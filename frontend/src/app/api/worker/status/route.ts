@@ -79,7 +79,7 @@ export async function PATCH(req: NextRequest) {
     return json({ error: 'target_id is required' }, 400)
   }
   if (!newStatus || !VALID_STATUSES.has(newStatus)) {
-    return json({ error: `status must be one of: ${[...VALID_STATUSES].join(', ')}` }, 400)
+    return json({ error: `status must be one of: ${Array.from(VALID_STATUSES).join(', ')}` }, 400)
   }
 
   // 4. Load target worker — must be same org

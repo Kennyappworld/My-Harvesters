@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest) {
   // 3. Verify worker exists and is active
   const { data: worker, error: workerErr } = await sb
     .from('workers')
-    .select('id, status')
+    .select('id, role, status')
     .eq('id', user.id)
     .single()
 

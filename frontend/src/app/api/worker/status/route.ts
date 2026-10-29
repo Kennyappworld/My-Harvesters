@@ -11,16 +11,9 @@
  *  - Service role key server-side only — never in browser
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { makeSupabaseAdmin } from '@/lib/server-env'
 
-function makeClient(): SupabaseClient {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-           ?? process.env.SUPABASE_ANON_KEY
-           ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-  if (!url || !key) throw new Error('Supabase not configured')
-  return createClient(url, key, { auth: { persistSession: false } })
-}
+function makeClient() { return makeSupabaseAdmin() }
 
 const ROLE_LEVEL: Record<string, number> = {
   developer: 7, senior_pastor: 6, pastor: 5,
@@ -47,7 +40,7 @@ export async function PATCH(req: NextRequest) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!token) return json({ error: 'Unauthorized' }, 401)
 
-  let sb: SupabaseClient
+  let sb: ReturnType<typeof makeClient>
   try { sb = makeClient() } catch {
     return json({ error: 'Server not configured' }, 503)
   }

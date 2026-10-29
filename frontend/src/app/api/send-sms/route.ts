@@ -17,7 +17,7 @@
  *   { sent: number }  |  { error: string }
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient }              from '@supabase/supabase-js'
+import { makeSupabaseAdmin }         from '@/lib/server-env'
 
 // ─── Simple in-process rate limiter ───────────────────────────────────────────
 // In production you'd use Redis / Upstash, but this keeps zero extra deps.
@@ -42,8 +42,6 @@ export async function POST(req: NextRequest) {
   // 1. Env check — fail fast with a clear message during setup
   const TERMII_API_KEY  = process.env.TERMII_API_KEY
   const TERMII_SENDER   = process.env.TERMII_SENDER_ID || 'SanctuaryHQ'
-  const SUPABASE_URL    = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const SUPABASE_SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!TERMII_API_KEY) {
     return NextResponse.json({ error: 'SMS not configured: TERMII_API_KEY missing from server env' }, { status: 503 })
@@ -56,20 +54,15 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Auth check — user must have a valid Supabase session
-  if (SUPABASE_URL && SUPABASE_SECRET) {
+  {
     const authHeader = req.headers.get('authorization') || ''
     const token      = authHeader.replace('Bearer ', '')
     if (!token) {
-      // Also try cookie-based auth
-      const cookieHeader = req.headers.get('cookie') || ''
-      const sessionMatch = cookieHeader.match(/sanctuaryhq_session=([^;]+)/)
-      if (!sessionMatch) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     // Verify token with Supabase service role
     try {
-      const admin = createClient(SUPABASE_URL, SUPABASE_SECRET)
+      const admin = makeSupabaseAdmin()
       const { data: { user }, error } = await admin.auth.getUser(token)
       if (error || !user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

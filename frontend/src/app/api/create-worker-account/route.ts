@@ -12,12 +12,7 @@
  *  - Returns minimal information to caller
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl    = process.env.NEXT_PUBLIC_SUPABASE_URL      ?? ''
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY     ?? ''
-const anonKey        = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-                    ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+import { makeSupabaseAdmin } from '@/lib/server-env'
 
 // ops_head and admin_head (level 4) are trusted to create accounts
 const ADMIN_ROLES = new Set(['developer', 'senior_pastor', 'pastor', 'ops_head', 'admin_head', 'admin'])
@@ -35,8 +30,11 @@ type CreateWorkerBody = {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // ── 0. Config check ──────────────────────────────────────────────────────
-  if (!supabaseUrl || !anonKey) {
+  // ── 0. Build admin client (validates env vars with URL normalisation) ─────
+  let adminClient: ReturnType<typeof makeSupabaseAdmin>
+  try {
+    adminClient = makeSupabaseAdmin()
+  } catch {
     return json({ error: 'Service not configured' }, 503)
   }
 
@@ -48,19 +46,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return json({ error: 'Unauthorized' }, 401)
   }
 
-  const anonClient = createClient(supabaseUrl, anonKey)
-  const { data: { user: caller }, error: authErr } = await anonClient.auth.getUser(callerToken)
+  const { data: { user: caller }, error: authErr } = await adminClient.auth.getUser(callerToken)
 
   if (authErr || !caller?.id) {
     return json({ error: 'Unauthorized' }, 401)
   }
 
   // ── 2. Verify caller has admin role (from DB, not metadata) ──────────────
-  if (!serviceRoleKey) {
-    return json({ error: 'Service role not configured — contact administrator' }, 503)
-  }
-
-  const adminClient = createClient(supabaseUrl, serviceRoleKey)
   const { data: callerWorker, error: workerErr } = await adminClient
     .from('workers')
     .select('role, org_id, status')

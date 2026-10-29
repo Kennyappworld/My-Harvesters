@@ -7,7 +7,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { makeSupabaseAdmin } from '@/lib/server-env'
 
 // Cache for 60 seconds to avoid hammering Supabase on every page load
 let cache: { data: Record<string, unknown>; at: number } | null = null
@@ -21,18 +21,14 @@ export async function GET() {
     })
   }
 
-  const url = process.env.SUPABASE_URL
-           ?? process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-           ?? process.env.SUPABASE_ANON_KEY
-           ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!url || !key) {
+  let sb: ReturnType<typeof makeSupabaseAdmin>
+  try {
+    sb = makeSupabaseAdmin()
+  } catch {
     return NextResponse.json({ error: 'Not configured' }, { status: 503 })
   }
 
   try {
-    const sb = createClient(url, key, { auth: { persistSession: false } })
     const { data, error } = await sb
       .from('organisations')
       .select('id,slug,name,tagline,logo_url,app_name,powered_by_text,powered_by_url,powered_by_visible,primary_color,accent_color,allow_self_reg,signup_fields')

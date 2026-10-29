@@ -12,16 +12,9 @@
  *  - Returns no sensitive fields in response
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { makeSupabaseAdmin } from '@/lib/server-env'
 
-function makeClient(): SupabaseClient {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-           ?? process.env.SUPABASE_ANON_KEY
-           ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-  if (!url || !key) throw new Error('Supabase not configured')
-  return createClient(url, key, { auth: { persistSession: false } })
-}
+function makeClient() { return makeSupabaseAdmin() }
 
 // Fields a worker is allowed to update on their own profile
 const ALLOWED_PROFILE_FIELDS = ['full_name', 'phone', 'department', 'marital_status', 'avatar_url'] as const
@@ -35,7 +28,7 @@ export async function PATCH(req: NextRequest) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let sb: SupabaseClient
+  let sb: ReturnType<typeof makeClient>
   try { sb = makeClient() } catch {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
   }
@@ -144,7 +137,7 @@ export async function POST(req: NextRequest) {
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let sb: SupabaseClient
+  let sb: ReturnType<typeof makeClient>
   try { sb = makeClient() } catch {
     return NextResponse.json({ error: 'Server not configured' }, { status: 503 })
   }

@@ -3,12 +3,18 @@
  *
  * Server-side login — Supabase URL + keys never exposed to the browser.
  * The client sends { email, password } and gets back worker profile data.
+ *
+ * Security:
+ *  - Rate limited: 10 attempts per IP per 10-minute window
+ *  - Role always loaded from workers table (never from JWT metadata)
+ *  - Service-role key server-side only
+ *  - URL normalisation handles missing https:// in env vars
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { makeSupabaseAdmin } from '@/lib/server-env'
 
-// ── Rate limiting ─────────────────────────────────────────────────────────────
+// ── Rate limiting (in-memory, per serverless instance) ────────────────────────
 const attempts = new Map<string, number[]>()
 const LIMIT  = 10
 const WINDOW = 10 * 60 * 1000
@@ -20,17 +26,6 @@ function rateCheck(ip: string): boolean {
   list.push(now)
   attempts.set(ip, list)
   return true
-}
-
-// ── Supabase client factory ───────────────────────────────────────────────────
-function makeClient(): SupabaseClient {
-  const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-           ?? process.env.SUPABASE_ANON_KEY
-           ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-           ?? ''
-  if (!url || !key) throw new Error('SUPABASE_URL / key not set in environment.')
-  return createClient(url, key, { auth: { persistSession: false } })
 }
 
 // ── Handler ───────────────────────────────────────────────────────────────────
@@ -62,12 +57,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Please enter a valid email address.' }, { status: 400 })
   }
 
-  // Build Supabase client — return clear error if env vars missing
-  let sb: SupabaseClient
+  // Build Supabase admin client — robust URL normalisation handles missing https://
+  let sb: ReturnType<typeof makeSupabaseAdmin>
   try {
-    sb = makeClient()
+    sb = makeSupabaseAdmin()
   } catch (e) {
-    console.error('[login] env not configured:', e)
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('[login] env not configured:', msg)
     return NextResponse.json(
       { error: 'Server is not fully configured. Contact your administrator.' },
       { status: 503 }
@@ -75,12 +71,20 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    // ── 1. Check worker record exists first ───────────────────────────────────
-    const { data: workerCheck } = await sb
+    // ── 1. Check worker record exists ─────────────────────────────────────────
+    const { data: workerCheck, error: wcErr } = await sb
       .from('workers')
-      .select('email,status')
+      .select('email, status')
       .eq('email', email)
       .maybeSingle()
+
+    if (wcErr) {
+      console.error('[login] workers check error:', wcErr.message)
+      return NextResponse.json(
+        { error: 'Database error. Please try again.' },
+        { status: 500 }
+      )
+    }
 
     if (!workerCheck) {
       // Worker row missing — check if the email is in auth.users at all
@@ -100,7 +104,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (workerCheck.status === 'inactive') {
+    if (workerCheck.status === 'inactive' || workerCheck.status === 'suspended') {
       return NextResponse.json(
         { error: 'Your account has been deactivated. Contact your administrator.' },
         { status: 403 }
@@ -144,7 +148,7 @@ export async function POST(req: NextRequest) {
     // ── 3. Load full worker profile ───────────────────────────────────────────
     const { data: worker, error: wErr } = await sb
       .from('workers')
-      .select('id,email,full_name,role,status,branch_key,department,avatar_url,must_change_password')
+      .select('id, email, full_name, role, status, branch_key, department, avatar_url, must_change_password')
       .eq('email', email)
       .single()
 

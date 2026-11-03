@@ -63,7 +63,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return json({ error: 'Forbidden — admin role required' }, 403)
   }
 
-  if (callerWorker.status !== 'active') {
+  if (['inactive', 'suspended', 'deleted'].includes(callerWorker.status ?? '')) {
     return json({ error: 'Forbidden — account is not active' }, 403)
   }
 
@@ -77,101 +77,134 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const { email, password, name, phone, branch_key, dept, role, resetOnly } = body
 
-  // Required fields
   if (!email || typeof email !== 'string') return json({ error: 'email is required' }, 400)
   if (!password || typeof password !== 'string') return json({ error: 'password is required' }, 400)
-  if (!resetOnly && (!name || typeof name !== 'string')) return json({ error: 'name is required' }, 400)
 
-  // Sanitise email
   const cleanEmail = email.trim().toLowerCase()
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
-    return json({ error: 'Invalid email address' }, 400)
-  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return json({ error: 'Invalid email address' }, 400)
   if (cleanEmail.length > 200) return json({ error: 'Email too long' }, 400)
 
-  // Name length
-  const cleanName = name.trim().slice(0, 200)
-  if (cleanName.length < 2) return json({ error: 'Name too short' }, 400)
-
-  // Password strength (basic server-side check)
   if (password.length < 8) return json({ error: 'Password must be at least 8 characters' }, 400)
   if (password.length > 128) return json({ error: 'Password too long' }, 400)
 
+  const ROLE_LEVEL: Record<string, number> = {
+    developer: 7, senior_pastor: 6, pastor: 5, ops_head: 4, admin_head: 4, admin: 3, unit_head: 2, worker: 1, guest: 0,
+  }
+  const callerLevel = ROLE_LEVEL[callerWorker.role] ?? 0
+  const isDeveloper = callerWorker.role === 'developer'
+
+  // An existing person may only be changed by someone in the same church with
+  // a higher rank (previously any admin could reset any account's password —
+  // including a senior pastor's or another church's — by email).
+  const canManage = (target: { role?: string | null; org_id?: string | null }) =>
+    isDeveloper || ((target.org_id ?? null) === (callerWorker.org_id ?? null) && callerLevel > (ROLE_LEVEL[target.role ?? 'worker'] ?? 1))
+
+  const { data: existingRows, error: lookupErr } = await adminClient
+    .from('workers')
+    .select('id, role, org_id, status')
+    .eq('email', cleanEmail)
+    .limit(1)
+  if (lookupErr) {
+    console.error('[create-worker-account] lookup error:', lookupErr.message)
+    return json({ error: 'Could not check existing accounts — please try again' }, 500)
+  }
+  const existing = existingRows?.[0] ?? null
+  if (existing && !canManage(existing)) {
+    return json({ error: 'Forbidden — you cannot change this person\'s account' }, 403)
+  }
+
+  // ── 4a. Reset-only: set a new password for an existing account ───────────
+  // (crashed before: it read `name` even though resets don't send one)
+  if (resetOnly) {
+    if (!existing) return json({ error: 'Worker not found' }, 404)
+    const { error: pwErr } = await adminClient.auth.admin.updateUserById(existing.id, { password, ban_duration: 'none' })
+    if (pwErr) {
+      console.error('[create-worker-account] reset error:', pwErr.message)
+      return json({ error: 'Failed to reset password — this person may not have a login account yet. Use "Create account" instead.' }, 500)
+    }
+    await adminClient.from('workers').update({ must_change_password: true }).eq('id', existing.id)
+    return json({ ok: true })
+  }
+
+  if (!name || typeof name !== 'string') return json({ error: 'name is required' }, 400)
+  const cleanName = name.trim().slice(0, 200)
+  if (cleanName.length < 2) return json({ error: 'Name too short' }, 400)
+
   // Role elevation rules — higher roles can only be set by developer or senior_pastor
   const allowedNewRoles =
-    callerWorker.role === 'developer'
+    isDeveloper
       ? ['developer', 'senior_pastor', 'pastor', 'ops_head', 'admin_head', 'admin', 'unit_head', 'worker']
     : callerWorker.role === 'senior_pastor'
       ? ['pastor', 'ops_head', 'admin_head', 'admin', 'unit_head', 'worker']
     : callerWorker.role === 'pastor' || callerWorker.role === 'ops_head' || callerWorker.role === 'admin_head'
       ? ['admin', 'unit_head', 'worker']
-      : ['unit_head', 'worker']  // admin can only create unit_head/worker
+      : ['unit_head', 'worker']
   const cleanRole = typeof role === 'string' && allowedNewRoles.includes(role) ? role : 'worker'
 
-  // ── 4a. Reset-only: just update password for existing user ───────────────
-  if (resetOnly) {
-    const { data: existingWorker } = await adminClient
-      .from('workers')
-      .select('id')
-      .eq('email', cleanEmail)
-      .single()
-    if (!existingWorker?.id) return json({ error: 'Worker not found' }, 404)
-    const { error: pwErr } = await adminClient.auth.admin.updateUserById(existingWorker.id, {
-      password,
-    })
-    if (pwErr) return json({ error: 'Failed to reset password' }, 500)
-    await adminClient.from('workers').update({ must_change_password: true }).eq('id', existingWorker.id)
-    return json({ ok: true })
+  // branch_key is a text key (e.g. "lekki"); branch_id is the branch's uuid.
+  // The old code wrote the key into branch_id, which failed silently and left
+  // the person without a profile ("account not fully set up" at login).
+  const cleanBranchKey = typeof branch_key === 'string' && branch_key.trim() ? branch_key.trim().slice(0, 100) : null
+  let branchId: string | null = null
+  if (cleanBranchKey) {
+    const { data: br } = await adminClient
+      .from('branches').select('id').eq('org_id', callerWorker.org_id).eq('branch_key', cleanBranchKey).maybeSingle()
+    branchId = (br as { id?: string } | null)?.id ?? null
   }
 
-  // ── 4. Create Supabase auth user ─────────────────────────────────────────
+  // ── 4. Create (or find) the login account ────────────────────────────────
+  let userId: string | null = null
   const { data, error: createErr } = await adminClient.auth.admin.createUser({
     email: cleanEmail,
     password,
-    email_confirm: true,      // skip confirmation email
-    user_metadata: {
-      full_name:   cleanName,
-      branch_key:  branch_key ?? '',
-      department:  dept ?? '',
-      role:        cleanRole,
-    },
+    email_confirm: true,
+    user_metadata: { full_name: cleanName, branch_key: cleanBranchKey ?? '', department: dept ?? '' },
   })
 
   if (createErr) {
-    if (createErr.message?.toLowerCase().includes('already registered')) {
-      // Idempotent — user already exists, just update their worker record
-      await adminClient
-        .from('workers')
-        .update({ status: 'active', must_change_password: true, phone: phone?.trim() ?? undefined })
-        .eq('email', cleanEmail)
-      return json({ ok: true, note: 'Account already exists — set to active' })
+    const msg = createErr.message?.toLowerCase() ?? ''
+    if (!(msg.includes('already registered') || msg.includes('already been registered') || msg.includes('exists'))) {
+      console.error('[create-worker-account] Supabase error:', createErr.message)
+      return json({ error: 'Failed to create account — please try again' }, 500)
     }
-    // Do not leak internal error details
-    console.error('[create-worker-account] Supabase error:', createErr.message)
-    return json({ error: 'Failed to create account — please try again' }, 500)
+    // Login account already exists (e.g. they registered through the sign-up page).
+    // Find it and apply the password the admin just chose (it was ignored before).
+    const authId = existing?.id ?? null
+    if (!authId) return json({ error: 'This email already has a login. Use "Reset password" on their record.' }, 409)
+    const { error: upErr } = await adminClient.auth.admin.updateUserById(authId, { password, ban_duration: 'none' })
+    if (upErr) {
+      console.error('[create-worker-account] update existing error:', upErr.message)
+      return json({ error: 'Failed to update the existing account' }, 500)
+    }
+    userId = authId
+  } else {
+    userId = data.user?.id ?? null
+  }
+  if (!userId) return json({ error: 'Failed to create account — please try again' }, 500)
+
+  // ── 5. Create or update the worker profile, and report failures ──────────
+  const profile = {
+    org_id:               existing?.org_id ?? callerWorker.org_id,
+    email:                cleanEmail,
+    full_name:            cleanName,
+    role:                 cleanRole,
+    branch_key:           cleanBranchKey,
+    branch_id:            branchId,
+    department:           typeof dept === 'string' ? dept.slice(0, 100) : null,
+    phone:                typeof phone === 'string' ? phone.trim().slice(0, 30) : null,
+    status:               'active',
+    must_change_password: true,
+  }
+  const { error: saveErr } = existing
+    ? await adminClient.from('workers').update(profile).eq('id', existing.id)
+    : await adminClient.from('workers').insert({ id: userId, ...profile })
+
+  if (saveErr) {
+    console.error('[create-worker-account] profile save error:', saveErr.message)
+    return json({ error: `Login created, but the profile could not be saved: ${saveErr.message}` }, 500)
   }
 
-  const newUserId = data.user?.id
-
-  // ── 5. Ensure worker record is synced ────────────────────────────────────
-  if (newUserId) {
-    await adminClient
-      .from('workers')
-      .upsert({
-        id:                newUserId,
-        org_id:            callerWorker.org_id,
-        email:             cleanEmail,
-        full_name:         cleanName,
-        role:              cleanRole,
-        branch_id:         branch_key ?? '',
-        department:        dept ?? '',
-        phone:             phone?.trim() ?? '',
-        status:            'active',
-        must_change_password: true,
-      }, { onConflict: 'id' })
-  }
-
-  return json({ ok: true, userId: newUserId })
+  return json({ ok: true, userId })
 }
 
 // Helper

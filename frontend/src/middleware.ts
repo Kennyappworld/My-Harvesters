@@ -32,7 +32,7 @@ const MIN_TOKEN_LEN  = 32
 const CSP = [
   "default-src 'self'",
   // Scripts: self + Next.js inline bootstrap (required for hydration)
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'" + (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
   // Styles: self + Google Fonts
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   // Fonts: self + Google Fonts CDN

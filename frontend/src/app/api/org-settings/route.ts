@@ -9,6 +9,9 @@
 import { NextResponse } from 'next/server'
 import { makeSupabaseAdmin } from '@/lib/server-env'
 
+// Read live on each request (it was being frozen at build time).
+export const dynamic = 'force-dynamic'
+
 // Cache for 60 seconds to avoid hammering Supabase on every page load
 let cache: { data: Record<string, unknown>; at: number } | null = null
 const CACHE_TTL = 60_000

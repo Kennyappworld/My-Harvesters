@@ -10,15 +10,19 @@ import {
   browserSupportsWebAuthn,
   platformAuthenticatorIsAvailable,
 } from '@simplewebauthn/browser'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { setAppSessionCookie } from '@/lib/appSession'
+
+// The signed-in user's token, sent so the server knows who is registering.
+async function authHeader(): Promise<Record<string, string>> {
+  const { data } = (await supabase?.auth.getSession()) ?? { data: { session: null } }
+  const token = data.session?.access_token
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 export function usePasskey() {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
-
-  const supabase = (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-    : null
 
   // ── Check support ────────────────────────────────────────────
   const isSupported = browserSupportsWebAuthn()
@@ -37,7 +41,7 @@ export function usePasskey() {
     setError(null)
     try {
       // Step 1: get options from server
-      const optRes = await fetch('/api/passkey/register-options', { method: 'POST' })
+      const optRes = await fetch('/api/passkey/register-options', { method: 'POST', headers: await authHeader() })
       if (!optRes.ok) throw new Error((await optRes.json()).error)
       const options = await optRes.json()
 
@@ -47,7 +51,7 @@ export function usePasskey() {
       // Step 3: verify with server
       const verifyRes = await fetch('/api/passkey/register-verify', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
         body:    JSON.stringify({ response: registration, deviceName }),
       })
       const verifyData = await verifyRes.json()
@@ -103,12 +107,13 @@ export function usePasskey() {
 
       // Step 4: exchange the magic-link token for a Supabase session
       if (!supabase) throw new Error('Supabase not configured')
+      // The server returns a hashed one-time token, which is exchanged as token_hash.
       const { error: sessionErr } = await supabase.auth.verifyOtp({
-        email:     verifyData.email,
-        token:     verifyData.token,
-        type:      'magiclink',
+        token_hash: verifyData.token,
+        type:       'magiclink',
       })
-      if (sessionErr) throw new Error(sessionErr.message)
+      if (sessionErr) throw new Error('Could not complete sign in. Please use your password.')
+      setAppSessionCookie()
 
       return { success: true, mustChangePassword: verifyData.mustChangePassword }
     } catch (err: unknown) {

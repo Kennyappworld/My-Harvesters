@@ -79,10 +79,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Forbidden — insufficient role' }, { status: 403 })
       }
     } catch {
-      // If Supabase check fails (service key not configured) let it through in dev
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ error: 'Auth check failed' }, { status: 500 })
-      }
+      // Never send SMS without a confirmed caller (the old code let it through outside production)
+      return NextResponse.json({ error: 'Auth check failed' }, { status: 500 })
     }
   }
 

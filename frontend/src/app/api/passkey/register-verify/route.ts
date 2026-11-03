@@ -21,8 +21,11 @@ const ORIGIN    = process.env.NEXT_PUBLIC_APP_ORIGIN ?? 'http://localhost:3000'
 export async function POST(req: NextRequest) {
   try {
     // ── 1. Auth check ────────────────────────────────────────
+    // The browser sends its Supabase session token (the app never set an
+    // 'sb-access-token' cookie, so registration always failed before).
+    const authz = req.headers.get('authorization') ?? ''
     const cookieStore = await cookies()
-    const accessToken = cookieStore.get('sb-access-token')?.value
+    const accessToken = (authz.startsWith('Bearer ') ? authz.slice(7) : '') || cookieStore.get('sb-access-token')?.value
     if (!accessToken) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }

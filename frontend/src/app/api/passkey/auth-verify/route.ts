@@ -41,6 +41,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Challenge not found or expired' }, { status: 400 })
     }
 
+    // Claim the challenge before verifying, so the same signed response can't be
+    // replayed in parallel. Only the request that flips used=false→true goes on.
+    const { data: claimed } = await getSupabaseAdmin()
+      .from('passkey_challenges')
+      .update({ used: true })
+      .eq('id', challengeRow.id)
+      .eq('used', false)
+      .select('id')
+    if (!claimed || claimed.length === 0) {
+      return NextResponse.json({ error: 'Challenge already used' }, { status: 400 })
+    }
+
     // ── 3. Find the credential in DB ─────────────────────────
     const credentialId = body.response.id
     const { data: credRow } = await getSupabaseAdmin()
@@ -81,12 +93,6 @@ export async function POST(req: NextRequest) {
         last_used_at: new Date().toISOString(),
       })
       .eq('id', credRow.id)
-
-    // Mark challenge used
-    await getSupabaseAdmin()
-      .from('passkey_challenges')
-      .update({ used: true })
-      .eq('id', challengeRow.id)
 
     // ── 6. Look up the worker's email and create a Supabase session ──
     const { data: worker } = await getSupabaseAdmin()

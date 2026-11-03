@@ -8,14 +8,8 @@
  */
 'use client'
 import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-) ? createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!
-  ) : null
+import { supabase } from '@/lib/supabase'
+import { clearAppSessionCookie } from '@/lib/appSession'
 
 export type UserRole = 'developer' | 'senior_pastor' | 'pastor' | 'ops_head' | 'admin_head' | 'admin' | 'unit_head' | 'worker' | 'guest'
 
@@ -68,8 +62,14 @@ export function useSession() {
       return
     }
     try {
+      // getUser() checks the token with Supabase (getSession() only reads local
+      // storage). No valid session means not signed in, whatever the cookie says.
+      const { data: { user: authUser }, error: userErr } = await supabase.auth.getUser()
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { setLoading(false); return }
+      if (userErr || !authUser || !session?.user) {
+        clearSessionAndRedirect()
+        return
+      }
 
       // Always load role from workers table — not from JWT metadata
       const { data: worker } = await supabase
@@ -79,29 +79,18 @@ export function useSession() {
         .single()
 
       if (!worker) {
-        // Worker record not yet created — use metadata temporarily
-        const meta = session.user.user_metadata || {}
-        setUser({
-          id:         session.user.id,
-          email:      session.user.email || '',
-          name:       String(meta.full_name || session.user.email?.split('@')[0] || 'User'),
-          role:       'worker',
-          branch_key: String(meta.branch_key || ''),
-          branch_id:  null,
-          org_id:     null,
-          department: String(meta.department || ''),
-          avatar_url: null,
-          phone:      '',
-        })
-        setLoading(false)
+        // No worker profile: the account isn't set up, so don't show the app.
+        await supabase.auth.signOut().catch(() => {})
+        clearAppSessionCookie()
+        if (typeof window !== 'undefined') window.location.href = '/login?reason=not_set_up'
         return
       }
 
-      // Redirect if account is suspended or pending
-      if (worker.status === 'suspended') {
-        if (typeof window !== 'undefined') {
-          window.location.href = '/login?reason=suspended'
-        }
+      // Deactivated accounts are signed out
+      if (['suspended', 'inactive', 'deleted'].includes(worker.status ?? '')) {
+        await supabase.auth.signOut().catch(() => {})
+        clearAppSessionCookie()
+        if (typeof window !== 'undefined') window.location.href = '/login?reason=suspended'
         return
       }
 
@@ -135,9 +124,7 @@ export function useSession() {
 
   function clearSessionAndRedirect() {
     if (typeof window === 'undefined') return
-    document.cookie = 'sanctuaryhq_session=; path=/; max-age=0; SameSite=Lax; Secure'
-    // Also clear legacy cookie name
-    document.cookie = 'sanctuaryhq_session=; path=/; max-age=0'
+    clearAppSessionCookie()
     if (!window.location.pathname.includes('/login')) {
       window.location.href = '/login?reason=session_expired'
     }

@@ -2,16 +2,8 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@supabase/supabase-js'
 import { useOrgSettings, DEFAULT_SIGNUP_FIELDS, SignupField } from '@/lib/orgSettings'
 import { useBranches, useDepartments } from '@/lib/data'
-
-const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && (
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-) ? createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)!
-  ) : null
 
 // Rate limit: max 3 signups per 30 min per browser session
 const SIGNUP_RATE_KEY    = 'shq_signup_attempts'
@@ -111,7 +103,7 @@ function SignupForm() {
       setBusy(false)
       return
     }
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
       setSignupErr('Please enter a valid email address.')
       setBusy(false)
       return
@@ -124,26 +116,26 @@ function SignupForm() {
       : null
 
     try {
-      if (supabase) {
-        await supabase.from('workers').insert({
-          org_id:      settings.id || null,
-          full_name:   form.name.trim(),
-          phone:       form.phone.trim(),
-          email:       form.email.trim().toLowerCase() || null,
-          branch_key:  form.branch || null,
-          department:  form.dept || null,
-          role:        'worker',
-          first_timer: form.firstTimer === 'yes',
-          dob:         dobValue,
+      // Registration is handled by the server, which decides role and approval.
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          org_id:       settings.id || null,
+          name:         form.name.trim(),
+          phone:        form.phone.trim(),
+          email:        form.email.trim().toLowerCase(),
+          branch_key:   form.branch || null,
+          department:   form.dept || null,
+          first_timer:  form.firstTimer === 'yes',
+          dob:          dobValue,
           extra_fields: Object.keys(form.extraFields).length > 0 ? form.extraFields : null,
-          status:      settings.requireApproval ? 'pending' : 'active',
-          must_change_password: true,
-        })
-        await Promise.resolve(supabase.from('announcements').insert({
-          title: `New registration: ${form.name.trim()}`,
-          body: `${form.name.trim()} joined ${selectedBranch?.name || form.branch || 'a campus'} · ${form.dept || 'No department'}. ${settings.requireApproval ? 'Pending admin approval.' : 'Auto-approved.'}`,
-          scope: 'admin',
-        })).catch(() => null)
+        }),
+      })
+      const out = await res.json().catch(() => ({}))
+      if (!res.ok || !out.ok) {
+        setSignupErr(out.error || 'Registration failed — please check your details and try again.')
+        return
       }
       setDone(true)
     } catch {
@@ -339,8 +331,8 @@ function SignupForm() {
                 />
               </div>
               <div>
-                <label style={labelSt}>Email address <span style={{ opacity: 0.5, fontStyle: 'normal', textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
-                <input style={inputSt} type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                <label style={labelSt}>Email address *</label>
+                <input style={inputSt} type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                   placeholder="for login access"
                   onFocus={e => { e.target.style.borderColor='rgba(201,168,76,0.45)'; e.target.style.boxShadow='0 0 0 3px rgba(201,168,76,0.12)' }}
                   onBlur={e => { e.target.style.borderColor='#1e2d45'; e.target.style.boxShadow='none' }}

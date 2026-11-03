@@ -58,7 +58,7 @@ export async function PATCH(req: NextRequest) {
   if (!caller || !ALLOWED_CALLER_ROLES.has(caller.role)) {
     return json({ error: 'Forbidden — admin role required' }, 403)
   }
-  if (caller.status !== 'active') return json({ error: 'Forbidden — account not active' }, 403)
+  if (['inactive', 'suspended', 'deleted'].includes(caller.status ?? '')) return json({ error: 'Forbidden — account not active' }, 403)
 
   // 3. Parse body
   let body: { target_id?: string; status?: string }
@@ -83,6 +83,9 @@ export async function PATCH(req: NextRequest) {
     .single()
 
   if (!target) return json({ error: 'Worker not found' }, 404)
+  if (caller.role !== 'developer' && (target.org_id ?? null) !== (caller.org_id ?? null)) {
+    return json({ error: 'Worker not found' }, 404)
+  }
 
   // Cannot modify a worker with a higher or equal role (except developer)
   const callerLevel = ROLE_LEVEL[caller.role] ?? 0
@@ -106,6 +109,13 @@ export async function PATCH(req: NextRequest) {
     console.error('[worker/status] update error:', updateErr.message)
     return json({ error: 'Failed to update status' }, 500)
   }
+
+  // Lock or unlock the login itself, so a deactivated person can't sign in
+  // directly against Supabase or by resetting their password.
+  const { error: banErr } = await sb.auth.admin.updateUserById(target_id, {
+    ban_duration: newStatus === 'active' ? 'none' : '876000h',
+  })
+  if (banErr) console.error('[worker/status] login lock update failed:', banErr.message)
 
   return json({ ok: true })
 }

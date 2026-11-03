@@ -67,11 +67,14 @@ export async function POST(req: NextRequest) {
 
   try {
     // Derive the app origin for the redirect
-    const origin = process.env.NEXT_PUBLIC_APP_ORIGIN
-                ?? process.env.VERCEL_URL
-                  ? `https://${process.env.VERCEL_URL}`
-                  : req.headers.get('origin')
-                  ?? 'https://my-harvesters.vercel.app'
+    // The old expression was parsed as (ORIGIN ?? VERCEL_URL) ? `https://${VERCEL_URL}` : …,
+    // so with NEXT_PUBLIC_APP_ORIGIN set the reset link pointed at
+    // https://undefined/… or a one-off deployment URL. The request's Origin
+    // header is never used: it is attacker-controlled.
+    const configured = (process.env.NEXT_PUBLIC_APP_ORIGIN ?? '').trim().replace(/\/+$/, '')
+    const origin = configured
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : '')
+      || 'https://my-harvesters.vercel.app'
 
     const { error: resetErr } = await sb.auth.resetPasswordForEmail(email, {
       redirectTo: `${origin}/reset-password`,

@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { useOrgSettings } from '@/lib/orgSettings'
 import PoweredBy from '@/lib/PoweredBy'
 import { usePasskey } from '@/hooks/usePasskey'
+import { supabase } from '@/lib/supabase'
+import { setAppSessionCookie } from '@/lib/appSession'
 
 // Rate limit: max 5 attempts per 10 min window (per session)
 const RATE_KEY    = 'shq_login_attempts'
@@ -63,11 +65,12 @@ export default function LoginPage() {
   // Check if already logged in — use cookie only, never sessionStorage role
   useEffect(() => {
     const hasCookie = document.cookie.split(';').some(c => c.trim().startsWith('sanctuaryhq_session='))
-    if (hasCookie) { window.location.href = '/dashboard'; return }
+    if (hasCookie && !new URLSearchParams(window.location.search).get('reason')) { window.location.href = '/dashboard'; return }
     const params = new URLSearchParams(window.location.search)
-    if (params.get('reason') === 'session_expired') {
-      setError('Your session expired. Please sign in again.')
-    }
+    const reason = params.get('reason')
+    if (reason === 'session_expired') setError('Your session expired. Please sign in again.')
+    if (reason === 'suspended')       setError('Your account has been deactivated. Contact your administrator.')
+    if (reason === 'not_set_up')      setError('Your account is not fully set up yet. Ask your administrator to finish creating it.')
     // Clear any legacy role cache that may have been stored
     try { sessionStorage.removeItem('shq_user') } catch {}
   }, [])
@@ -135,18 +138,24 @@ export default function LoginPage() {
 
       const worker = json.worker
 
-      // Generate cryptographically secure session token
-      const tokenBytes = new Uint8Array(32)
-      crypto.getRandomValues(tokenBytes)
-      const sessionToken = Array.from(tokenBytes).map(b => b.toString(16).padStart(2, '0')).join('')
+      // Store the real Supabase session in the browser. Every screen and API
+      // call uses it to prove who the user is (role is still loaded from the DB).
+      if (!supabase || !json.session?.access_token) {
+        setError('Sign in failed — the app is not fully configured. Contact your administrator.')
+        setLoading(false)
+        return
+      }
+      const { error: sessErr } = await supabase.auth.setSession({
+        access_token:  json.session.access_token,
+        refresh_token: json.session.refresh_token,
+      })
+      if (sessErr) {
+        setError('Sign in failed. Please try again.')
+        setLoading(false)
+        return
+      }
 
-      // NOTE: role/profile is intentionally NOT stored in sessionStorage.
-      // useSession always loads role from the workers DB table via Supabase JWT.
-
-      // Set cookie with Secure flag on HTTPS, SameSite=Lax, 64-char hex token
-      const expires = new Date(Date.now() + 30 * 60 * 1000).toUTCString()
-      const isSecure = location.protocol === 'https:'
-      document.cookie = `sanctuaryhq_session=${sessionToken}; path=/; expires=${expires}; SameSite=Lax${isSecure ? '; Secure' : ''}`
+      setAppSessionCookie()
 
       try { sessionStorage.removeItem(RATE_KEY) } catch {}
 
